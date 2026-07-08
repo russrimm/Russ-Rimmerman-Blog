@@ -1,0 +1,90 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+/* Enable class-based dark mode (toggled on <html class="dark">) */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ------------------------------------------------------------------ *
+ * Azure-inspired design tokens
+ * ------------------------------------------------------------------ */
+@theme {
+  --font-sans:
+    "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif;
+  --font-mono:
+    "JetBrains Mono", ui-monospace, "SFMono-Regular", "Cascadia Code",
+    "Roboto Mono", monospace;
+
+  /* Brand palette */
+  --color-azure-50: #eff8ff;
+  --color-azure-100: #dbeefe;
+  --color-azure-200: #bfe1ff;
+  --color-azure-300: #93cdff;
+  --color-azure-400: #60affc;
+  --color-azure-500: #3b8ef8;
+  --color-azure-600: #0078d4; /* Microsoft Azure blue */
+  --color-azure-700: #005ba1;
+  --color-azure-800: #084d83;
+  --color-azure-900: #0d426d;
+  --color-azure-950: #082a49;
+
+  --color-teal-400: #2dd4bf;
+  --color-teal-500: #14b8a6;
+
+  /* Neutral / surface (deep navy charcoal) */
+  --color-ink-50: #f5f7fa;
+  --color-ink-100: #e6ebf1;
+  --color-ink-200: #cad3df;
+  --color-ink-300: #9fb0c3;
+  --color-ink-400: #6c8299;
+  --color-ink-500: #4a5f76;
+  --color-ink-600: #35485c;
+  --color-ink-700: #26374a;
+  --color-ink-800: #172231;
+  --color-ink-900: #0d1622;
+  --color-ink-950: #070d16;
+}
+
+/* ------------------------------------------------------------------ *
+ * Base
+ * ------------------------------------------------------------------ */
+html {
+  scroll-behavior: smooth;
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+body {
+  @apply bg-white text-ink-800 antialiased;
+  @apply dark:bg-ink-950 dark:text-ink-100;
+  font-family: var(--font-sans);
+}
+
+/* Gradient text helper */
+.text-gradient {
+  @apply bg-gradient-to-r from-azure-600 to-teal-400 bg-clip-text text-transparent;
+}
+
+/* Subtle grid/glow backdrop used on hero sections */
+.bg-grid {
+  background-image:
+    linear-gradient(to right, rgb(148 163 184 / 0.08) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(148 163 184 / 0.08) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* Focus visibility */
+:focus-visible {
+  @apply outline-2 outline-offset-2 outline-azure-500;
+}
+
+/* Prose (article) tweaks so it reads well in both themes */
+.prose :where(a):not(:where(.not-prose *)) {
+  @apply text-azure-600 no-underline hover:underline dark:text-azure-400;
+}
+.prose :where(h1, h2, h3, h4):not(:where(.not-prose *)) {
+  @apply scroll-mt-24;
+}

@@ -1,0 +1,105 @@
+---
+import { GISCUS } from "@/consts";
+
+const configured =
+  GISCUS.repoId !== "REPLACE_WITH_REPO_ID" &&
+  GISCUS.categoryId !== "REPLACE_WITH_CATEGORY_ID";
+---
+
+<section class="mt-16" aria-label="Comments">
+  <h2 class="mb-6 text-xl font-semibold text-ink-900 dark:text-white">
+    Comments
+  </h2>
+
+  {
+    configured ? (
+      <div class="giscus"></div>
+    ) : (
+      <div class="rounded-xl border border-dashed border-ink-300 bg-ink-50 p-6 text-sm text-ink-600 dark:border-ink-700 dark:bg-ink-900 dark:text-ink-300">
+        <p class="font-medium text-ink-800 dark:text-ink-100">
+          Comments aren't configured yet.
+        </p>
+        <p class="mt-1">
+          To enable Giscus: enable GitHub Discussions on a public repo, install
+          the{" "}
+          <a
+            href="https://github.com/apps/giscus"
+            class="text-azure-600 hover:underline dark:text-azure-400"
+          >
+            giscus app
+          </a>
+          , then fill in the values from{" "}
+          <a
+            href="https://giscus.app"
+            class="text-azure-600 hover:underline dark:text-azure-400"
+          >
+            giscus.app
+          </a>{" "}
+          in <code class="font-mono">src/consts.ts</code>.
+        </p>
+      </div>
+    )
+  }
+</section>
+
+{
+  configured && (
+    <script
+      is:inline
+      define:vars={{
+        repo: GISCUS.repo,
+        repoId: GISCUS.repoId,
+        category: GISCUS.category,
+        categoryId: GISCUS.categoryId,
+        mapping: GISCUS.mapping,
+        reactionsEnabled: GISCUS.reactionsEnabled,
+        emitMetadata: GISCUS.emitMetadata,
+        inputPosition: GISCUS.inputPosition,
+        lang: GISCUS.lang,
+      }}
+    >
+      {
+        (function () {
+          function currentTheme() {
+            return document.documentElement.classList.contains("dark")
+              ? "dark_dimmed"
+              : "light";
+          }
+
+          function loadGiscus() {
+            const container = document.querySelector(".giscus");
+            if (!container || container.dataset.loaded === "true") return;
+            container.dataset.loaded = "true";
+            const s = document.createElement("script");
+            s.src = "https://giscus.app/client.js";
+            s.async = true;
+            s.crossOrigin = "anonymous";
+            s.setAttribute("data-repo", repo);
+            s.setAttribute("data-repo-id", repoId);
+            s.setAttribute("data-category", category);
+            s.setAttribute("data-category-id", categoryId);
+            s.setAttribute("data-mapping", mapping);
+            s.setAttribute("data-reactions-enabled", reactionsEnabled);
+            s.setAttribute("data-emit-metadata", emitMetadata);
+            s.setAttribute("data-input-position", inputPosition);
+            s.setAttribute("data-theme", currentTheme());
+            s.setAttribute("data-lang", lang);
+            container.appendChild(s);
+          }
+
+          loadGiscus();
+
+          // Keep Giscus theme in sync with the site toggle.
+          window.addEventListener("theme-change", () => {
+            const frame = document.querySelector("iframe.giscus-frame");
+            if (!frame) return;
+            frame.contentWindow.postMessage(
+              { giscus: { setConfig: { theme: currentTheme() } } },
+              "https://giscus.app",
+            );
+          });
+        })()
+      }
+    </script>
+  )
+}

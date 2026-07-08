@@ -1,0 +1,45 @@
+---
+import type { CollectionEntry } from "astro:content";
+import { Image } from "astro:assets";
+import FormattedDate from "./FormattedDate.astro";
+import TagList from "./TagList.astro";
+
+interface Props {
+  post: CollectionEntry<"blog">;
+}
+const { post } = Astro.props;
+const { title, description, pubDate, heroImage, heroAlt, tags } = post.data;
+const url = `/blog/${post.id}`;
+---
+
+<article
+  class="group relative flex flex-col overflow-hidden rounded-2xl border border-ink-200 bg-white transition hover:-translate-y-1 hover:border-azure-300 hover:shadow-lg hover:shadow-azure-500/5 dark:border-ink-800 dark:bg-ink-900 dark:hover:border-azure-700"
+>
+  {
+    heroImage && (
+      <a href={url} class="block overflow-hidden" tabindex="-1">
+        <Image
+          src={heroImage}
+          alt={heroAlt ?? title}
+          width={800}
+          height={450}
+          class="aspect-[16/9] w-full object-cover transition duration-300 group-hover:scale-105"
+        />
+      </a>
+    )
+  }
+  <div class="flex flex-1 flex-col gap-3 p-5">
+    <div
+      class="flex items-center gap-2 text-xs font-medium text-ink-500 dark:text-ink-400"
+    >
+      <FormattedDate date={pubDate} />
+    </div>
+    <h3 class="text-lg font-semibold text-ink-900 dark:text-white">
+      <a href={url} class="after:absolute after:inset-0">{title}</a>
+    </h3>
+    <p class="line-clamp-3 flex-1 text-sm text-ink-600 dark:text-ink-300">
+      {description}
+    </p>
+    <TagList tags={tags} class="relative z-10 mt-1" />
+  </div>
+</article>

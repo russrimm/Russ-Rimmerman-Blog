@@ -1,0 +1,40 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import ProjectCard from "@/components/ProjectCard.astro";
+
+const projects = (await getCollection("projects")).sort(
+  (a, b) => a.data.order - b.data.order,
+);
+---
+
+<BaseLayout
+  title="Projects"
+  description="Open-source projects, reference architectures, and tools created by Russ Rimmerman."
+>
+  <div class="mx-auto max-w-5xl px-4 py-12 sm:px-6">
+    <header class="mb-10">
+      <h1
+        class="text-3xl font-bold tracking-tight text-ink-900 sm:text-4xl dark:text-white"
+      >
+        Projects
+      </h1>
+      <p class="mt-3 max-w-2xl text-lg text-ink-600 dark:text-ink-300">
+        Things I've built and shared — reference architectures, accelerators,
+        and tools for building on Azure.
+      </p>
+    </header>
+
+    {
+      projects.length === 0 ? (
+        <p class="text-ink-500 dark:text-ink-400">Projects coming soon.</p>
+      ) : (
+        <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {projects.map((project) => (
+            <ProjectCard project={project} />
+          ))}
+        </div>
+      )
+    }
+  </div>
+</BaseLayout>

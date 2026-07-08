@@ -1,61 +1,96 @@
-# vite-vanilla-ts-lib-starter
+# russrimmerman.com
 
-The starter is built on top of Vite 7.x and prepared for writing libraries in TypeScript. It generates a package with support for ESM modules and IIFE.
+The personal blog and portfolio of **Russ Rimmerman**, Microsoft Cloud Solution
+Architect. Built with [Astro](https://astro.build) and [Tailwind CSS](https://tailwindcss.com),
+deployed to [Azure Static Web Apps](https://learn.microsoft.com/azure/static-web-apps/).
 
 ## Features
 
-- ESM modules
-- IIFE bundle for direct browser support without bundler
-- Typings bundle
-- ESLint - scripts linter
-- Stylelint - styles linter
-- Prettier - formatter
-- Vitest - test framework
-- Husky + lint-staged - pre-commit git hook set up for formatting
+- ⚡ Astro static site — near-zero JavaScript, fast and SEO-friendly
+- ✍️ Blog authored in Markdown/MDX via Astro Content Collections
+- 🗂️ Projects/portfolio showcase
+- 🏷️ Tags & topic pages
+- 🌗 Dark/light mode with no-flash theme loading
+- 💬 Giscus comments on blog posts (GitHub Discussions)
+- 📰 RSS feed + sitemap + Open Graph/SEO meta tags
+- 📧 Newsletter signup (placeholder — wire to a provider when ready)
+- 🎨 Azure-inspired design system
 
-## GitHub Template
-
-This is a template repo. Click the green [Use this template](https://github.com/kbysiec/vite-vanilla-ts-lib-starter/generate) button to get started.
-
-## Clone to local
-
-If you prefer to do it manually with the cleaner git history
+## Getting started
 
 ```bash
-git clone https://github.com/kbysiec/vite-vanilla-ts-lib-starter.git
-cd vite-vanilla-ts-lib-starter
-npm i
+npm install
+npm run dev      # start the dev server at http://localhost:4321
 ```
 
-## Checklist
+## Scripts
 
-When you use this template, update the following:
+| Command           | Description                                     |
+| ----------------- | ----------------------------------------------- |
+| `npm run dev`     | Start the local dev server                      |
+| `npm run build`   | Type-check (`astro check`) and build to `dist/` |
+| `npm run preview` | Preview the production build locally            |
+| `npm run format`  | Format the codebase with Prettier               |
 
-- Remove `.git` directory and run `git init` to clean up the history
-- Change the name in `package.json` - it will be the name of the IIFE bundle global variable and bundle files name (`.mjs`, `.iife.js`, `d.ts`)
-- Change the author name in `LICENSE`
-- Clean up the `README` and `CHANGELOG` files
+## Writing a blog post
 
-And, enjoy 😊
+Create a Markdown file in `src/content/blog/`:
 
-## Usage
+```md
+---
+title: "My Post Title"
+description: "A short summary used for cards, SEO, and RSS."
+pubDate: 2026-07-08
+tags: ["Azure", "AI"]
+featured: false # set true to surface on the home page
+draft: false # set true to hide from the site
+---
 
-The starter contains the following scripts:
+Your content here…
+```
 
-- `dev` - starts dev server
-- `build` - generates the following bundles: ESM (`.js`) and IIFE (`.iife.js`). The name of bundle is automatically taken from `package.json` name property
-- `test` - starts vitest and runs all tests
-- `test:coverage` - starts vitest and run all tests with code coverage report
-- `lint:scripts` - lint `.ts` files with eslint
-- `lint:styles` - lint `.css` and `.scss` files with stylelint
-- `format:scripts` - format `.ts`, `.html` and `.json` files with prettier
-- `format:styles` - format `.cs` and `.scss` files with stylelint
-- `format` - format all with prettier and stylelint
-- `prepare` - script for setting up husky pre-commit hook
-- `uninstall-husky` - script for removing husky from repository
+Add a project by creating a Markdown file in `src/content/projects/`.
 
-## Acknowledgment
+## Configuration
 
-If you found it useful somehow, I would be grateful if you could leave a star in the project's GitHub repository.
+Site-wide values live in [`src/consts.ts`](src/consts.ts): title, tagline,
+social links, and **Giscus** settings.
 
-Thank you.
+### Enabling Giscus comments
+
+1. Push this repo to GitHub as a **public** repository.
+2. Enable **Discussions** on the repo (Settings → General → Features).
+3. Install the [giscus GitHub App](https://github.com/apps/giscus) on the repo.
+4. Visit [giscus.app](https://giscus.app), enter your repo, and copy the
+   generated `repo`, `repoId`, `category`, and `categoryId` values.
+5. Paste them into the `GISCUS` object in `src/consts.ts`.
+
+Until configured, blog posts show a friendly placeholder instead of comments.
+
+### Newsletter
+
+The signup form in `src/components/NewsletterSignup.astro` is a non-wired
+placeholder. To activate it, point the form's `action` at your provider
+(Mailchimp, Buttondown, Substack, etc.) and adjust the field names.
+
+## Deploying to Azure Static Web Apps
+
+A GitHub Actions workflow is included at
+[`.github/workflows/azure-static-web-apps.yml`](.github/workflows/azure-static-web-apps.yml).
+
+1. Create an **Azure Static Web App** resource (build preset: **Astro**, or use
+   the custom values `app_location: "/"`, `output_location: "dist"`).
+2. Add the deployment token as a repo secret named
+   `AZURE_STATIC_WEB_APPS_API_TOKEN`.
+3. Push to `main` — the workflow builds and deploys automatically.
+
+### Custom domain (www.russrimmerman.com)
+
+In the Static Web App → **Custom domains**, add `www.russrimmerman.com` and
+create the `CNAME` record your DNS provider requires. For the apex
+(`russrimmerman.com`), add it as well and set up the apex/ALIAS record or a
+redirect to `www`. SSL certificates are provisioned automatically.
+
+## License
+
+MIT © Russ Rimmerman

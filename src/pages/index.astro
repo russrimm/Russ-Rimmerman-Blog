@@ -1,0 +1,86 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import Hero from "@/components/Hero.astro";
+import PostCard from "@/components/PostCard.astro";
+import ProjectCard from "@/components/ProjectCard.astro";
+import NewsletterSignup from "@/components/NewsletterSignup.astro";
+
+const posts = (await getCollection("blog", ({ data }) => !data.draft)).sort(
+  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
+);
+const featuredPosts = (
+  posts.some((p) => p.data.featured)
+    ? posts.filter((p) => p.data.featured)
+    : posts
+).slice(0, 3);
+
+const projects = (await getCollection("projects"))
+  .filter((p) => p.data.featured)
+  .sort((a, b) => a.data.order - b.data.order)
+  .slice(0, 3);
+---
+
+<BaseLayout>
+  <Hero />
+
+  <!-- Latest posts -->
+  <section class="mx-auto max-w-5xl px-4 py-16 sm:px-6">
+    <div class="mb-8 flex items-end justify-between">
+      <div>
+        <h2
+          class="text-2xl font-bold tracking-tight text-ink-900 dark:text-white"
+        >
+          Latest writing
+        </h2>
+        <p class="mt-1 text-ink-600 dark:text-ink-300">
+          Notes on the things I'm learning and building.
+        </p>
+      </div>
+      <a
+        href="/blog"
+        class="hidden text-sm font-medium text-azure-600 hover:underline sm:inline dark:text-azure-400"
+        >All posts &rarr;</a
+      >
+    </div>
+    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      {featuredPosts.map((post) => <PostCard post={post} />)}
+    </div>
+  </section>
+
+  <!-- Featured projects -->
+  {
+    projects.length > 0 && (
+      <section class="border-y border-ink-200/70 bg-ink-50/50 dark:border-ink-800/70 dark:bg-ink-950">
+        <div class="mx-auto max-w-5xl px-4 py-16 sm:px-6">
+          <div class="mb-8 flex items-end justify-between">
+            <div>
+              <h2 class="text-2xl font-bold tracking-tight text-ink-900 dark:text-white">
+                Featured projects
+              </h2>
+              <p class="mt-1 text-ink-600 dark:text-ink-300">
+                A few things I've created and open-sourced.
+              </p>
+            </div>
+            <a
+              href="/projects"
+              class="hidden text-sm font-medium text-azure-600 hover:underline sm:inline dark:text-azure-400"
+            >
+              All projects &rarr;
+            </a>
+          </div>
+          <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {projects.map((project) => (
+              <ProjectCard project={project} />
+            ))}
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  <!-- Newsletter -->
+  <section class="mx-auto max-w-5xl px-4 py-16 sm:px-6">
+    <NewsletterSignup />
+  </section>
+</BaseLayout>

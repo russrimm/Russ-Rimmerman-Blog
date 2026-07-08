@@ -1,0 +1,58 @@
+---
+import { SITE_TAGLINE, SOCIALS } from "@/consts";
+---
+
+<section class="relative overflow-hidden">
+  <div class="bg-grid absolute inset-0 -z-10 opacity-60"></div>
+  <div
+    class="absolute -top-24 left-1/2 -z-10 h-72 w-[36rem] -translate-x-1/2 rounded-full bg-azure-500/20 blur-3xl dark:bg-azure-600/20"
+  >
+  </div>
+
+  <div class="mx-auto max-w-5xl px-4 py-20 sm:px-6 sm:py-28">
+    <div class="max-w-3xl">
+      <span
+        class="inline-flex items-center gap-2 rounded-full border border-azure-200 bg-azure-50 px-3 py-1 text-xs font-medium text-azure-700 dark:border-ink-700 dark:bg-ink-800 dark:text-azure-300"
+      >
+        <span class="h-1.5 w-1.5 rounded-full bg-teal-500"></span>
+        {SITE_TAGLINE}
+      </span>
+
+      <h1
+        class="mt-6 text-4xl font-bold tracking-tight text-ink-900 sm:text-6xl dark:text-white"
+      >
+        Hi, I'm Russ. I help teams build on
+        <span class="text-gradient">Microsoft Azure</span>.
+      </h1>
+
+      <p class="mt-6 text-lg text-ink-600 dark:text-ink-300">
+        I'm a Microsoft Cloud Solution Architect writing about the latest in
+        Azure, AI, security, and cloud engineering — and sharing the projects I
+        build along the way.
+      </p>
+
+      <div class="mt-8 flex flex-wrap items-center gap-3">
+        <a
+          href="/blog"
+          class="rounded-lg bg-azure-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-azure-700"
+        >
+          Read the blog
+        </a>
+        <a
+          href="/projects"
+          class="rounded-lg border border-ink-300 px-5 py-3 text-sm font-semibold text-ink-700 transition hover:border-azure-400 hover:text-azure-600 dark:border-ink-700 dark:text-ink-200 dark:hover:border-azure-500 dark:hover:text-azure-400"
+        >
+          View projects
+        </a>
+        <a
+          href={SOCIALS.linkedin}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="rounded-lg px-3 py-3 text-sm font-semibold text-ink-600 transition hover:text-azure-600 dark:text-ink-300 dark:hover:text-azure-400"
+        >
+          Connect on LinkedIn &rarr;
+        </a>
+      </div>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,94 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { SOCIALS } from "@/consts";
+
+const skills = [
+  "Azure Architecture",
+  "Landing Zones",
+  "Infrastructure as Code (Bicep / Terraform)",
+  "Azure OpenAI & AI Foundry",
+  "Microsoft Entra & Zero Trust",
+  "Networking & Hybrid Connectivity",
+  "DevOps & GitHub Actions",
+  "Cost Optimization & Governance",
+];
+---
+
+<BaseLayout
+  title="About"
+  description="About Russ Rimmerman, Microsoft Cloud Solution Architect."
+>
+  <div class="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+    <div class="flex flex-col gap-8 sm:flex-row sm:items-center">
+      <div
+        class="flex h-28 w-28 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-azure-600 to-teal-500 text-4xl font-bold text-white"
+        aria-hidden="true"
+      >
+        RR
+      </div>
+      <div>
+        <h1
+          class="text-3xl font-bold tracking-tight text-ink-900 sm:text-4xl dark:text-white"
+        >
+          Russ Rimmerman
+        </h1>
+        <p class="mt-2 text-lg text-azure-600 dark:text-azure-400">
+          Microsoft Cloud Solution Architect
+        </p>
+      </div>
+    </div>
+
+    <div class="prose prose-lg mt-10 max-w-none dark:prose-invert">
+      <p>
+        I'm a Microsoft Cloud Solution Architect helping organizations design,
+        build, and secure their platforms on Azure. My work spans enterprise
+        landing zones, AI solutions built on Azure OpenAI, Zero Trust identity,
+        and the automation that ties it all together.
+      </p>
+      <p>
+        This site is where I share the latest things I'm learning and the
+        projects I build along the way. My goal is to make cloud architecture
+        approachable — pragmatic patterns you can actually put to work, without
+        the over-engineering.
+      </p>
+      <p>
+        When I'm not in the Azure portal, I'm usually experimenting with new AI
+        tooling, writing, or contributing to open source.
+      </p>
+    </div>
+
+    <div class="mt-12">
+      <h2 class="text-xl font-semibold text-ink-900 dark:text-white">
+        What I work with
+      </h2>
+      <ul class="mt-4 flex flex-wrap gap-2">
+        {
+          skills.map((skill) => (
+            <li class="rounded-lg border border-ink-200 bg-white px-3 py-1.5 text-sm text-ink-700 dark:border-ink-800 dark:bg-ink-900 dark:text-ink-200">
+              {skill}
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+
+    <div class="mt-12 flex flex-wrap gap-3">
+      <a
+        href={SOCIALS.linkedin}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="rounded-lg bg-azure-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-azure-700"
+      >
+        Connect on LinkedIn
+      </a>
+      <a
+        href={SOCIALS.github}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="rounded-lg border border-ink-300 px-5 py-3 text-sm font-semibold text-ink-700 transition hover:border-azure-400 hover:text-azure-600 dark:border-ink-700 dark:text-ink-200 dark:hover:border-azure-500 dark:hover:text-azure-400"
+      >
+        Follow on GitHub
+      </a>
+    </div>
+  </div>
+</BaseLayout>

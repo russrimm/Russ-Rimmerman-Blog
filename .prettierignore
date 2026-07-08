@@ -1,6 +1,5 @@
-.history
-.husky
+.astro
 .vscode
-coverage
 dist
 node_modules
+package-lock.json

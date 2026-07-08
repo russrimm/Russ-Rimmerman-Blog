@@ -1,0 +1,22 @@
+{
+  "navigationFallback": {
+    "rewrite": "/404.html",
+    "exclude": ["/images/*.{png,jpg,gif,svg,webp}", "/*.{css,js,ico,txt,xml,json}"]
+  },
+  "responseOverrides": {
+    "404": {
+      "rewrite": "/404.html"
+    }
+  },
+  "globalHeaders": {
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "SAMEORIGIN",
+    "Referrer-Policy": "strict-origin-when-cross-origin",
+    "Permissions-Policy": "geolocation=(), microphone=(), camera=()",
+    "Strict-Transport-Security": "max-age=63072000; includeSubDomains; preload"
+  },
+  "mimeTypes": {
+    ".json": "application/json",
+    ".webmanifest": "application/manifest+json"
+  }
+}
