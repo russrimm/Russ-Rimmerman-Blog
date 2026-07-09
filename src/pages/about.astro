@@ -3,14 +3,41 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
 import { SOCIALS } from "@/consts";
 
 const skills = [
-  "Azure Architecture",
-  "Landing Zones",
-  "Infrastructure as Code (Bicep / Terraform)",
-  "Azure OpenAI & AI Foundry",
-  "Microsoft Entra & Zero Trust",
-  "Networking & Hybrid Connectivity",
-  "DevOps & GitHub Actions",
-  "Cost Optimization & Governance",
+  "Microsoft Power Platform",
+  "Power Apps & Power Automate",
+  "Copilot Studio",
+  "Azure Logic Apps",
+  "Low-Code / No-Code Development",
+  "Business Process Automation",
+  "Microsoft Endpoint Manager (Intune)",
+  "Azure Cloud Architecture",
+];
+
+const experience = [
+  {
+    role: "Principal Cloud Solution Architect — Power Platform",
+    company: "Microsoft",
+    period: "Jul 2022 – Present",
+    location: "Houston, TX · Remote",
+    summary:
+      "Design, develop, and implement innovative low-code solutions on the Microsoft Power Platform and Azure. Lead successful projects, collaborate across cross-functional teams, and help clients optimize business processes to achieve more with less.",
+  },
+  {
+    role: "Senior Customer Engineer (Premier Field Engineer)",
+    company: "Microsoft",
+    period: "Jun 2012 – Jun 2022",
+    location: "Houston, TX · Hybrid",
+    summary:
+      "Specialized in Microsoft Endpoint Manager and Power Platform technologies, delivering high-impact engagements, training, health checks, risk assessments, and supportability reviews to customers across every vertical.",
+  },
+  {
+    role: "Senior Technical Account Manager",
+    company: "Microsoft",
+    period: "Jun 2010 – Jun 2012",
+    location: "Greater Houston · Hybrid",
+    summary:
+      "Connected customers directly to Microsoft product groups and expertise, deploying and supporting cutting-edge solutions while building strong relationships and driving successful outcomes.",
+  },
 ];
 ---
 
@@ -33,28 +60,66 @@ const skills = [
           Russ Rimmerman
         </h1>
         <p class="mt-2 text-lg text-azure-600 dark:text-azure-400">
-          Microsoft Cloud Solution Architect
+          Principal Cloud Solution Architect · Microsoft
         </p>
       </div>
     </div>
 
     <div class="prose prose-lg mt-10 max-w-none dark:prose-invert">
       <p>
-        I'm a Microsoft Cloud Solution Architect helping organizations design,
-        build, and secure their platforms on Azure. My work spans enterprise
-        landing zones, AI solutions built on Azure OpenAI, Zero Trust identity,
-        and the automation that ties it all together.
+        I'm a Principal Cloud Solution Architect at Microsoft with over 30 years
+        of experience across a wide range of information technology domains. As a
+        Power Platform expert, I design, develop, and implement innovative
+        solutions tailored to each client's unique needs using low-code tools
+        like Copilot Studio, Power Apps, Power Automate, and Azure Logic Apps.
       </p>
       <p>
-        This site is where I share the latest things I'm learning and the
-        projects I build along the way. My goal is to make cloud architecture
-        approachable — pragmatic patterns you can actually put to work, without
-        the over-engineering.
+        My mission is to empower clients to optimize their business processes
+        through low-code development — helping them achieve more with less and
+        improve their outcomes through increased efficiency and productivity. I
+        have a strong track record of leading successful projects, collaborating
+        across cross-functional teams, and delivering high-quality solutions that
+        exceed customer expectations.
       </p>
       <p>
-        When I'm not in the Azure portal, I'm usually experimenting with new AI
-        tooling, writing, or contributing to open source.
+        I've co-authored two Microsoft Press e-books in the Endpoint Management
+        space, sharing insights and best practices with the wider community.
+        This site is where I continue that — sharing what I'm learning and the
+        projects I build along the way. I'm passionate about making a positive
+        difference in my clients' businesses through the power of Microsoft's
+        cutting-edge technologies.
       </p>
+    </div>
+
+    <div class="mt-12">
+      <h2 class="text-xl font-semibold text-ink-900 dark:text-white">
+        Experience
+      </h2>
+      <p class="mt-1 text-sm text-ink-500 dark:text-ink-400">
+        16+ years at Microsoft
+      </p>
+      <ol class="mt-6 space-y-8 border-l border-ink-200 pl-6 dark:border-ink-800">
+        {
+          experience.map((job) => (
+            <li class="relative">
+              <span
+                class="absolute top-1.5 -left-[1.65rem] h-3 w-3 rounded-full bg-azure-500 ring-4 ring-white dark:ring-ink-950"
+                aria-hidden="true"
+              />
+              <h3 class="font-semibold text-ink-900 dark:text-white">
+                {job.role}
+              </h3>
+              <p class="text-sm text-azure-600 dark:text-azure-400">
+                {job.company} · {job.period}
+              </p>
+              <p class="text-xs text-ink-500 dark:text-ink-400">
+                {job.location}
+              </p>
+              <p class="mt-2 text-ink-700 dark:text-ink-300">{job.summary}</p>
+            </li>
+          ))
+        }
+      </ol>
     </div>
 
     <div class="mt-12">
