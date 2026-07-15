@@ -1,0 +1,87 @@
+---
+import type { CollectionEntry } from "astro:content";
+import { Image } from "astro:assets";
+import FormattedDate from "./FormattedDate.astro";
+import TagList from "./TagList.astro";
+import { readingTimeLabel } from "@/utils/readingTime";
+
+interface Props {
+  post: CollectionEntry<"blog">;
+}
+
+const { post } = Astro.props;
+const { title, description, pubDate, updatedDate, heroImage, heroAlt, tags } =
+  post.data;
+const url = `/blog/${post.id}`;
+const readTime = readingTimeLabel(post.body);
+---
+
+<article
+  class="group relative grid overflow-hidden rounded-3xl border border-ink-200 bg-white transition hover:border-azure-300 hover:shadow-xl hover:shadow-azure-500/5 md:grid-cols-2 dark:border-ink-800 dark:bg-ink-900 dark:hover:border-azure-700"
+>
+  {
+    heroImage ? (
+      <a href={url} class="relative block overflow-hidden" tabindex="-1">
+        <Image
+          src={heroImage}
+          alt={heroAlt ?? title}
+          width={1200}
+          height={800}
+          class="h-full min-h-64 w-full object-cover transition duration-300 group-hover:scale-105"
+        />
+      </a>
+    ) : (
+      <div
+        class="bg-grid relative hidden min-h-64 items-center justify-center bg-gradient-to-br from-azure-50 to-teal-50 md:flex dark:from-ink-950 dark:to-ink-900"
+        aria-hidden="true"
+      >
+        <span class="text-gradient font-mono text-5xl font-bold opacity-40">
+          {"</>"}
+        </span>
+      </div>
+    )
+  }
+
+  <div class="flex flex-col justify-center gap-4 p-7 sm:p-9">
+    <div class="flex flex-wrap items-center gap-2">
+      <span
+        class="inline-flex items-center gap-1.5 rounded-full bg-azure-600 px-3 py-1 text-xs font-semibold text-white"
+      >
+        Featured
+      </span>
+      <div
+        class="flex items-center gap-2 text-xs font-medium text-ink-500 dark:text-ink-400"
+      >
+        <FormattedDate date={pubDate} />
+        {readTime && <span aria-hidden="true">·</span>}
+        {readTime && <span>{readTime}</span>}
+      </div>
+    </div>
+
+    <h2
+      class="text-2xl font-bold tracking-tight text-ink-900 sm:text-3xl dark:text-white"
+    >
+      <a href={url} class="after:absolute after:inset-0">{title}</a>
+    </h2>
+
+    <p class="text-ink-600 dark:text-ink-300">{description}</p>
+
+    <TagList tags={tags} class="relative z-10 mt-1" />
+
+    <span
+      class="mt-1 inline-flex items-center gap-1 text-sm font-semibold text-azure-600 dark:text-azure-400"
+    >
+      Read article
+      <svg
+        class="h-4 w-4 transition group-hover:translate-x-0.5"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        stroke-width="2"
+        aria-hidden="true"
+      >
+        <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14m-6-6 6 6-6 6"></path>
+      </svg>
+    </span>
+  </div>
+</article>

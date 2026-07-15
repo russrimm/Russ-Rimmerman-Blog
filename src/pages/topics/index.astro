@@ -1,0 +1,61 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import TopicCard from "@/components/TopicCard.astro";
+import { TOPICS, getTopicPosts } from "@/utils/topics";
+
+const posts = await getCollection("blog", ({ data }) => !data.draft);
+
+const topics = TOPICS.map((topic) => ({
+  ...topic,
+  count: getTopicPosts(topic, posts).length,
+})).filter((topic) => topic.count > 0);
+---
+
+<BaseLayout
+  title="Topics"
+  description="Explore Russ Rimmerman's writing by topic — AI and agents, Copilot, Azure, Power Platform, endpoint management, and more."
+>
+  <div class="mx-auto max-w-5xl px-4 py-12 sm:px-6">
+    <header class="mb-10 max-w-2xl">
+      <h1
+        class="text-3xl font-bold tracking-tight text-ink-900 sm:text-4xl dark:text-white"
+      >
+        Topics
+      </h1>
+      <p class="mt-3 text-lg text-ink-600 dark:text-ink-300">
+        Curated paths into the areas I write about most — from identity and
+        Azure to Copilot, agents, and automation.
+      </p>
+    </header>
+
+    {
+      topics.length === 0 ? (
+        <p class="text-ink-500 dark:text-ink-400">
+          No topics yet — check back soon.
+        </p>
+      ) : (
+        <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {topics.map((topic) => (
+            <TopicCard
+              title={topic.title}
+              description={topic.description}
+              href={`/topics/${topic.slug}`}
+              count={topic.count}
+              icon={topic.icon}
+            />
+          ))}
+        </div>
+      )
+    }
+
+    <p class="mt-10 text-sm text-ink-500 dark:text-ink-400">
+      Looking for something more specific? Browse every
+      <a
+        href="/tags"
+        class="font-medium text-azure-600 hover:underline dark:text-azure-400"
+        >tag</a
+      >.
+    </p>
+  </div>
+</BaseLayout>

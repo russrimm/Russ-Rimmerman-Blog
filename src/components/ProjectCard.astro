@@ -11,7 +11,8 @@ const { title, summary, tech, repoUrl, liveUrl, image, imageAlt } =
 ---
 
 <article
-  class="flex flex-col overflow-hidden rounded-2xl border border-ink-200 bg-white transition hover:border-azure-300 hover:shadow-lg hover:shadow-azure-500/5 dark:border-ink-800 dark:bg-ink-900 dark:hover:border-azure-700"
+  id={project.id}
+  class="flex scroll-mt-24 flex-col overflow-hidden rounded-2xl border border-ink-200 bg-white transition hover:border-azure-300 hover:shadow-lg hover:shadow-azure-500/5 dark:border-ink-800 dark:bg-ink-900 dark:hover:border-azure-700"
 >
   {
     image && (

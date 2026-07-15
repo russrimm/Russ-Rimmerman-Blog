@@ -1,0 +1,121 @@
+---
+title: "I'm Finally Starting a Blog (and Here's What I've Been Building)"
+description: "After years of 'I should really start a blog,' here it is. A quick tour of what I've been building lately — Pulse360, Portal of Portals, and the Microsoft Communications Portal."
+pubDate: 2026-07-10
+tags: ["Microsoft", "Azure", "Power Platform", "Vibe Coding", "Projects"]
+featured: true
+draft: false
+---
+
+I've been saying "I should really start a blog" for about three years now. The
+domain has been sitting there. The half-written intro posts have come and gone.
+And every time I sat down to actually publish something, I found a reason not to.
+
+So consider this the reason I finally did: I've built a handful of things lately
+that I'm genuinely excited about, and I wanted a place to talk about them that
+wasn't a LinkedIn post buried by the algorithm ten minutes after I hit publish.
+
+If you work anywhere near the Microsoft cloud — Microsoft 365, Azure, Power
+Platform — a few of these might be useful to you too. Here's a tour.
+
+## Pulse360 — one dashboard for every Microsoft update stream
+
+If you've ever tried to keep up with Microsoft's pace of change, you know the
+problem: the news lives in a dozen different places. Message Center, the M365
+roadmap, Azure Updates, the Fabric roadmap, the Power Platform release planner,
+MSRC security advisories, a pile of product blogs. Nobody has time to check all
+of them.
+
+[**Pulse360**](/projects#pulse360) is my answer to that. It pulls all of those official Microsoft
+update streams — Microsoft 365, Azure, Fabric, Power Platform, Dynamics 365,
+Copilot, and MSRC — into a single, fast, filterable dashboard. It's dark-mode
+first, everything is sorted newest-first, and there's a global search and
+per-product filters so you can scope down to just what you care about.
+
+Under the hood it's a Next.js 16 app (App Router, React 19, TypeScript,
+Tailwind CSS 4). Server Components do the heavy lifting and route handlers act
+as a server-side proxy for the cross-origin and bot-protected feeds. If you
+want to poke at it, it's live at [mspulse360.app](https://www.mspulse360.app).
+
+{/* TODO: Add Pulse360 screenshots. The repo currently ships without screenshots
+    in public/images/. Drop your best 2–3 captures (dashboard + a filtered feed)
+    into this post and reference them here. */}
+
+You can find the source on GitHub:
+[github.com/russrimm/Pulse360](https://github.com/russrimm/Pulse360).
+
+## Portal of Portals — a hub for all the hubs
+
+This one's still cooking, so I'll keep it brief. **Portal of Portals** is exactly
+what it sounds like: a single landing spot that ties together the various portals
+and tools I've been building, so there's one front door instead of a bookmark
+folder full of them.
+
+It's a private repo for now while I get it into shape, but it's the connective
+tissue for a lot of the other projects here — and I'll write a proper deep-dive
+once it's ready to show off.
+
+{/* TODO: Portal of Portals is a private repo and couldn't be accessed to pull
+    screenshots automatically. Add a couple of your favorite captures here and a
+    fuller description of what it does. */}
+
+## Microsoft Communications Portal — a single pane of glass you can self-host
+
+The [**Microsoft Communications Portal**](/projects#microsoft-communications-portal) grew out of a request I kept hearing from
+customers: they wanted *one* place to see all the Microsoft updates that affect
+them — Power Platform release plans, the Microsoft 365 roadmap, Azure
+announcements, the Fabric roadmap, tenant-specific Message Center posts, and
+Service Health incidents — without bouncing between half a dozen admin centers.
+And critically, they wanted something they could deploy on their *own*
+infrastructure.
+
+So that's what this is: a single-pane-of-glass web app backed by a tiny Node.js
+server that proxies the upstream APIs and handles the Microsoft Graph
+authentication. Six of the nine pages work immediately with no credentials at
+all; only the Graph-backed pages (Message Center, Service Health) need an Entra
+app registration.
+
+Here's the home dashboard — every communication stream in one filterable view:
+
+![Microsoft Communications Portal home dashboard](https://raw.githubusercontent.com/russrimm/MicrosoftCommunicationsPortal/main/screenshots/home-dark.png)
+
+The Message Center page pulls tenant-specific Microsoft 365 announcements
+straight from Microsoft Graph, filterable by severity and date:
+
+![Microsoft 365 Message Center view](https://raw.githubusercontent.com/russrimm/MicrosoftCommunicationsPortal/main/screenshots/message-center-dark.png)
+
+And my favorite feature — the **Guided Report** builder. It walks you through
+picking sources and produces a clean, shareable report you can export. There's
+even one-click export to a self-contained HTML file you can paste straight into
+an Outlook email:
+
+![Guided Report builder](https://raw.githubusercontent.com/russrimm/MicrosoftCommunicationsPortal/main/screenshots/guided-report-dark.png)
+
+There's also an optional AI layer that produces a "top 5 most impactful changes
+this week" digest and can summarize any individual announcement into plain
+language with an impact rating and an admin-action flag.
+
+It's MIT-licensed and not an official Microsoft product — just a reference
+implementation I put together to help customers keep up. Source and setup docs
+are here:
+[github.com/russrimm/MicrosoftCommunicationsPortal](https://github.com/russrimm/MicrosoftCommunicationsPortal).
+
+## Why I build these (and why I'm writing about them)
+
+If you're noticing a theme here — "Microsoft ships a lot, and it's hard to keep
+up" — you're right. That's the itch behind most of what I make. I'm a Cloud
+Solution Architect, and the single most common thing I hear from customers is
+some version of *"how do I stay on top of all this change?"*
+
+The other thing worth admitting: I'm not a career developer. Most of this got
+built by describing what I wanted and letting AI do the heavy lifting, then
+poking at it until it worked. That approach — call it vibe coding — is a big part
+of what I want to write about here, alongside the projects themselves.
+
+So that's the plan for this blog: the things I'm building, the Microsoft cloud
+news worth paying attention to, and what I'm learning about building software
+with AI as a co-pilot rather than fighting a compiler by myself.
+
+If any of these projects are useful to you, or you want to swap notes on
+building this kind of thing, I'd love to hear from you — [reach out anytime](/contact).
+Thanks for reading the very first post. There will be more.

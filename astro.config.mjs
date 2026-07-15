@@ -21,6 +21,12 @@ export default defineConfig({
   integrations: [mdx(), sitemap(), ...keystaticIntegrations],
   vite: {
     plugins: [tailwindcss()],
+    server: {
+      // Allow the Astro dev server to be reached through forwarded hosts
+      // (e.g. GitHub Codespaces "*.app.github.dev"), otherwise Vite blocks
+      // the request and the browser shows an error page.
+      allowedHosts: [".app.github.dev"],
+    },
   },
   markdown: {
     shikiConfig: {

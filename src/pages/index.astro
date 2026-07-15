@@ -2,18 +2,33 @@
 import { getCollection } from "astro:content";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import Hero from "@/components/Hero.astro";
-import PostCard from "@/components/PostCard.astro";
-import ProjectCard from "@/components/ProjectCard.astro";
+import FeaturedPost from "@/components/FeaturedPost.astro";
+import PostListItem from "@/components/PostListItem.astro";
 import NewsletterSignup from "@/components/NewsletterSignup.astro";
+import { SOCIALS } from "@/consts";
+import { TOPICS, getTopicPosts } from "@/utils/topics";
 
 const posts = (await getCollection("blog", ({ data }) => !data.draft)).sort(
   (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
 );
-const featuredPosts = (
-  posts.some((p) => p.data.featured)
-    ? posts.filter((p) => p.data.featured)
-    : posts
-).slice(0, 3);
+
+const featuredPost =
+  posts.find((p) => p.data.featured) ?? posts[0] ?? undefined;
+const recentPosts = posts
+  .filter((p) => p.id !== featuredPost?.id)
+  .slice(0, 5);
+
+// Curated topic pathways. Only hubs with real content are rendered, so we
+// never link readers to an empty destination.
+const topics = TOPICS.map((topic) => ({
+  ...topic,
+  count: getTopicPosts(topic, posts).length,
+})).filter((topic) => topic.count > 0);
+
+const heroTopics = topics.slice(0, 5).map((t) => ({
+  label: t.title,
+  href: `/topics/${t.slug}`,
+}));
 
 const projects = (await getCollection("projects"))
   .filter((p) => p.data.featured)
@@ -22,65 +37,231 @@ const projects = (await getCollection("projects"))
 ---
 
 <BaseLayout>
-  <Hero />
+  <Hero topics={heroTopics} />
 
-  <!-- Latest posts -->
-  <section class="mx-auto max-w-5xl px-4 py-16 sm:px-6">
-    <div class="mb-8 flex items-end justify-between">
-      <div>
-        <h2
-          class="text-2xl font-bold tracking-tight text-ink-900 dark:text-white"
+  <div
+    class="mx-auto grid max-w-5xl gap-10 px-4 pb-16 sm:px-6 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)] lg:gap-12"
+  >
+    <!-- Main column: latest content -->
+    <div>
+      <div class="mb-6 flex items-end justify-between gap-4">
+        <div>
+          <h2
+            class="text-2xl font-bold tracking-tight text-ink-900 dark:text-white"
+          >
+            Latest writing
+          </h2>
+          <p class="mt-1 text-ink-600 dark:text-ink-300">
+            Field notes on what I'm learning, building, and shipping.
+          </p>
+        </div>
+        <a
+          href="/blog"
+          class="hidden shrink-0 text-sm font-medium text-azure-600 hover:underline sm:inline dark:text-azure-400"
+          >All posts &rarr;</a
         >
-          Latest writing
-        </h2>
-        <p class="mt-1 text-ink-600 dark:text-ink-300">
-          Notes on the things I'm learning and building.
-        </p>
       </div>
+
+      {featuredPost && <FeaturedPost post={featuredPost} />}
+
+      {
+        recentPosts.length > 0 && (
+          <div class="mt-8">
+            <h3 class="text-sm font-semibold tracking-wide text-ink-500 uppercase dark:text-ink-400">
+              More recent posts
+            </h3>
+            <div class="mt-2 divide-y divide-ink-200/70 dark:divide-ink-800/70">
+              {recentPosts.map((post) => (
+                <PostListItem post={post} />
+              ))}
+            </div>
+          </div>
+        )
+      }
+
       <a
         href="/blog"
-        class="hidden text-sm font-medium text-azure-600 hover:underline sm:inline dark:text-azure-400"
-        >All posts &rarr;</a
+        class="mt-6 inline-flex items-center gap-1 text-sm font-semibold text-azure-600 hover:underline dark:text-azure-400"
       >
+        Browse all posts
+        <svg
+          class="h-4 w-4"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          stroke-width="2"
+          aria-hidden="true"
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14m-6-6 6 6-6 6"></path>
+        </svg>
+      </a>
     </div>
-    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-      {featuredPosts.map((post) => <PostCard post={post} />)}
-    </div>
-  </section>
 
-  <!-- Featured projects -->
-  {
-    projects.length > 0 && (
-      <section class="border-y border-ink-200/70 bg-ink-50/50 dark:border-ink-800/70 dark:bg-ink-950">
-        <div class="mx-auto max-w-5xl px-4 py-16 sm:px-6">
-          <div class="mb-8 flex items-end justify-between">
-            <div>
-              <h2 class="text-2xl font-bold tracking-tight text-ink-900 dark:text-white">
+    <!-- Sidebar -->
+    <aside class="space-y-6 lg:sticky lg:top-20 lg:self-start">
+      <!-- Search -->
+      <section
+        class="rounded-2xl border border-ink-200 bg-white p-5 dark:border-ink-800 dark:bg-ink-900"
+      >
+        <h2 class="text-sm font-semibold text-ink-900 dark:text-white">
+          Search the blog
+        </h2>
+        <form role="search" action="/search" method="get" class="mt-3">
+          <label for="sidebar-search" class="sr-only">Search articles</label>
+          <div class="relative">
+            <svg
+              class="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-ink-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="2"
+              aria-hidden="true"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="m21 21-4.3-4.3M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"></path>
+            </svg>
+            <input
+              id="sidebar-search"
+              type="search"
+              name="q"
+              autocomplete="off"
+              placeholder="Copilot, Azure, agents…"
+              class="w-full rounded-lg border border-ink-300 bg-white py-2 pr-3 pl-9 text-sm text-ink-900 placeholder:text-ink-400 focus:border-azure-500 focus:ring-2 focus:ring-azure-500/30 focus:outline-none dark:border-ink-700 dark:bg-ink-950 dark:text-white"
+            />
+          </div>
+        </form>
+      </section>
+
+      <!-- Topics -->
+      {
+        topics.length > 0 && (
+          <section class="rounded-2xl border border-ink-200 bg-white p-5 dark:border-ink-800 dark:bg-ink-900">
+            <div class="flex items-center justify-between">
+              <h2 class="text-sm font-semibold text-ink-900 dark:text-white">
+                Explore topics
+              </h2>
+              <a
+                href="/topics"
+                class="text-xs font-medium text-azure-600 hover:underline dark:text-azure-400"
+              >
+                All
+              </a>
+            </div>
+            <ul class="mt-3 space-y-1">
+              {topics.map((topic) => (
+                <li>
+                  <a
+                    href={`/topics/${topic.slug}`}
+                    class="group flex items-center justify-between rounded-lg px-2 py-1.5 text-sm text-ink-700 transition hover:bg-ink-50 hover:text-azure-600 dark:text-ink-200 dark:hover:bg-ink-800 dark:hover:text-azure-400"
+                  >
+                    <span>{topic.title}</span>
+                    <span class="rounded-full bg-ink-100 px-2 py-0.5 text-xs text-ink-500 group-hover:bg-azure-100 group-hover:text-azure-700 dark:bg-ink-800 dark:text-ink-400 dark:group-hover:bg-ink-700">
+                      {topic.count}
+                    </span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )
+      }
+
+      <!-- Newsletter -->
+      <NewsletterSignup compact />
+
+      <!-- Projects -->
+      {
+        projects.length > 0 && (
+          <section class="rounded-2xl border border-ink-200 bg-white p-5 dark:border-ink-800 dark:bg-ink-900">
+            <div class="flex items-center justify-between">
+              <h2 class="text-sm font-semibold text-ink-900 dark:text-white">
                 Featured projects
               </h2>
-              <p class="mt-1 text-ink-600 dark:text-ink-300">
-                A few things I've created and open-sourced.
-              </p>
+              <a
+                href="/projects"
+                class="text-xs font-medium text-azure-600 hover:underline dark:text-azure-400"
+              >
+                All
+              </a>
             </div>
-            <a
-              href="/projects"
-              class="hidden text-sm font-medium text-azure-600 hover:underline sm:inline dark:text-azure-400"
-            >
-              All projects &rarr;
-            </a>
-          </div>
-          <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {projects.map((project) => (
-              <ProjectCard project={project} />
-            ))}
+            <ul class="mt-3 space-y-3">
+              {projects.map((project) => (
+                <li>
+                  <a
+                    href={project.data.liveUrl ?? project.data.repoUrl ?? "/projects"}
+                    target={project.data.liveUrl || project.data.repoUrl ? "_blank" : undefined}
+                    rel={project.data.liveUrl || project.data.repoUrl ? "noopener noreferrer" : undefined}
+                    class="group block"
+                  >
+                    <p class="text-sm font-semibold text-ink-900 transition group-hover:text-azure-600 dark:text-white dark:group-hover:text-azure-400">
+                      {project.data.title}
+                    </p>
+                    <p class="mt-0.5 line-clamp-2 text-xs text-ink-500 dark:text-ink-400">
+                      {project.data.summary}
+                    </p>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )
+      }
+
+      <!-- Connect -->
+      <section
+        class="rounded-2xl border border-ink-200 bg-gradient-to-br from-azure-50 to-white p-5 dark:border-ink-800 dark:from-ink-900 dark:to-ink-950"
+      >
+        <div class="flex items-center gap-3">
+          <span
+            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-azure-600 to-teal-500 text-sm font-bold text-white"
+            aria-hidden="true"
+          >
+            RR
+          </span>
+          <div>
+            <p class="text-sm font-semibold text-ink-900 dark:text-white">
+              Russ Rimmerman
+            </p>
+            <p class="text-xs text-ink-500 dark:text-ink-400">
+              Principal CSA · Microsoft
+            </p>
           </div>
         </div>
+        <p class="mt-3 text-sm text-ink-600 dark:text-ink-300">
+          30+ years in IT, 16+ at Microsoft. Sharing what I build across cloud,
+          identity, AI, and automation.
+        </p>
+        <div class="mt-4 flex flex-wrap items-center gap-4 text-sm font-medium">
+          <a
+            href="/about"
+            class="text-azure-600 hover:underline dark:text-azure-400"
+            >About</a
+          >
+          <a
+            href={SOCIALS.linkedin}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="text-ink-600 transition hover:text-azure-600 dark:text-ink-300 dark:hover:text-azure-400"
+            >LinkedIn</a
+          >
+          <a
+            href={SOCIALS.github}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="text-ink-600 transition hover:text-azure-600 dark:text-ink-300 dark:hover:text-azure-400"
+            >GitHub</a
+          >
+          <a
+            href="/rss.xml"
+            class="text-ink-600 transition hover:text-azure-600 dark:text-ink-300 dark:hover:text-azure-400"
+            >RSS</a
+          >
+        </div>
       </section>
-    )
-  }
-
-  <!-- Newsletter -->
-  <section class="mx-auto max-w-5xl px-4 py-16 sm:px-6">
-    <NewsletterSignup />
-  </section>
+    </aside>
+  </div>
 </BaseLayout>
+
+

@@ -1,16 +1,29 @@
 ---
-import { SITE_TAGLINE, SOCIALS } from "@/consts";
+import { SITE_TAGLINE } from "@/consts";
+
+interface Props {
+  /** Curated topic chips linking into real tag pages. */
+  topics?: { label: string; href: string }[];
+}
+
+const { topics = [] } = Astro.props;
 ---
 
 <section class="relative overflow-hidden">
   <div class="bg-grid absolute inset-0 -z-10 opacity-60"></div>
   <div
-    class="absolute -top-24 left-1/2 -z-10 h-72 w-[36rem] -translate-x-1/2 rounded-full bg-azure-500/20 blur-3xl dark:bg-azure-600/20"
+    class="absolute -top-32 left-1/4 -z-10 h-72 w-[36rem] -translate-x-1/2 rounded-full bg-azure-500/20 blur-3xl dark:bg-azure-600/20"
+  >
+  </div>
+  <div
+    class="absolute -top-24 right-0 -z-10 h-64 w-96 rounded-full bg-teal-400/10 blur-3xl dark:bg-teal-500/10"
   >
   </div>
 
-  <div class="mx-auto max-w-5xl px-4 py-20 sm:px-6 sm:py-28">
-    <div class="max-w-3xl">
+  <div
+    class="mx-auto grid max-w-5xl items-center gap-10 px-4 py-12 sm:px-6 sm:py-16 lg:grid-cols-[1.1fr_0.9fr] lg:gap-12"
+  >
+    <div class="max-w-2xl">
       <span
         class="inline-flex items-center gap-2 rounded-full border border-azure-200 bg-azure-50 px-3 py-1 text-xs font-medium text-azure-700 dark:border-ink-700 dark:bg-ink-800 dark:text-azure-300"
       >
@@ -19,38 +32,82 @@ import { SITE_TAGLINE, SOCIALS } from "@/consts";
       </span>
 
       <h1
-        class="mt-6 text-4xl font-bold tracking-tight text-ink-900 sm:text-6xl dark:text-white"
+        class="mt-5 text-4xl font-bold tracking-tight text-balance text-ink-900 sm:text-5xl dark:text-white"
       >
-        Hi, I'm Russ. I architect solutions on the
-        <span class="text-gradient">Microsoft Cloud</span>.
+        Build smarter with the{" "}
+        <span class="text-gradient">Microsoft Cloud &amp; AI</span>.
       </h1>
 
-      <p class="mt-6 text-lg text-ink-600 dark:text-ink-300">
-        Notes, references, and lessons from my work — documented for myself and
-        shared with the community.
+      <p class="mt-5 text-lg text-pretty text-ink-600 dark:text-ink-300">
+        Practical, field-tested guidance on identity, Copilot, agents,
+        automation, and modern development — all blog content written by Russ
+        Rimmerman, Principal Cloud Solution Architect.
       </p>
 
-      <div class="mt-8 flex flex-wrap items-center gap-3">
+      <div class="mt-7 flex flex-wrap items-center gap-3">
         <a
           href="/blog"
-          class="rounded-lg bg-azure-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-azure-700"
+          class="rounded-lg bg-azure-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-azure-700 focus-visible:ring-2 focus-visible:ring-azure-500/40"
         >
-          Read the blog
+          Explore the latest
         </a>
         <a
-          href="/projects"
+          href="/topics"
           class="rounded-lg border border-ink-300 px-5 py-3 text-sm font-semibold text-ink-700 transition hover:border-azure-400 hover:text-azure-600 dark:border-ink-700 dark:text-ink-200 dark:hover:border-azure-500 dark:hover:text-azure-400"
         >
-          View projects
+          Browse topics
         </a>
-        <a
-          href={SOCIALS.linkedin}
-          target="_blank"
-          rel="noopener noreferrer"
-          class="rounded-lg px-3 py-3 text-sm font-semibold text-ink-600 transition hover:text-azure-600 dark:text-ink-300 dark:hover:text-azure-400"
+      </div>
+
+      {
+        topics.length > 0 && (
+          <div class="mt-8">
+            <p class="text-xs font-medium tracking-wide text-ink-500 uppercase dark:text-ink-400">
+              Popular topics
+            </p>
+            <ul class="mt-3 flex flex-wrap gap-2">
+              {topics.map((topic) => (
+                <li>
+                  <a
+                    href={topic.href}
+                    class="inline-flex items-center rounded-full border border-ink-200 bg-white px-3 py-1 text-xs font-medium text-ink-600 transition hover:border-azure-400 hover:text-azure-600 dark:border-ink-700 dark:bg-ink-900 dark:text-ink-300 dark:hover:border-azure-500 dark:hover:text-azure-400"
+                  >
+                    {topic.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )
+      }
+    </div>
+
+    <!-- Technical visual: a static "terminal" motif -->
+    <div class="relative hidden lg:block" aria-hidden="true">
+      <div
+        class="rounded-2xl border border-ink-200 bg-white/70 shadow-xl shadow-azure-500/5 backdrop-blur-sm dark:border-ink-800 dark:bg-ink-900/70"
+      >
+        <div
+          class="flex items-center gap-2 border-b border-ink-200/70 px-4 py-3 dark:border-ink-800/70"
         >
-          Connect on LinkedIn &rarr;
-        </a>
+          <span class="h-3 w-3 rounded-full bg-red-400/70"></span>
+          <span class="h-3 w-3 rounded-full bg-amber-400/70"></span>
+          <span class="h-3 w-3 rounded-full bg-teal-400/70"></span>
+          <span class="ml-2 font-mono text-xs text-ink-400 dark:text-ink-500"
+            >architect@azure ~</span
+          >
+        </div>
+        <pre
+          class="overflow-x-auto p-4 font-mono text-[13px] leading-relaxed text-ink-700 dark:text-ink-200"><code><span class="text-ink-400 dark:text-ink-500"># deploy an agent, the field-tested way</span>
+<span class="text-teal-600 dark:text-teal-400">az</span> login --tenant <span class="text-azure-600 dark:text-azure-400">contoso.onmicrosoft.com</span>
+<span class="text-teal-600 dark:text-teal-400">az</span> ai foundry agent create \
+  --name <span class="text-azure-600 dark:text-azure-400">"assistant"</span> \
+  --model <span class="text-azure-600 dark:text-azure-400">gpt-4o</span> \
+  --identity <span class="text-azure-600 dark:text-azure-400">managed</span>
+
+<span class="text-ink-400 dark:text-ink-500">✓ least privilege by default</span>
+<span class="text-ink-400 dark:text-ink-500">✓ grounded on Microsoft Learn</span>
+<span class="inline-flex items-center">→ ready <span class="ml-1 inline-block h-4 w-2 animate-pulse bg-azure-500 align-middle motion-reduce:animate-none"></span></span></code></pre>
       </div>
     </div>
   </div>

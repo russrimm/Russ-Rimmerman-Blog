@@ -7,7 +7,7 @@ export const SITE_URL = "https://www.russrimmerman.com";
 export const AUTHOR = {
   name: "Russ Rimmerman",
   role: "Microsoft Cloud Solution Architect",
-  email: "hello@russrimmerman.com",
+  email: "russ@russrimmerman.com",
 };
 
 export const SOCIALS = {
@@ -18,6 +18,7 @@ export const SOCIALS = {
 export const NAV_LINKS = [
   { href: "/", label: "Home" },
   { href: "/blog", label: "Blog" },
+  { href: "/topics", label: "Topics" },
   { href: "/projects", label: "Projects" },
   { href: "/about", label: "About" },
   { href: "/contact", label: "Contact" },
