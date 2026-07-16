@@ -422,6 +422,56 @@ or ask for a security review — no re-explaining required.
   you (and the AI) inherit it automatically.
 </Explain>
 
+## Writing posts without touching code: the built-in CMS
+
+Editing MDX files by hand is fine once you're comfortable, but you don't have to.
+This blog ships with a lightweight **content management system (CMS)** called
+[Keystatic](https://keystatic.com) — a friendly admin UI for creating and editing
+posts, filling in titles, dates, tags, and hero images, and writing the body in a
+rich editor. It reads and writes the same MDX files in your repo, so there's no
+database and no separate service to host.
+
+<Explain title="What's a CMS, and why would I want one?">
+  A CMS is the dashboard you write and manage content in instead of hand-editing
+  files. Keystatic is a **git-based** CMS: every change it makes is just an edit to
+  a file in your repo that you commit like any other. You get the comfort of a
+  visual editor *and* the version history of Git — no trade-off.
+</Explain>
+
+You don't install it separately — it comes bundled as a dependency when your
+project is scaffolded in Part 2. To keep the live site fast, the admin UI only
+loads when you explicitly start it in CMS mode. Once your project exists, the
+whole loop is:
+
+```bash
+npm run cms
+```
+
+Then open **http://localhost:4321/keystatic** in your browser. You'll see
+collections for **Blog Posts** and **Projects**. Click one to edit it, or use
+**+ Create** to start a new post — fill in the fields, write the body, and save.
+Keystatic writes the `.mdx` file into `src/content/` for you.
+
+<Explain title="Why a separate `npm run cms` instead of the normal dev server?">
+  The everyday `npm run dev` server stays a pure, fast static site with no admin
+  code shipped to visitors. `npm run cms` sets a flag that mounts the Keystatic
+  editor at `/keystatic` **only on your machine**. It never gets deployed to the
+  public site, so there's no login to secure and no admin surface exposed to the
+  internet.
+</Explain>
+
+Because every save is just a file change, your workflow stays the same as the
+rest of this series: **write in the CMS, review the change, commit it to Git, and
+push.** The AI can still help — ask it to draft a post, then polish it in the
+Keystatic editor, or vice versa. Use whichever feels natural for the piece you're
+writing.
+
+<Explain title="Do I have to use the CMS?">
+  Not at all. Some people prefer writing MDX directly in VS Code with the AI right
+  there; others like the structured fields and preview of the CMS. They edit the
+  exact same files, so you can switch between them post to post — or even mid-post.
+</Explain>
+
 ## What you should have right now
 
 Before moving on, make sure all of this is true — Part 2 assumes every one of

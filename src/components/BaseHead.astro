@@ -74,10 +74,8 @@ const socialImage = new URL(image, Astro.site);
 <script is:inline>
   function applyTheme() {
     const stored = localStorage.getItem("theme");
-    const prefersDark = window.matchMedia(
-      "(prefers-color-scheme: dark)",
-    ).matches;
-    if (stored === "dark" || (!stored && prefersDark)) {
+    // Default to dark mode unless the visitor has explicitly chosen light.
+    if (stored !== "light") {
       document.documentElement.classList.add("dark");
     } else {
       document.documentElement.classList.remove("dark");
