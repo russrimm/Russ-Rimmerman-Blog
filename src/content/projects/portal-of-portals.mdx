@@ -11,6 +11,7 @@ imageAlt: "Portal 360° home dashboard showing service health and platform tiles
 import Screenshot from "@/components/Screenshot.astro";
 import entraUsers from "@/assets/projects/portal-of-portals/entra-users.png";
 import secureScore from "@/assets/projects/portal-of-portals/secure-score.png";
+import devices from "@/assets/projects/portal-of-portals/devices.png";
 import deviceCompliance from "@/assets/projects/portal-of-portals/device-compliance.png";
 import azureResources from "@/assets/projects/portal-of-portals/azure-resources.png";
 import powerPlatform from "@/assets/projects/portal-of-portals/power-platform-environments.png";
@@ -65,6 +66,12 @@ inventory, compliance and configuration state, reporting, and the Windows update
 catalog all live under one roof. The compliance dashboard shows the
 state distribution across every managed device with drill-down into
 non-compliant devices and the policies behind them.
+
+<Screenshot
+  src={devices}
+  alt="Portal 360 Intune managed devices inventory listing enrolled devices with OS, ownership, and compliance status"
+  caption="Intune managed device inventory — every enrolled device in one list, with OS, ownership, and compliance status at a glance."
+/>
 
 <Screenshot
   src={deviceCompliance}
