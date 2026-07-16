@@ -24,6 +24,14 @@ This is written for the technical-adjacent — you can follow instructions and
 you're not scared of a terminal, but you're not a career developer. That's
 exactly who vibe coding is for.
 
+One thing worth saying up front: there are *many* tools you can use to vibe code,
+and no single one is "correct." Whichever tool you're most comfortable with that
+gets the job done is the best one to use. This series leans on VS Code and
+Copilot, but I'd also recommend installing and trying out the [GitHub Copilot
+CLI](https://docs.github.com/en/copilot/how-tos/copilot-cli/cli-getting-started)
+and the [GitHub Copilot app](https://github.com/features/ai/github-app) to find
+what fits the way you work.
+
 <Explain title="Do I need to read this if I already have a blog?">
   No. If you already have a working project and dev environment, skip straight to
   the **agent and skills scaffolding** section near the end — that part is
@@ -208,6 +216,41 @@ these all work.
   later to create your repository without leaving VS Code. Install it now from
   [cli.github.com](https://cli.github.com) and confirm `gh --version` prints a
   version before you continue — Part 2 assumes it's set up.
+</Explain>
+
+## Where to do the work: local vs. GitHub Codespaces
+
+Everything above installs your tools **locally**, on your own machine. That's a
+perfectly good way to work — but it's not the only one, and it comes with a
+gotcha I learned the hard way.
+
+After spinning up project after project, I ran my hard drive out of space.
+Here's the thing that took me too long to realize: **once your code is committed
+and pushed to a GitHub repo, you don't need to keep a local copy forever.** The
+repo *is* the source of truth. When you're done working on a project for a while
+and you're tight on disk, delete the local folder — you can always clone it back
+down the moment you want to pick it up again.
+
+Better yet, skip the local-disk problem entirely with
+[**GitHub Codespaces**](https://github.com/features/codespaces), which lets you
+work on and test your code in the cloud. Your editor, terminal, tools, and
+running preview all live on a container GitHub spins up for you — you just open
+it in the browser or connect VS Code to it.
+
+<Explain title="What actually is a Codespace?">
+  A Codespace is a full development environment — VS Code, a terminal, Node, Git,
+  your project files, everything — running on a machine in the cloud instead of on
+  your laptop. You reach it from a browser or from VS Code on your machine, but the
+  work happens remotely. Nothing takes up space on your local drive, and you can
+  spin one up or throw it away per project.
+</Explain>
+
+<Explain title="Which should I pick as a beginner?">
+  Either works, and you can switch anytime — the project is identical in both. Go
+  **local** if you want the simplest mental model and reliable offline access. Go
+  **Codespaces** if you're low on disk space, jump between machines, or just want
+  a clean environment you can delete without a second thought. Many people do both:
+  local for daily work, a Codespace when they're on a different computer.
 </Explain>
 
 ## Scaffold a home for your agents and skills
