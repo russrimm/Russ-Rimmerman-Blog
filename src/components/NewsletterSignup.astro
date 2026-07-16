@@ -1,7 +1,9 @@
 ---
-// Newsletter signup — placeholder only.
-// TODO: Wire this form to a provider (Mailchimp, Buttondown, Substack, etc.)
-// by setting the `action` attribute and adjusting field names as required.
+// Newsletter signup — posts to the Azure Static Web Apps managed API function
+// at /api/subscribe, which forwards to the configured provider (Buttondown or
+// Mailchimp). The provider API key stays server-side; see api/src/functions/
+// subscribe.js. Until a provider is configured the endpoint returns a friendly
+// "not available yet" message rather than silently dropping the signup.
 interface Props {
   compact?: boolean;
 }
@@ -28,6 +30,7 @@ const { compact = false } = Astro.props;
       compact ? "" : "sm:mx-auto sm:max-w-md",
     ]}
     data-newsletter
+    novalidate
   >
     <label for="newsletter-email" class="sr-only">Email address</label>
     <input
@@ -35,12 +38,25 @@ const { compact = false } = Astro.props;
       name="email"
       type="email"
       required
+      autocomplete="email"
       placeholder="you@example.com"
       class="w-full flex-1 rounded-lg border border-ink-300 bg-white px-4 py-2.5 text-sm text-ink-900 placeholder:text-ink-400 focus:border-azure-500 focus:ring-2 focus:ring-azure-500/30 focus:outline-none dark:border-ink-700 dark:bg-ink-900 dark:text-white"
     />
+    {/* Honeypot: hidden from users, catches bots. */}
+    <div class="hidden" aria-hidden="true">
+      <label for="newsletter-website">Leave this field empty</label>
+      <input
+        id="newsletter-website"
+        name="website"
+        type="text"
+        tabindex="-1"
+        autocomplete="off"
+      />
+    </div>
     <button
       type="submit"
-      class="rounded-lg bg-azure-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-azure-700 focus:ring-2 focus:ring-azure-500/40 focus:outline-none"
+      data-newsletter-submit
+      class="rounded-lg bg-azure-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-azure-700 focus:ring-2 focus:ring-azure-500/40 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60"
     >
       Subscribe
     </button>
@@ -48,6 +64,7 @@ const { compact = false } = Astro.props;
   <p
     data-newsletter-note
     class="mt-3 text-xs text-ink-500 dark:text-ink-400"
+    role="status"
     aria-live="polite"
   >
   </p>
@@ -58,16 +75,70 @@ const { compact = false } = Astro.props;
     document.querySelectorAll("form[data-newsletter]").forEach((form) => {
       if (form.dataset.bound === "true") return;
       form.dataset.bound = "true";
-      form.addEventListener("submit", (e) => {
+
+      const wrapper = form.parentElement;
+      const note = wrapper?.querySelector("[data-newsletter-note]");
+      const submit = form.querySelector("[data-newsletter-submit]");
+      const emailInput = form.querySelector('input[name="email"]');
+
+      const setNote = (message, tone) => {
+        if (!note) return;
+        note.textContent = message;
+        note.classList.remove("text-emerald-600", "text-red-600");
+        if (tone === "success") note.classList.add("text-emerald-600");
+        if (tone === "error") note.classList.add("text-red-600");
+      };
+
+      form.addEventListener("submit", async (e) => {
         e.preventDefault();
-        const note = form.parentElement?.querySelector(
-          "[data-newsletter-note]",
-        );
-        if (note) {
-          note.textContent =
-            "Thanks! Newsletter sign-up isn't wired up yet — check back soon.";
+
+        const email = (emailInput?.value || "").trim();
+        if (!emailInput?.checkValidity() || !email) {
+          setNote("Please enter a valid email address.", "error");
+          emailInput?.focus();
+          return;
         }
-        form.reset();
+
+        submit.disabled = true;
+        const originalLabel = submit.textContent;
+        submit.textContent = "Subscribing…";
+        setNote("Subscribing…", null);
+
+        try {
+          const res = await fetch("/api/subscribe", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              email,
+              website: form.querySelector('input[name="website"]')?.value || "",
+            }),
+          });
+
+          let data = {};
+          try {
+            data = await res.json();
+          } catch {
+            /* non-JSON response */
+          }
+
+          if (res.ok && data.ok) {
+            setNote(data.message || "You're subscribed. Thanks!", "success");
+            form.reset();
+          } else {
+            setNote(
+              data.message || "Something went wrong. Please try again later.",
+              "error",
+            );
+          }
+        } catch {
+          setNote(
+            "Couldn't reach the server. Please try again later.",
+            "error",
+          );
+        } finally {
+          submit.disabled = false;
+          submit.textContent = originalLabel;
+        }
       });
     });
   }

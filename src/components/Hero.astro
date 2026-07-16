@@ -98,12 +98,15 @@ const { topics = [] } = Astro.props;
           >
         </div>
         <pre
-          class="overflow-x-auto p-4 font-mono text-[13px] leading-relaxed text-ink-700 dark:text-ink-200"><code><span class="text-ink-400 dark:text-ink-500"># deploy an agent, the field-tested way</span>
+          class="overflow-x-auto p-4 font-mono text-[13px] leading-relaxed text-ink-700 dark:text-ink-200"><code><span class="text-ink-400 dark:text-ink-500"># provision an Azure AI Foundry resource</span>
 <span class="text-teal-600 dark:text-teal-400">az</span> login --tenant <span class="text-azure-600 dark:text-azure-400">contoso.onmicrosoft.com</span>
-<span class="text-teal-600 dark:text-teal-400">az</span> ai foundry agent create \
-  --name <span class="text-azure-600 dark:text-azure-400">"assistant"</span> \
-  --model <span class="text-azure-600 dark:text-azure-400">gpt-4o</span> \
-  --identity <span class="text-azure-600 dark:text-azure-400">managed</span>
+<span class="text-teal-600 dark:text-teal-400">az</span> cognitiveservices account create \
+  --name <span class="text-azure-600 dark:text-azure-400">my-foundry</span> \
+  --resource-group <span class="text-azure-600 dark:text-azure-400">rg-ai</span> \
+  --kind <span class="text-azure-600 dark:text-azure-400">AIServices</span> \
+  --sku <span class="text-azure-600 dark:text-azure-400">S0</span> \
+  --location <span class="text-azure-600 dark:text-azure-400">eastus</span> \
+  --assign-identity
 
 <span class="text-ink-400 dark:text-ink-500">✓ least privilege by default</span>
 <span class="text-ink-400 dark:text-ink-500">✓ grounded on Microsoft Learn</span>

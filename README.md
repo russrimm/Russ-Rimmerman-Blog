@@ -69,9 +69,37 @@ Until configured, blog posts show a friendly placeholder instead of comments.
 
 ### Newsletter
 
-The signup form in `src/components/NewsletterSignup.astro` is a non-wired
-placeholder. To activate it, point the form's `action` at your provider
-(Mailchimp, Buttondown, Substack, etc.) and adjust the field names.
+The signup form (`src/components/NewsletterSignup.astro`) posts to an Azure
+Static Web Apps **managed API function** at `/api/subscribe`
+(`api/src/functions/subscribe.js`), which forwards the address to your provider.
+The provider API key stays server-side and is never exposed to the browser.
+
+Configure **one** provider by adding these values in the Static Web App under
+**Settings → Environment variables** (Application settings):
+
+**Buttondown**
+
+| Name                 | Value                     |
+| -------------------- | ------------------------- |
+| `NEWSLETTER_PROVIDER` | `buttondown`             |
+| `BUTTONDOWN_API_KEY`  | your Buttondown API token |
+
+**Mailchimp**
+
+| Name                 | Value                                          |
+| -------------------- | ---------------------------------------------- |
+| `NEWSLETTER_PROVIDER` | `mailchimp`                                    |
+| `MAILCHIMP_API_KEY`   | API key incl. datacenter suffix (`…-us21`)     |
+| `MAILCHIMP_LIST_ID`   | audience / list ID                             |
+
+Until a provider is configured the endpoint returns a friendly "not available
+yet" message rather than silently discarding the signup. The form validates the
+email, includes a honeypot for bots, shows accessible loading/success/error
+states, and only reports success when the provider confirms it.
+
+To test the function locally, run the SWA CLI (`swa start dist --api-location
+api`) after `npm run build`; the plain `astro dev` server does not serve `/api`.
+
 
 ## Deploying to Azure Static Web Apps
 
@@ -79,7 +107,8 @@ A GitHub Actions workflow is included at
 [`.github/workflows/azure-static-web-apps.yml`](.github/workflows/azure-static-web-apps.yml).
 
 1. Create an **Azure Static Web App** resource (build preset: **Astro**, or use
-   the custom values `app_location: "/"`, `output_location: "dist"`).
+   the custom values `app_location: "/"`, `api_location: "api"`,
+   `output_location: "dist"`).
 2. Add the deployment token as a repo secret named
    `AZURE_STATIC_WEB_APPS_API_TOKEN`.
 3. Push to `main` — the workflow builds and deploys automatically.

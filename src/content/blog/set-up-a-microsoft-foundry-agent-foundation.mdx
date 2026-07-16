@@ -1,0 +1,261 @@
+---
+title: "Stand Up Your Own Microsoft Foundry Model, the Field-Tested Way"
+description: "The exact, verified steps to provision an Azure AI Foundry resource, deploy a current GPT model, and call it keyless with Entra ID — including every real-world snag: MFA claims challenges, disabled local auth, custom subdomains, RBAC, quota, and DNS. This is the foundation your Foundry agent runs on."
+pubDate: 2026-07-15
+heroImage: ../../assets/blog/foundry-foundation.svg
+heroAlt: "A terminal running the az cognitiveservices account create command next to an abstract model node graph in Azure blue and teal."
+tags: ["AI", "Azure", "AI Foundry", "Getting Started", "Agents"]
+featured: false
+draft: true
+---
+
+import Explain from "@/components/Explain.astro";
+
+Before you build a *customized Microsoft Foundry agent*, something has to run it:
+a Foundry resource, a deployed model, and a secure way to call it. Most guides
+hand-wave that part with a screenshot of the portal. This post is the opposite —
+every command here was run against a live Azure subscription, and every error
+you see below is one I actually hit and had to solve.
+
+Consider this the foundation. Once the model is deployed and you can call it
+keyless, wiring up the agent itself (instructions, tools, grounding, MCP) is the
+fun part — and the subject of the next post.
+
+<Explain title="Is this the agent, or the plumbing?">
+  It's the plumbing — deliberately. A Foundry agent needs a model endpoint to
+  talk to. This post gets you a deployed model you can call securely from code.
+  The agent definition sits on top of it.
+</Explain>
+
+## What you'll end up with
+
+- An **Azure AI Foundry** resource (an `AIServices` Cognitive Services account)
+- A **current GPT model** deployed onto it
+- **Keyless (Entra ID) inference** working end to end — no API keys to leak
+- A verified `HTTP 200` from a real chat completion
+
+Everything uses the Azure CLI so it's copy-pasteable and repeatable.
+
+## Prerequisites
+
+- An Azure subscription where you can create resources
+- **Azure CLI 2.80+** (this was verified on `2.88.0`)
+- Permission to assign roles on the resource you create (Owner or User Access
+  Administrator)
+
+<Explain title="On a tight budget? Start free with GitHub Models">
+  You don't strictly need an Azure subscription to start experimenting. Your
+  **GitHub account** includes free access to a catalog of hosted models through
+  [GitHub Models](https://github.com/marketplace/models) — great for prototyping
+  an agent's prompts and logic at zero cost. The trade-offs: usage is
+  **rate-limited**, and the free tier leans toward **slightly older or smaller
+  models** rather than the newest flagship releases. It's an excellent way to
+  build and validate your idea before you provision anything in Azure — then come
+  back here when you're ready for a dedicated, production-grade deployment with
+  your own quota, identity, and networking.
+</Explain>
+
+Install or update the CLI:
+
+```bash
+curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+az version
+```
+
+## Step 1 — Sign in (and expect an MFA speed bump)
+
+```bash
+az login --use-device-code
+```
+
+Follow the code to <span class="whitespace-nowrap">https://login.microsoft.com/device</span>
+and sign in. Basic sign-in usually works for *read* operations. The moment you
+try to *create* something, many tenants throw this:
+
+```text
+AADSTS50076: ... you must use multi-factor authentication to access ...
+```
+
+That's a Conditional Access policy demanding a stronger token for management
+(ARM) calls. The CLI even prints the fix — re-login honoring the **claims
+challenge** it hands you:
+
+```bash
+az login --use-device-code \
+  --tenant <your-tenant-id> \
+  --scope "https://management.core.windows.net//.default" \
+  --claims-challenge "<the-base64-string-the-cli-printed>"
+```
+
+Complete MFA in the browser this time, and write operations start working.
+
+<Explain title="Why did a read work but a create fail?">
+  Reads and writes can be gated by different Conditional Access rules. A plain
+  token was enough to *list* resource groups but not to *create* one — the create
+  triggered a step-up MFA requirement encoded in a claims challenge. Re-running
+  login with that exact challenge mints a token the policy accepts.
+</Explain>
+
+## Step 2 — Register the provider and create a resource group
+
+```bash
+az provider register --namespace Microsoft.CognitiveServices --wait
+az group create --name rg-ai --location eastus
+```
+
+## Step 3 — Provision the Foundry resource
+
+This is the same command shown on the site's homepage — a real, valid Azure CLI
+command, not a mock:
+
+```bash
+az cognitiveservices account create \
+  --name my-foundry-unique \
+  --resource-group rg-ai \
+  --kind AIServices \
+  --sku S0 \
+  --location eastus \
+  --assign-identity
+```
+
+Notes that matter:
+
+- `--kind AIServices` is what makes this an **Azure AI Foundry** resource rather
+  than a single-service Cognitive Services account.
+- The name must be **globally unique** and lowercase — append a random suffix
+  (`openssl rand -hex 3`) if you hit a name conflict.
+- `--assign-identity` gives the resource a **system-assigned managed identity**,
+  so it can reach other Azure services later without secrets.
+
+When it finishes you'll see `"provisioningState": "Succeeded"`.
+
+## Step 4 — Deploy a current GPT model (mind the quota)
+
+List what's actually available to you first — model availability varies by
+region and subscription:
+
+```bash
+az cognitiveservices account list-models \
+  -n my-foundry-unique -g rg-ai \
+  --query "[?starts_with(name,'gpt-')].{name:name, version:version}" -o table
+```
+
+Then deploy one. The obvious trap: the *newest* model may have **zero quota** on
+your subscription, and the deploy fails with `InsufficientQuota`. Check quota
+before committing to a model:
+
+```bash
+az cognitiveservices usage list -l eastus \
+  --query "[?limit>\`0\`].{name:name.value, limit:limit}" -o table
+```
+
+Pick a model that has non-zero quota, then:
+
+```bash
+az cognitiveservices account deployment create \
+  -n my-foundry-unique -g rg-ai \
+  --deployment-name gpt-5.4 \
+  --model-name gpt-5.4 \
+  --model-version 2026-03-05 \
+  --model-format OpenAI \
+  --sku-name GlobalStandard \
+  --sku-capacity 10
+```
+
+<Explain title="What is --sku-capacity 10?">
+  Capacity is measured in thousands of tokens per minute (TPM). `10` = 10K TPM,
+  which is plenty for building and testing. It draws from the quota you checked
+  above, so keep it modest.
+</Explain>
+
+## Step 5 — Make keyless auth actually work
+
+Here's where a secure-by-default tenant will surprise you. Two things bit me:
+
+**1. Local (key) auth was disabled.** Trying to list keys returned:
+
+```text
+Failed to list key. disableLocalAuth is set to be true
+```
+
+That's a *good* default — it forces Entra ID auth instead of shared keys. So
+don't fight it; use tokens.
+
+**2. Token auth needs a custom subdomain.** The regional endpoint rejects tokens:
+
+```text
+Please provide a custom subdomain for token authentication ...
+```
+
+If your account was created without one (`customSubDomainName` is `null`), set it:
+
+```bash
+ACCT_ID=$(az cognitiveservices account show -n my-foundry-unique -g rg-ai --query id -o tsv)
+az resource update --ids "$ACCT_ID" --set properties.customSubDomainName=my-foundry-unique
+```
+
+That activates the endpoint `https://my-foundry-unique.services.ai.azure.com/`.
+Give DNS a minute to propagate before the first call.
+
+**3. Grant yourself a data-plane role.** Being the resource owner is not enough
+to *call* the model — you need a data role:
+
+```bash
+az role assignment create \
+  --assignee "you@yourtenant.onmicrosoft.com" \
+  --role "Cognitive Services User" \
+  --scope "$ACCT_ID"
+```
+
+<Explain title="Owner isn't enough?">
+  Owner is a *control-plane* role — it lets you manage the resource. Calling the
+  model is a *data-plane* action gated by roles like **Cognitive Services User**
+  or **Cognitive Services OpenAI User**. Different plane, different role.
+</Explain>
+
+## Step 6 — Verify with a real request
+
+Get an Entra token for the Cognitive Services audience and call your deployment.
+No API key involved:
+
+```bash
+TOKEN=$(az account get-access-token \
+  --resource https://cognitiveservices.azure.com \
+  --query accessToken -o tsv)
+
+curl -s "https://my-foundry-unique.services.ai.azure.com/openai/deployments/gpt-5.4/chat/completions?api-version=2024-10-21" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"messages":[{"role":"user","content":"Say hello and name your model family in one sentence."}],"max_completion_tokens":80}'
+```
+
+A working response returns `HTTP 200` with `"model": "gpt-5.4-..."` and the
+assistant's reply. That's your foundation, verified.
+
+## The gotcha checklist
+
+If any single step fails, it's almost always one of these:
+
+- **MFA / claims challenge** — re-login with the `--claims-challenge` the CLI prints.
+- **`InsufficientQuota`** — pick a model/SKU with non-zero quota, or request more.
+- **`disableLocalAuth`** — keys are off by design; use Entra tokens.
+- **"custom subdomain" error** — set `customSubDomainName`, then wait for DNS.
+- **`401`/`403` on the call** — you're missing the **Cognitive Services User** data role.
+- **DNS won't resolve** — the subdomain was just created; give it a minute.
+
+## Clean up when you're done
+
+An idle `AIServices` account and deployment bill per-token only, but tidy up to
+be safe:
+
+```bash
+az group delete --name rg-ai --yes --no-wait
+```
+
+## What's next
+
+You now have a deployed model you can call securely. The next post,
+[Build Your Customized Microsoft Foundry Agent](/blog/build-your-customized-microsoft-foundry-agent),
+turns this endpoint into a real agent — instructions, tools, grounding on
+trustworthy data, MCP servers, and least-privilege identity. That's where the
+foundation pays off.

@@ -1,7 +1,8 @@
 ---
 title: "How a Microsoft Architect Who Can't Code Learned to Vibe Code"
-description: "I know just enough PowerShell to be dangerous and never had the patience to actually learn to code. Here's what vibe coding taught me — plan mode, skills, picking the right model, and wiring up MCPs like MS Learn and Azure."
+description: "I know just enough PowerShell to be dangerous and never had the patience to actually learn to code. Here's what vibe coding taught me — plan mode, skills, picking the right model, wiring up MCPs like MS Learn and Azure, and putting a reviewer in the loop."
 pubDate: 2026-07-11
+updatedDate: 2026-07-15
 tags: ["Vibe Coding", "AI", "Microsoft", "Azure", "MCP", "Copilot"]
 featured: false
 draft: false
@@ -129,11 +130,46 @@ Two that changed how I work:
 - **The Azure MCP** — this one lets the AI interact with real Azure context
   rather than working from generic examples. When I'm building something that
   touches Azure, having the AI grounded in the actual services and shapes I'm
-  working with beats hand-copying details back and forth.
+  working with beats hand-copying details back and forth. It also ships an
+  **Azure best-practices tool** the AI can call before it writes or deploys — so
+  I get secure defaults like managed identities, Key Vault, and least-privilege
+  roles instead of the hard-coded-secret shortcuts a model reaches for on its
+  own. I make a habit of telling it to *check Azure best practices first*, and I
+  lead my instructions with security so it stays the priority, not an afterthought.
 
 The pattern behind both: an AI that can *look things up* and *take grounded
 action* is in a different league from one working purely from memory. If you're
 in the Microsoft world and haven't wired up the MS Learn MCP yet, start there.
+
+## Lesson 6: Put a reviewer in the loop — especially for security
+
+Here's the lesson that scared me straight. On one project — **Pulse 360°**, a
+public dashboard that pulls in Microsoft's update feeds — I stopped working with a
+single AI and gave it a *team*. A lead, a frontend specialist, a backend
+specialist, a data-integrations specialist, a tester, and, crucially, a reviewer
+whose entire job was responsible-AI and security. Each one had a defined role and
+read from a shared, append-only **decisions ledger** so nobody re-litigated
+settled calls or lost the plot between sessions.
+
+That reviewer earned its keep almost immediately. The builder agents had wired up
+the feed rendering and it *worked* — the pages looked great. But the reviewer
+flagged something the demo would never surface: **eight different components were
+rendering untrusted HTML from external feeds straight into the page with no
+sanitization.** On a public site, that's a live cross-site-scripting hole. One
+poisoned feed item and any visitor's session is fair game.
+
+We stopped everything. The fix — centralized server-side sanitization, an image
+proxy, an https-only link policy — was sequenced as its own isolated milestone
+that shipped *before* any new features. Not because I'd asked for a security
+review, but because someone in the room was always looking for exactly that.
+
+The lesson isn't "hire five agents." It's this: **vibe coding will cheerfully
+generate code that runs, demos clean, and is quietly unsafe.** A model optimizing
+for "make it work" is not optimizing for "make it safe." So put a step in your
+process whose only job is to be suspicious — whether that's a dedicated reviewer
+agent, a security-focused pass where you tell the AI to hunt its own
+vulnerabilities, or simply your own refusal to ship until something has actually
+been reviewed. If I hadn't, that XSS hole would have gone live.
 
 ## The mindset shift that made it all work
 
@@ -157,6 +193,8 @@ If you're technical but not a coder, here's the shortest path I know:
 3. **Build your first skill** the next time you catch yourself repeating context.
 4. **Wire up the MS Learn MCP** so your answers are grounded in current docs.
 5. **Notice which model you're using** and start switching deliberately.
+6. **Add a review step** — a dedicated reviewer, a security-hunting pass, or just
+   a rule that nothing ships unreviewed. Assume the working code might be unsafe.
 
 None of that requires you to learn to code. It requires you to be clear about
 what you want — and if you've made it this far in a career adjacent to

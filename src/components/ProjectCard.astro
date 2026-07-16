@@ -12,7 +12,7 @@ const { title, summary, tech, repoUrl, liveUrl, image, imageAlt } =
 
 <article
   id={project.id}
-  class="flex scroll-mt-24 flex-col overflow-hidden rounded-2xl border border-ink-200 bg-white transition hover:border-azure-300 hover:shadow-lg hover:shadow-azure-500/5 dark:border-ink-800 dark:bg-ink-900 dark:hover:border-azure-700"
+  class="group relative flex scroll-mt-24 flex-col overflow-hidden rounded-2xl border border-ink-200 bg-white transition hover:border-azure-300 hover:shadow-lg hover:shadow-azure-500/5 dark:border-ink-800 dark:bg-ink-900 dark:hover:border-azure-700"
 >
   {
     image && (
@@ -26,7 +26,14 @@ const { title, summary, tech, repoUrl, liveUrl, image, imageAlt } =
     )
   }
   <div class="flex flex-1 flex-col gap-3 p-6">
-    <h3 class="text-lg font-semibold text-ink-900 dark:text-white">{title}</h3>
+    <h3 class="text-lg font-semibold text-ink-900 dark:text-white">
+      <a
+        href={`/projects/${project.id}`}
+        class="transition after:absolute after:inset-0 group-hover:text-azure-600 focus-visible:outline-none focus-visible:after:rounded-2xl focus-visible:after:ring-2 focus-visible:after:ring-azure-500 dark:group-hover:text-azure-400"
+      >
+        {title}
+      </a>
+    </h3>
     <p class="flex-1 text-sm text-ink-600 dark:text-ink-300">{summary}</p>
 
     {
@@ -41,7 +48,7 @@ const { title, summary, tech, repoUrl, liveUrl, image, imageAlt } =
       )
     }
 
-    <div class="mt-2 flex items-center gap-4 text-sm font-medium">
+    <div class="relative z-10 mt-2 flex items-center gap-4 text-sm font-medium">
       {
         liveUrl && (
           <a

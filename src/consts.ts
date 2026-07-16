@@ -26,9 +26,9 @@ export const NAV_LINKS = [
 
 // Giscus comments configuration.
 // TODO: Fill these in from https://giscus.app after enabling GitHub Discussions
-// on a public repo (e.g. russrimm/russrimmerman.com) and installing the giscus app.
+// on a public repo (russrimm/Russ-Rimmerman-Blog) and installing the giscus app.
 export const GISCUS = {
-  repo: "russrimm/russrimmerman.com",
+  repo: "russrimm/Russ-Rimmerman-Blog",
   repoId: "REPLACE_WITH_REPO_ID",
   category: "Comments",
   categoryId: "REPLACE_WITH_CATEGORY_ID",

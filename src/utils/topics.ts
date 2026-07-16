@@ -39,18 +39,33 @@ export const TOPICS: TopicDef[] = [
     ],
   },
   {
-    slug: "copilot",
-    title: "Copilot & Copilot Studio",
+    slug: "m365-copilot",
+    title: "M365 Copilot",
     description:
-      "Extending Microsoft Copilot and building custom agents in Copilot Studio.",
+      "Extending and rolling out Microsoft 365 Copilot across the enterprise.",
     intro:
-      "Practical guidance on Microsoft Copilot and Copilot Studio — from extending the experiences you already have to building purpose-built agents that solve real business problems.",
+      "Practical guidance on Microsoft 365 Copilot — from extending the experiences you already have to driving adoption and governance across the enterprise.",
     icon: "chip",
-    tags: ["Copilot"],
+    tags: ["M365 Copilot", "Copilot"],
+    focus: [
+      "Extending Microsoft 365 Copilot",
+      "Adoption and change management",
+      "Governance and rollout in the enterprise",
+    ],
+  },
+  {
+    slug: "copilot-studio",
+    title: "Copilot Studio",
+    description:
+      "Building purpose-built agents and custom copilots in Copilot Studio.",
+    intro:
+      "Hands-on guidance for Copilot Studio — designing, building, and shipping purpose-built agents that solve real business problems.",
+    icon: "chip",
+    tags: ["Copilot Studio"],
     focus: [
       "Building agents in Copilot Studio",
-      "Extending Microsoft 365 Copilot",
-      "Governance and rollout in the enterprise",
+      "Topics, actions, and knowledge sources",
+      "Testing, publishing, and governance",
     ],
   },
   {

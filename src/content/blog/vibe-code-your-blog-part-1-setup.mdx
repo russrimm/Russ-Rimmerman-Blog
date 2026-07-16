@@ -1,0 +1,440 @@
+---
+title: "Vibe Code Your Own Blog, Part 1: Getting Set Up"
+description: "A complete, beginner-proof setup guide for vibe coding your first project — a blog. GitHub, Git, VS Code Insiders, Node LTS, Copilot, and the agent/skills scaffolding you need before you write a single line."
+pubDate: 2026-07-15
+tags:
+  ["Vibe Coding", "Vibe Coding Blog Series", "AI", "Getting Started", "Copilot"]
+featured: true
+draft: false
+---
+
+import Explain from "@/components/Explain.astro";
+
+Here's the part most "build an app with AI" tutorials skip: before the magic
+happens, you have to install a small pile of tools and get them talking to each
+other. Skip that, and you'll spend your first vibe coding session fighting your
+own laptop instead of building anything.
+
+So this post is the unglamorous, deeply important half — the setup. By the end
+you'll have everything a non-developer needs to sit down and vibe code a real,
+publishable blog: accounts, tools, a working command line, and an AI assistant
+wired up with the right agents and skills. **Part 2** picks up where this leaves
+off and actually builds the site.
+
+This is written for the technical-adjacent — you can follow instructions and
+you're not scared of a terminal, but you're not a career developer. That's
+exactly who vibe coding is for.
+
+<Explain title="Do I need to read this if I already have a blog?">
+  No. If you already have a working project and dev environment, skip straight to
+  the **agent and skills scaffolding** section near the end — that part is
+  project-agnostic and worth doing regardless of what you're building. Everything
+  before it is for people starting from a blank machine.
+</Explain>
+
+## What "vibe coding" is (and isn't)
+
+Vibe coding means describing what you want in plain language and steering an AI
+until the thing actually works — not typing a single prompt and walking away with
+a finished app. It's a conversation: you set the direction, the AI proposes,
+you push back, and you converge on something real.
+
+I go deep on the mindset — plan mode, picking a model, knowing when the AI has
+wandered off — in [How a Microsoft Architect Who Can't Code Learned to Vibe
+Code](/blog/vibe-coding-lessons). Read that for the *why*. This post is the *how
+do I even get started*.
+
+## Before you install anything: the plan
+
+You're going to set up five things, in this order, because each one builds on the
+last:
+
+1. **A GitHub account** — your home base for code, history, and hosting.
+2. **Git** — the tool that actually tracks your changes locally.
+3. **VS Code Insiders** — the editor where the vibe coding happens.
+4. **Node LTS + npm** — the engine that runs a modern website.
+5. **GitHub Copilot** — the AI you'll be steering.
+
+Then you'll scaffold a home for your agents and skills so the AI works *with*
+you instead of guessing. Let's go.
+
+> **A note on operating systems:** I'm writing the commands Windows-first, since
+> that's what most first-timers are on. Where macOS or Linux differ, I'll call it
+> out inline.
+
+## Step 1: Create a GitHub account
+
+Head to [github.com](https://github.com) and sign up. Pick a username you won't
+be embarrassed by later — it shows up in your project URLs.
+
+<Explain title="Why do I need GitHub for a blog?">
+  Three reasons. First, it's a **backup** — your writing and code live safely in
+  the cloud, not just on one laptop. Second, it's a **time machine** — every
+  change is versioned, so you can undo anything, even a week later. Third, it's
+  **free hosting and the front door for AI tools** — Copilot and the agents you'll
+  use authenticate through your GitHub identity. One account unlocks all of it.
+</Explain>
+
+While you're there, enable **two-factor authentication** in your account
+settings. GitHub requires it for most contributors now, and you don't want to hit
+that wall mid-project.
+
+## Step 2: Install Git (this is not the same as a GitHub account)
+
+This trips people up constantly: your GitHub *account* lives on the web, but
+**Git** is a separate program that runs on your computer and does the actual work
+of tracking changes.
+
+- **Windows:** download and run the installer from
+  [git-scm.com](https://git-scm.com). Accept the defaults — they're sensible.
+- **macOS:** run `git --version` in Terminal; if Git isn't installed, macOS
+  offers to install it for you. Or use [Homebrew](https://brew.sh):
+  `brew install git`.
+- **Linux:** `sudo apt install git` (Debian/Ubuntu) or your distro's equivalent.
+
+Once installed, tell Git who you are — this stamps your name on every change you
+save:
+
+```bash
+git config --global user.name "Your Name"
+git config --global user.email "you@example.com"
+```
+
+<Explain title="Why does Git need my name and email?">
+  Every saved change (a "commit") records who made it. Use the same email as your
+  GitHub account so your work is properly attributed. It's not a login — just a
+  label on your history.
+</Explain>
+
+## Step 3: Install VS Code Insiders
+
+VS Code is the editor. **Insiders** is the daily-updated version that gets the
+newest Copilot and AI-agent features before anyone else. Download it from
+[code.visualstudio.com/insiders](https://code.visualstudio.com/insiders).
+
+<Explain title="Why Insiders instead of regular VS Code?">
+  The AI agent features move fast, and Insiders gets them first — often weeks
+  ahead of the stable release. The tradeoff: it updates every day and can
+  occasionally be a little rough. For vibe coding, being on the newest features is
+  worth it. If you ever hit a bad build, regular VS Code is always there as a
+  fallback — your projects work in both.
+</Explain>
+
+When you first open it, sign in with your GitHub account (bottom-left account
+icon). This connects the editor to your identity and, in a moment, to Copilot.
+
+## Step 4: Install Node.js (LTS) and confirm npm works
+
+A modern blog is built and previewed by **Node.js**, and Node ships with
+**npm**, the tool that installs the building blocks your site depends on.
+
+Install the **LTS** version — not "Current" — from
+[nodejs.org](https://nodejs.org).
+
+<Explain title="Why LTS and not the newest 'Current' version?">
+  LTS stands for "Long-Term Support." It's the stable, boring, widely-compatible
+  version that every tutorial and tool expects. "Current" is the bleeding edge —
+  newer, but more likely to surface bugs you won't yet know how to debug. As a
+  beginner, boring is your friend.
+</Explain>
+
+After installing, **close and reopen your terminal**, then verify both tools are
+found:
+
+```bash
+node --version
+npm --version
+```
+
+You should see version numbers (for example, `v22.x.x` and `10.x.x`). If instead
+you see something like `'npm' is not recognized` or `command not found`, your
+`PATH` isn't picking up Node yet.
+
+<Explain title="What is PATH, and why would npm 'not be found'?">
+  `PATH` is the list of folders your terminal searches when you type a command.
+  If `node` and `npm` aren't found, it means the terminal doesn't know where the
+  installer put them. The fix is almost never manual PATH surgery.
+</Explain>
+
+**The reliable fix** for a "not found" error:
+
+1. Fully quit and reopen your terminal (and VS Code) — the installer updates
+   `PATH`, but only new terminal sessions see it.
+2. Restart your computer if step 1 doesn't do it.
+3. If it *still* fails, don't hand-edit PATH. Instead, uninstall Node and
+   reinstall it with a **version manager**, which handles PATH for you:
+   [`fnm`](https://github.com/Schniz/fnm) or
+   [`nvm-windows`](https://github.com/coreybutler/nvm-windows) on Windows;
+   [`nvm`](https://github.com/nvm-sh/nvm) on macOS/Linux.
+
+<Explain title="Why a version manager is the better long-term answer">
+  A version manager installs Node in a predictable place, wires up your PATH
+  automatically, and lets you switch Node versions per project later. It removes
+  the entire class of "npm not found" problems instead of patching one instance.
+</Explain>
+
+## Step 5: Turn on GitHub Copilot
+
+Copilot is the AI you'll be steering. In VS Code Insiders, open the Extensions
+panel, search **GitHub Copilot**, and install it. Then click the Copilot icon and
+sign in with your GitHub account.
+
+<Explain title="Do I have to pay for Copilot?">
+  There's a **free tier** that's enough to get started, plus paid plans that
+  unlock more usage and access to more capable models. For this series the free
+  tier will get you moving; if you find yourself vibe coding daily, a paid plan
+  pays for itself in saved time. Check your current status any time from the
+  Copilot menu in VS Code.
+</Explain>
+
+## Verify everything before you build
+
+Run this quick checklist in a **fresh** terminal. Each command should print a
+version or a success message — no errors:
+
+```bash
+git --version          # e.g. git version 2.4x.x
+node --version         # e.g. v22.x.x
+npm --version          # e.g. 10.x.x
+code --version         # VS Code version (use 'code-insiders' if 'code' isn't found)
+gh --version           # optional but recommended (see below)
+```
+
+If any line errors out, fix that tool before moving on — every later step assumes
+these all work.
+
+<Explain title="What's 'gh' and do I need it?">
+  `gh` is GitHub's official command-line tool. It's the easiest way to log in to
+  GitHub from the terminal (`gh auth login`) and later to create your repository
+  without leaving VS Code. Install it from
+  [cli.github.com](https://cli.github.com). It's optional for now but saves
+  friction in Part 2.
+</Explain>
+
+## Scaffold a home for your agents and skills
+
+This is the step that separates "AI autocomplete" from actually *vibe coding*.
+Skills and agents are reusable instructions you give the AI so it stops guessing
+and starts working the way you want. You'll want two homes for them.
+
+**1. Per-project customization** lives inside each repository, in a `.github`
+folder. This travels with the project, so anyone who clones it (including future
+you) gets the same AI behavior:
+
+```text
+your-blog/
+└── .github/
+    ├── copilot-instructions.md   # always-on context about THIS project
+    ├── instructions/             # rules scoped to certain files
+    ├── prompts/                  # reusable /slash-command prompts
+    ├── agents/                   # custom agents (*.agent.md)
+    └── skills/                   # project-specific skills (SKILL.md)
+```
+
+**2. Your personal, portable library** lives in your home folder and follows you
+across every project:
+
+```text
+~/.agents/
+└── skills/
+    └── my-skill/
+        └── SKILL.md
+```
+
+<Explain title="What does `~` mean?">
+  `~` is shorthand for your **user home directory**. On macOS and Linux that's
+  something like `/home/yourname`. On Windows it's `C:\Users\yourname`, where
+  `yourname` is typically your Entra ID (work or school account) **without** the
+  `@domain.com` part — so `russ@contoso.com` becomes `C:\Users\russ`. So
+  `~/.agents/skills` just means the `.agents\skills` folder inside your home
+  directory.
+</Explain>
+
+<Explain title="Why two separate locations?">
+  The `.github` folder is **team- and project-scoped** — it ships with the repo so
+  the customization is guaranteed to be there. Your `~/.agents/skills` folder is
+  **personal and portable** — reusable skills you want on hand no matter what
+  you're building. VS Code Copilot reads both, so you get project-specific rules
+  and your own toolkit at the same time.
+</Explain>
+
+You don't need to author anything elaborate yet. For now, just **create the empty
+structure** so the tools have somewhere to look. In VS Code's terminal, from a
+folder where you'll keep projects:
+
+```bash
+mkdir -p ~/.agents/skills
+```
+
+That's the portable library ready. The project-scoped `.github` files come to
+life in Part 2, once your blog repository actually exists — there's no point
+writing project instructions before there's a project to describe.
+
+<Explain title="Where do NEW skills go later?">
+  Author your own skills under `~/.agents/skills/<name>/SKILL.md` (portable) or a
+  project's `.github/skills/` (ships with that repo). Avoid editing any
+  tool-managed or "bundled" skill folders — those get overwritten when the tool
+  updates.
+</Explain>
+
+If you want to go deeper on plan mode, picking a model, and how skills change the
+way you work, that's all in [the vibe coding lessons
+post](/blog/vibe-coding-lessons).
+
+## Vibe coding safely (read this before Part 2)
+
+AI will happily run terminal commands and rewrite files for you. That's powerful
+and occasionally dangerous. A few habits keep you out of trouble:
+
+- **Commit early and often.** Every time something works, save it to Git. It's
+  your undo button for the whole project.
+- **Work on a branch for anything risky.** Branches let you experiment without
+  touching your known-good version.
+- **Read commands before you approve them.** If the AI wants to delete files or
+  run something you don't recognize, slow down and ask it to explain first.
+- **Never put secrets in your code.** API keys and passwords belong in
+  environment variables or a secrets store — never committed to the repo, which
+  may become public.
+
+<Explain title="Why does this matter for a simple blog?">
+  Because the habits you build now carry into everything you vibe code later. A
+  blog is low-stakes — the perfect place to learn to commit often, use branches,
+  and review what the AI does *before* it matters on a real project.
+</Explain>
+
+### Make security the AI's default, not an afterthought
+
+The habits above keep *you* safe. The next step is making sure the *code the AI
+writes* is safe too — because an AI left to its own devices will happily reach
+for whatever pattern was most common in its training data, and "most common" is
+very often "least secure." Hard-coded connection strings, public storage
+accounts, keys in config files, wide-open CORS. It's not malicious; it just
+doesn't know your bar unless you set it.
+
+You set that bar by **grounding the AI in real security guidance and making that
+guidance the highest priority** in every instruction, skill, and agent you use.
+Three levers do most of the work:
+
+- **Wire up the Azure MCP and use its Azure best-practices tool.** The
+  [Azure MCP server](https://github.com/Azure/azure-mcp) ships a built-in Azure
+  best-practices capability the AI can call before it writes or deploys anything
+  that touches Azure. It returns secure, production-grade guidance — **managed
+  identities instead of connection strings, Key Vault for secrets, least-privilege
+  role assignments, private networking, and secure defaults** — grounded in
+  current Microsoft recommendations rather than whatever the model half-remembers.
+  Ask the AI to *"check Azure best practices first"* and it'll pull that guidance
+  in before generating code.
+- **Pair it with the Microsoft Learn MCP** so security and identity guidance comes
+  straight from the current official docs — Entra ID, Defender, and Azure security
+  baselines — instead of stale training data.
+- **Lead with security in your own instructions, skills, and agents.** When you
+  scaffold the `.github` files in Part 2, put security *first* in
+  `copilot-instructions.md` — least privilege, no secrets in code, managed
+  identities, input validation, secure defaults. A short, explicit
+  "security comes first" rule at the top of your instructions steers every
+  response after it.
+
+<Explain title="What's a 'security-focused skill or agent'?">
+  It's a reusable instruction set whose whole job is to hold the AI to a security
+  bar. You can create a **security-review skill** that runs a checklist before you
+  ship — secrets scanning, dependency risk, auth and access review, input
+  validation — or a dedicated **security-review agent** you hand a diff to for a
+  second opinion. The point is the same as any skill: promote your best "did we do
+  this securely?" prompts into a permanent capability the AI applies every time,
+  instead of hoping you remember to ask.
+</Explain>
+
+<Explain title="Why put security at the *top* of my instructions?">
+  Instructions are read top to bottom, and earlier rules carry more weight when
+  the AI has to make a trade-off. If "ship it fast" sits above "do it securely,"
+  guess which one wins under pressure. Leading with least privilege, no hard-coded
+  secrets, and secure-by-default patterns makes security the lens everything else
+  is filtered through — not a box you check at the end.
+</Explain>
+
+### The vibe-coding-specific risks worth knowing
+
+Classic web vulnerabilities still apply, but AI-generated code adds a few failure
+modes of its own. These are the ones I'd burn into your habits from day one:
+
+- **Never ship code you don't understand.** Keep a human in the loop. The AI
+  optimizes for *"this runs,"* not *"this is safe."* If you can't explain what a
+  block does, don't merge it — ask the AI to walk you through it first.
+- **Verify every dependency before you install it.** Models hallucinate package
+  names, and attackers register those made-up names with malware inside
+  ("slopsquatting"). Before you `npm install` anything the AI suggests, confirm
+  the package is real, actively maintained, and spelled exactly right — then pin
+  the version and commit your lockfile.
+- **Ask for security explicitly in the prompt.** Don't assume the AI will validate
+  input, apply least privilege, or avoid hard-coded secrets on its own. Say so.
+  "Follow secure coding practices, validate all input server-side, no secrets in
+  code" costs you one sentence and changes what you get back.
+- **Let a scanner watch your back.** Turn on secret scanning and dependency alerts
+  (GitHub gives you both for free), and run them automatically — not just when you
+  remember. A scanner catches the leaked key or vulnerable package you'll
+  eventually miss by eye.
+- **Treat tool and web output as untrusted.** Content the AI pulls from a webpage,
+  a file, or an API can carry hidden instructions (prompt injection). Never let
+  something the AI *read* trigger something risky it then *does* without you
+  confirming it.
+
+<Explain title="What's 'slopsquatting' and why should I care for a blog?">
+  When an AI invents a package name that doesn't exist, an attacker can register
+  that exact name and fill it with malicious code — so the next person who trusts
+  the AI's suggestion installs malware. It's a real, growing supply-chain attack.
+  The fix is cheap: don't install anything you haven't confirmed is the genuine,
+  maintained package. Building that reflex on a low-stakes blog means you'll have
+  it when the stakes are real.
+</Explain>
+
+### Steal a ready-made security skill
+
+Everything above is easier to enforce when it's written down as a skill the AI
+pulls in automatically. This repo ships one you can copy: a **`vibesec-skill`**
+under `.github/skills/` that captures secure-coding practices across access
+control, XSS, CSRF, secrets, SSRF, file uploads, SQL injection, JWTs, and the
+AI-specific risks above — and tells the AI to **treat security as the highest
+priority** and fail closed when it's unsure.
+
+Drop a copy into your own project's `.github/skills/` (or your portable
+`~/.agents/skills/`), and the AI will apply it whenever you're building a web app
+or ask for a security review — no re-explaining required.
+
+<Explain title="Do I have to write that skill myself?">
+  No. That's the whole point of skills being portable files: grab an existing one,
+  drop it in, and it just works. Refine it over time as you learn your own bar.
+  When you catch a security lesson the skill doesn't cover yet, add a line — future
+  you (and the AI) inherit it automatically.
+</Explain>
+
+## What you should have right now
+
+Before moving on, make sure all of this is true — Part 2 assumes every one of
+them:
+
+- ✅ A GitHub account with 2FA enabled, and you're signed in inside VS Code.
+- ✅ Git installed and configured with your name and email.
+- ✅ VS Code **Insiders** open, with the Copilot extension active and responding.
+- ✅ `node`, `npm`, and `git` all return versions in a fresh terminal.
+- ✅ A `~/.agents/skills` folder ready for your portable skills.
+- ✅ You understand the safety basics: commit often, branch for risk, no secrets.
+- ✅ You know how to make security the AI's default — ground it in the Azure and
+  MS Learn MCPs, and lead every instruction, skill, and agent with security first.
+- ✅ You've internalized the vibe-coding risks: review what you can't explain,
+  verify every dependency before installing, and let a scanner watch your back.
+
+If any box is unchecked, sort it now. A shaky foundation turns Part 2 into a
+frustrating detour hunt instead of the fun part.
+
+## Next: actually building the thing
+
+That's the setup — the part nobody warns you about, now behind you. In **Part 2**,
+we put it all to work: scaffolding the blog with Astro, writing a
+`copilot-instructions.md` so the AI understands your project, steering it through
+your first real feature with plan mode, and deploying the finished site to the
+internet with a live URL to share.
+
+**Your homework before Part 2:** run the verification checklist one more time and
+make sure every command comes back clean. Then
+[subscribe](#) so you don't miss the build — or if you get stuck on setup, the
+[contact page](/contact) is the fastest way to reach me.

@@ -1,0 +1,189 @@
+---
+title: "Build Your Customized Microsoft Foundry Agent"
+description: "With a deployed model in place, this walkthrough turns it into a real Azure AI Foundry agent — instructions, tools, grounding on trustworthy data, MCP servers, and least-privilege identity — so it does useful work instead of just answering trivia."
+pubDate: 2026-07-15
+heroImage: ../../assets/blog/foundry-agent.svg
+heroAlt: "A central AI agent core connected to model, grounding, tools, MCP, identity, and memory nodes in violet and cyan."
+tags: ["AI", "Azure", "AI Foundry", "Agents", "MCP"]
+featured: false
+draft: true
+---
+
+import Explain from "@/components/Explain.astro";
+
+In the previous post — [Stand Up Your Own Microsoft Foundry Model](/blog/set-up-a-microsoft-foundry-agent-foundation)
+— we did the unglamorous part: provisioned an Azure AI Foundry resource, deployed
+a current GPT model, and proved we could call it keyless with Entra ID. That gave
+us a model endpoint. A model endpoint is not an agent.
+
+This post turns that endpoint into a **customized Foundry agent** — one with a
+job, a personality, access to your data, and the ability to *take action* —
+while keeping it least-privilege and safe.
+
+<Explain title="Model vs. agent — what's the actual difference?">
+  A model answers a prompt. An **agent** wraps a model with durable instructions,
+  tools it can call, grounding data it can retrieve, and state (threads/runs) so
+  it can carry out multi-step tasks. Same model underneath; far more capable
+  surface around it.
+</Explain>
+
+> **Note on versions:** The Azure AI Foundry Agent Service and its SDKs move
+> quickly. The steps below reflect the current shape of the service; before you
+> rely on any specific SDK method or API version, confirm it against the official
+> [Microsoft Learn docs](https://learn.microsoft.com/azure/ai-foundry/) and note
+> the date you verified it. Everything here builds on the resource and deployment
+> from Part 1.
+
+## What we're building
+
+A support-style assistant that:
+
+1. Uses the **model deployment** from Part 1
+2. Follows **custom instructions** (its job and guardrails)
+3. **Grounds** its answers on your own documents instead of guessing
+4. Can call **tools** — including an **MCP server** — to take real action
+5. Runs under a **least-privilege identity**
+
+## The two paths: portal and code
+
+You can build an agent two ways. Use the **Azure AI Foundry portal** to prototype
+quickly and eyeball behavior, then move to **code** so the agent is versioned,
+reviewable, and reproducible. This post focuses on code, because an agent you
+can't rebuild from source isn't a production asset.
+
+<Explain title="Why not just click it together in the portal?">
+  The portal is perfect for exploration. But a real agent needs to live in a
+  repo: instructions reviewed in pull requests, tools declared explicitly, and
+  redeployable into another environment. Treat the portal as a whiteboard and
+  code as the source of truth.
+</Explain>
+
+## Step 1 — Point at your Foundry project
+
+Agents live inside a Foundry **project** on the resource you created. Grab your
+project endpoint (the `https://<name>.services.ai.azure.com/...` form) and
+authenticate with the same keyless, Entra-based approach from Part 1 —
+`DefaultAzureCredential` picks up your `az login` session locally and a managed
+identity in Azure, so there are no keys in your code.
+
+```python
+from azure.identity import DefaultAzureCredential
+from azure.ai.projects import AIProjectClient
+
+project = AIProjectClient(
+    endpoint="https://my-foundry-unique.services.ai.azure.com/api/projects/my-project",
+    credential=DefaultAzureCredential(),
+)
+```
+
+<Explain title="Where does DefaultAzureCredential get its identity?">
+  Locally it uses your `az login` token; in Azure it uses the managed identity
+  you assigned in Part 1 (`--assign-identity`). Same code, no secrets, and it
+  respects the RBAC roles you granted — least privilege by construction.
+</Explain>
+
+## Step 2 — Give the agent a job (instructions)
+
+The single highest-leverage thing you'll write is the agent's **instructions** —
+its standing orders. Be explicit about scope, tone, and what it must *not* do.
+
+```python
+agent = project.agents.create_agent(
+    model="gpt-5.4",  # the deployment name from Part 1
+    name="support-assistant",
+    instructions=(
+        "You are a support assistant for Contoso's internal IT team. "
+        "Answer only from the grounded knowledge provided. If you don't know, "
+        "say so and open a ticket using the available tool. Never invent "
+        "policies, and never expose secrets or internal identifiers."
+    ),
+)
+```
+
+Good instructions are specific about **boundaries**, not just persona. "Never
+invent policies" and "say so when unsure" prevent the two failure modes that
+make agents untrustworthy: confident hallucination and silent overreach.
+
+## Step 3 — Ground it on your data
+
+An ungrounded agent is a very confident stranger. Grounding connects it to *your*
+content so answers are accurate and current. In Foundry you attach a knowledge
+source — for example a vector index built from your documents — so the agent
+retrieves relevant passages before it answers.
+
+Keep two rules in mind:
+
+- **Least privilege on the data too.** The agent should only reach the documents
+  it needs, through an identity scoped to exactly that.
+- **Cite what it used.** Grounded answers that link back to source build trust
+  and make review possible.
+
+## Step 4 — Give it tools (including MCP)
+
+Grounding lets an agent *know*; tools let it *do*. Declare tools explicitly so
+the agent's capabilities are auditable. Beyond built-in tools, the
+**Model Context Protocol (MCP)** lets you plug in standardized tool servers —
+the same pattern used across the Microsoft ecosystem — so your agent can reach
+systems like ticketing, Microsoft Learn, or your own APIs through a consistent
+interface.
+
+<Explain title="Why MCP instead of hand-rolled functions?">
+  MCP standardizes how an agent discovers and calls tools, so the same server
+  works across different agents and hosts. You wire the capability once and reuse
+  it — and you can reason about exactly what the agent is allowed to invoke.
+</Explain>
+
+Whatever tools you add, the security posture is the same as the rest of this
+series: the identity behind each tool call should be scoped to the minimum it
+needs, and every action should be traceable.
+
+## Step 5 — Run it and iterate
+
+Agents work in **threads** (a conversation) and **runs** (the agent processing a
+turn, calling tools as needed). You create a thread, add a user message, start a
+run, and read the result — then refine the instructions and tools based on what
+you see.
+
+```python
+thread = project.agents.threads.create()
+project.agents.messages.create(
+    thread_id=thread.id, role="user",
+    content="Our VPN client won't connect after the last update. What should I try?",
+)
+run = project.agents.runs.create_and_process(
+    thread_id=thread.id, agent_id=agent.id,
+)
+# Read the agent's messages from the thread once the run completes.
+```
+
+Iterate here relentlessly. Most of the quality in a good agent comes from
+tightening instructions and grounding — not from swapping models.
+
+## Keep it least-privilege and observable
+
+Before you call an agent "done," pressure-test the boring, important parts:
+
+- **Identity:** the agent and each tool run under scoped roles, not broad ones.
+- **Data access:** grounding reaches only the sources it should.
+- **Guardrails:** instructions forbid inventing facts and exposing secrets; content
+  filters are on.
+- **Observability:** you can see each run's tool calls and inputs for review.
+- **Cost:** token usage and capacity match the workload — revisit the quota notes
+  from Part 1.
+
+<Explain title="Is this an official Microsoft-supported reference architecture?">
+  No — this is practitioner guidance for building on the Foundry Agent Service,
+  not an official Microsoft position. Validate the specifics against Microsoft
+  Learn for your region, licensing, and the preview/GA status of any feature you
+  depend on.
+</Explain>
+
+## Where this leaves you
+
+You started with nothing and now have a model deployed on your own Foundry
+resource **and** a customized agent that grounds on your data, uses tools, and
+runs under a least-privilege identity — all keyless. That's a real, defensible
+foundation to build on.
+
+If there's a specific agent scenario you'd like me to tackle next, the
+[contact page](/contact) is the fastest way to reach me.
