@@ -196,18 +196,18 @@ git --version          # e.g. git version 2.4x.x
 node --version         # e.g. v22.x.x
 npm --version          # e.g. 10.x.x
 code --version         # VS Code version (use 'code-insiders' if 'code' isn't found)
-gh --version           # optional but recommended (see below)
+gh --version           # e.g. gh version 2.x.x (see below)
 ```
 
 If any line errors out, fix that tool before moving on — every later step assumes
 these all work.
 
 <Explain title="What's 'gh' and do I need it?">
-  `gh` is GitHub's official command-line tool. It's the easiest way to log in to
-  GitHub from the terminal (`gh auth login`) and later to create your repository
-  without leaving VS Code. Install it from
-  [cli.github.com](https://cli.github.com). It's optional for now but saves
-  friction in Part 2.
+  `gh` is GitHub's official command-line tool, and this series relies on it. It's
+  the easiest way to log in to GitHub from the terminal (`gh auth login`) and
+  later to create your repository without leaving VS Code. Install it now from
+  [cli.github.com](https://cli.github.com) and confirm `gh --version` prints a
+  version before you continue — Part 2 assumes it's set up.
 </Explain>
 
 ## Scaffold a home for your agents and skills
@@ -257,13 +257,29 @@ across every project:
   and your own toolkit at the same time.
 </Explain>
 
-You don't need to author anything elaborate yet. For now, just **create the empty
-structure** so the tools have somewhere to look. In VS Code's terminal, from a
-folder where you'll keep projects:
+You don't need to author anything elaborate yet — and you don't need to create
+the folders by hand either. This is a perfect first taste of vibe coding: **let
+the AI scaffold it for you.** Open Copilot Chat in VS Code (the chat panel), make
+sure it's in **Agent mode** so it's allowed to run commands, and paste a prompt
+like this:
 
-```bash
-mkdir -p ~/.agents/skills
+```text
+Create my portable skills library at ~/.agents/skills. Just create the
+empty folder structure — don't add any files yet. Show me the command
+before you run it so I can approve it.
 ```
+
+The AI will propose a command (it'll be something like `mkdir -p
+~/.agents/skills`), wait for you to approve it, and then run it in the terminal.
+Reading and approving that command *before* it runs is exactly the safe habit
+you'll rely on for the rest of this series.
+
+<Explain title="What's 'Agent mode'?">
+  Copilot Chat has a few modes. **Agent mode** lets the AI take actions on your
+  behalf — running terminal commands, creating files, editing code — pausing to
+  ask for your approval along the way. It's the mode that turns chat into actual
+  vibe coding. Look for the mode picker at the bottom of the chat panel.
+</Explain>
 
 That's the portable library ready. The project-scoped `.github` files come to
 life in Part 2, once your blog repository actually exists — there's no point
