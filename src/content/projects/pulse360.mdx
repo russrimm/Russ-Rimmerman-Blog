@@ -11,6 +11,7 @@ imageAlt: "Pulse 360° landing dashboard with tiles for M365 Message Center, Rel
 ---
 
 import Screenshot from "@/components/Screenshot.astro";
+import messageCenter from "@/assets/projects/pulse360/message-center.png";
 import msrc from "@/assets/projects/pulse360/msrc-security-updates.png";
 import productNews from "@/assets/projects/pulse360/product-news.png";
 import releasePlans from "@/assets/projects/pulse360/release-plans.png";
@@ -40,7 +41,8 @@ Pulse 360° pulls signals from the official Microsoft channels and renders them
 with a consistent UI everywhere:
 
 - **Microsoft 365 Message Center** — live tenant messages via Microsoft Graph
-  (`/admin/serviceAnnouncement/messages`)
+  (`/admin/serviceAnnouncement/messages`), brokered through Azure API Management
+  in production so the app ships no Entra credentials
 - **MSRC Security Updates** — official CVRF data from `api.msrc.microsoft.com`,
   with a month picker, per-CVE cards, KB articles, downloads, weakness (CWE)
   info, and revision history
@@ -56,6 +58,22 @@ with a consistent UI everywhere:
 Every list gets **global filtering and search** — Product, Area, Date, and Major
 Changes filters, plus case- and whitespace-insensitive matching against titles,
 product names, and message IDs.
+
+## Message Center, live from your tenant
+
+The Microsoft 365 Message Center is the one surface that reads your own tenant
+rather than a public feed. Pulse 360° pulls advisories straight from Microsoft
+Graph (`/admin/serviceAnnouncement/messages`) and renders them with the same
+filtering everything else gets — by product, category, and date, with major
+changes and action-required items flagged up front. In production the request
+goes through Azure API Management, so the app itself holds no Entra credentials
+and still returns live messages.
+
+<Screenshot
+  src={messageCenter}
+  alt="Pulse 360 Microsoft 365 Message Center page showing tenant advisory cards with message IDs, product tags, category, and act-by dates"
+  caption="The Message Center reads live tenant advisories via Microsoft Graph — brokered through Azure API Management in production, with product, category, and date filters and major-change flags surfaced up front."
+/>
 
 ## Security response, at a glance
 
@@ -113,6 +131,50 @@ live update count per group and drill-through detail pages.
   alt="Pulse 360 Microsoft Fabric Roadmap grouped by area with collapsible sections and per-group update counts"
   caption="The Microsoft Fabric roadmap, grouped by product area with collapsible sections and per-group update counts sourced from the public Fabric roadmap."
 />
+
+## Architecture at a glance
+
+Everything is server-first: the browser only ever talks to Pulse 360°'s own
+`/api/*` route handlers, and the Next.js server calls each upstream on the
+reader's behalf. The Message Center path is the one that needs credentials, and
+in production those live in Azure API Management, not in the app.
+
+```text
+                    ┌─────────────────────────────────────────────┐
+                    │                Browser (client)             │
+                    │   React 19 islands: filters, search, modals │
+                    │        · React Query 5 · Zustand 5          │
+                    └───────────────────────┬─────────────────────┘
+                                             │ fetch /api/*
+                                             ▼
+      ┌────────────────────────────────────────────────────────────────┐
+      │             Next.js 16 App Router  ·  Vercel (server)           │
+      │  Server Components · Route Handlers · server-only Graph client  │
+      └────┬────────────────┬─────────────────┬────────────────┬───────┘
+           │                │                 │                │
+    /api/messages     /api/proxy-rss      /api/msrc     release-plan fetches
+           │                │                 │                │
+           ▼                ▼                 ▼                ▼
+   ┌───────────────┐ ┌──────────────┐ ┌──────────────┐ ┌──────────────────┐
+   │ Azure API     │ │ Allowlisted  │ │ MSRC CVRF API│ │ Microsoft release│
+   │ Management    │ │ *.microsoft  │ │ api.msrc.    │ │ planner feeds    │
+   │ (APIM gateway)│ │ .com RSS/Atom│ │ microsoft.com│ │ (M365/Azure/etc.)│
+   └───────┬───────┘ └──────────────┘ └──────────────┘ └──────────────────┘
+           │ injects app-only token
+           │ (client credentials · Named Values)
+           ▼
+   ┌────────────────────────────────────┐
+   │ Microsoft Graph                    │
+   │ /admin/serviceAnnouncement/messages│
+   │ (M365 Message Center)              │
+   └────────────────────────────────────┘
+```
+
+The key move is the leftmost path. The deployment sends _unauthenticated_
+requests to the APIM gateway; APIM does the Entra client-credentials token
+exchange and adds the `Authorization` header from a policy backed by Named
+Values. The app never holds a client secret, and the Message Center renders the
+same way every other surface does.
 
 ## How it's built
 
