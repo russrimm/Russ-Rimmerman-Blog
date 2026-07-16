@@ -216,6 +216,40 @@ Tell your agent to **show each command before running it and stop on the first
 failure** — that way an authorization error surfaces immediately with the exact
 step to hand off, instead of leaving a half-configured identity.
 
+#### Troubleshooting the deploy
+
+**`azure/login@v2` fails with "Not all values are present. Ensure 'client-id' and
+'tenant-id' are supplied."**
+
+The login step received empty `client-id`/`tenant-id` values, which means one or
+more of the `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID` repo
+secrets is **missing or empty**. Fix it:
+
+1. Confirm which secrets exist — repo **Settings → Secrets and variables →
+   Actions**, or run `gh secret list`. You need all three.
+2. If the Entra identity already exists, just (re)set the secrets — you don't need
+   to recreate the app registration:
+
+   ```bash
+   APP_ID=$(az ad app list --display-name "russrimmerman-blog-deploy" --query "[0].appId" -o tsv)
+   gh secret set AZURE_CLIENT_ID --body "$APP_ID"
+   gh secret set AZURE_TENANT_ID --body "$(az account show --query tenantId -o tsv)"
+   gh secret set AZURE_SUBSCRIPTION_ID --body "$(az account show --query id -o tsv)"
+   ```
+
+   If the app registration doesn't exist yet, run the full
+   [one-time identity setup](#one-time-identity-setup--let-your-coding-agent-do-it)
+   above first.
+3. If `gh secret set` fails with a permission error, run
+   `gh auth refresh -h github.com -s repo` (needs repo admin) or add the secrets
+   manually in the Actions secrets UI, then re-run.
+4. Re-run the failed run from **Actions → Re-run jobs**, or push a new commit to
+   `main`.
+
+> Pull requests from **forks** can't obtain an OIDC token, so this step will
+> always fail for them by design. Only pushes to `main` and PRs from branches in
+> this repo can deploy.
+
 ### Custom domain (www.russrimmerman.com)
 
 In the Static Web App → **Custom domains**, add `www.russrimmerman.com` and
