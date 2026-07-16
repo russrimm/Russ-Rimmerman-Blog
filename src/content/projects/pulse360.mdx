@@ -1,7 +1,7 @@
 ---
 title: "Pulse 360°"
 summary: "A product-agnostic news and update portal that unifies Microsoft's official update streams — Microsoft 365, Azure, Fabric, Power Platform, Dynamics 365, Copilot, and the MSRC — into one fast, filterable, dark-mode-first dashboard."
-tech: ["Next.js 16", "React 19", "TypeScript", "Tailwind CSS 4", "Microsoft Graph", "Vercel"]
+tech: ["Next.js 16", "React 19", "TypeScript", "Tailwind CSS 4", "Microsoft Graph", "Azure API Management", "Vercel"]
 repoUrl: "https://github.com/russrimm/Pulse360"
 liveUrl: "https://www.mspulse360.app"
 order: 5
@@ -120,10 +120,21 @@ The architecture is deliberately server-first:
 
 - **Server-first data fetching.** The Graph client (`src/lib/api.server.ts`) is
   marked `server-only`, so secrets never reach the browser. The client talks to
-  `/api/messages`; the server holds the Entra app credentials and proxies Graph.
-- **App-only Graph auth.** Message Center uses the client-credentials flow — no
-  user sign-in required — and acquires a fresh access token per request rather
-  than persisting one.
+  `/api/messages`; the server calls Microsoft Graph on its behalf.
+- **Azure API Management fronts Graph.** In production, the Next.js app holds no
+  Entra credentials at all — it points at an **Azure API Management (APIM)**
+  gateway (for example `https://graphapirim.azure-api.net`) that sits in front of
+  the Microsoft 365 Message Center endpoint. APIM performs the app-only
+  client-credentials token acquisition and injects the `Authorization` header
+  through a policy backed by **Named Values**, so the deployment sends
+  _unauthenticated_ requests and never stores a client secret. A single
+  `AZURE_API_URL` environment variable selects this behavior: when it points at a
+  non-`graph.microsoft.com` host the app enters "APIM mode" and skips local token
+  acquisition entirely; if APIM ever returns a `401`, it falls back to direct
+  Graph when local credentials happen to be present. Local development uses that
+  direct path instead — `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, and
+  `AZURE_CLIENT_SECRET` with `AZURE_API_URL` set to `https://graph.microsoft.com`
+  — so the secret only ever lives on a developer's machine.
 - **Graceful degradation.** If an upstream is down, list endpoints return `200`
   with an empty array so the UI degrades instead of throwing a 5xx at the user.
 - **Caching by source.** Server fetches use Next.js `revalidate` hints — roughly
@@ -145,8 +156,10 @@ edges get real attention:
 - **Hardened inline SVG.** Inline SVG is allowed but paired with a strict CSP
   (`script-src 'none'; sandbox;`) and `Content-Disposition: attachment` to
   neutralize active content.
-- **Secrets stay server-side**, `.env*` is broadly gitignored, and production
-  console output is silenced to avoid leaking upstream payloads into host logs.
+- **Secrets stay server-side** — and in production the Graph credentials don't
+  live in the app at all, since APIM holds them and handles token acquisition.
+  `.env*` is broadly gitignored, and production console output is silenced to
+  avoid leaking upstream payloads into host logs.
 
 ## Tech stack
 
@@ -155,9 +168,11 @@ Next.js 16 (App Router, Server Components, Turbopack) and React 19 on TypeScript
 the accordion, popover, and icon primitives; React Query 5 handles the client
 cache and Zustand 5 holds filter state. Feed parsing runs through
 `fast-xml-parser`, `xml2js`, and `rss-parser`, with an optional Prisma 7 /
-PostgreSQL layer for the pieces that need persistence. It's built for Vercel but
-runs anywhere Node 20.19+, 22.12+, or 24.x can host Next.js 16, and it's covered
-by Playwright across Chromium, Firefox, and WebKit.
+PostgreSQL layer for the pieces that need persistence. Microsoft Graph access is
+brokered through **Azure API Management** in production so no Entra secrets ship
+with the app. It's built for Vercel but runs anywhere Node 20.19+, 22.12+, or
+24.x can host Next.js 16, and it's covered by Playwright across Chromium,
+Firefox, and WebKit.
 
 Explore it live at [mspulse360.app](https://www.mspulse360.app), or read the full
 setup and architecture notes in the [GitHub
