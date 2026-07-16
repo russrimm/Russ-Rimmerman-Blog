@@ -1,5 +1,5 @@
 ---
-import { SITE_TITLE, NAV_LINKS } from "@/consts";
+import { NAV_LINKS } from "@/consts";
 import ThemeToggle from "./ThemeToggle.astro";
 
 const pathname = Astro.url.pathname;
@@ -19,7 +19,7 @@ const isActive = (href: string) =>
         class="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-azure-600 to-teal-500 text-sm font-bold text-white"
         >RR</span
       >
-      <span class="text-ink-900 dark:text-white">{SITE_TITLE}</span>
+      <span class="text-ink-900 dark:text-white">The Blog Home of Russ Rimmerman</span>
     </a>
 
     <div class="flex items-center gap-1 sm:gap-2">

@@ -1,12 +1,164 @@
 ---
-title: "Pulse360"
-summary: "A monitoring and insights solution that gives a 360-degree view of your environment's health, usage, and signals in one place."
-tech: ["TypeScript", "Azure", "Microsoft Graph", "GitHub Actions"]
+title: "Pulse 360°"
+summary: "A product-agnostic news and update portal that unifies Microsoft's official update streams — Microsoft 365, Azure, Fabric, Power Platform, Dynamics 365, Copilot, and the MSRC — into one fast, filterable, dark-mode-first dashboard."
+tech: ["Next.js 16", "React 19", "TypeScript", "Tailwind CSS 4", "Microsoft Graph", "Vercel"]
 repoUrl: "https://github.com/russrimm/Pulse360"
+liveUrl: "https://www.mspulse360.app"
 order: 5
 featured: true
+image: ../../assets/projects/pulse360/home-dashboard.png
+imageAlt: "Pulse 360° landing dashboard with tiles for M365 Message Center, Release Plans, Product News, and Security & Advisories"
 ---
 
-Pulse360 brings a 360-degree view of your environment together — health,
-usage, and operational signals — so you can spot trends, catch issues early,
-and keep a steady pulse on what matters most.
+import Screenshot from "@/components/Screenshot.astro";
+import msrc from "@/assets/projects/pulse360/msrc-security-updates.png";
+import productNews from "@/assets/projects/pulse360/product-news.png";
+import releasePlans from "@/assets/projects/pulse360/release-plans.png";
+import azureUpdates from "@/assets/projects/pulse360/azure-updates.png";
+import fabricRoadmap from "@/assets/projects/pulse360/fabric-roadmap.png";
+
+**Pulse 360°** answers a question every Microsoft-focused team asks: _what
+changed, and where do I find it?_ Instead of bouncing between the Message
+Center, the Azure updates blog, the Microsoft 365 and Fabric release planners,
+the MSRC portal, and a dozen product blogs, you get one console with the same
+filtering, search, and drill-through behavior across every product area — sorted
+newest-first, keyboard-navigable, and equally usable in light or dark mode.
+
+It's live at [mspulse360.app](https://www.mspulse360.app), built on the **Next.js
+16 App Router, React 19, TypeScript, and Tailwind CSS 4**, with Radix UI
+primitives for the interactive pieces. Server Components do the heavy lifting;
+client islands add just the filters and modals that need state. There are no
+third-party trackers beyond Vercel Analytics and Speed Insights.
+
+> Independent project — **not affiliated with, endorsed by, or supported by
+> Microsoft**. It surfaces Microsoft's own public feeds; the official portals
+> remain the system of record for anything compliance-critical.
+
+## What it unifies
+
+Pulse 360° pulls signals from the official Microsoft channels and renders them
+with a consistent UI everywhere:
+
+- **Microsoft 365 Message Center** — live tenant messages via Microsoft Graph
+  (`/admin/serviceAnnouncement/messages`)
+- **MSRC Security Updates** — official CVRF data from `api.msrc.microsoft.com`,
+  with a month picker, per-CVE cards, KB articles, downloads, weakness (CWE)
+  info, and revision history
+- **Release Plans** — Azure, Microsoft 365, Fabric, and Dynamics 365 / Power
+  Platform release planners
+- **Fabric & Power Platform Roadmap** — grouped by product, collapsible, with
+  drill-through detail pages
+- **Product News** — aggregated RSS/Atom feeds for Power BI, Power Apps, Power
+  Automate, Power Platform, Copilot, Copilot Studio, Azure AI Foundry, Azure
+  AI/ML, Semantic Kernel, VS Code, Windows, Tech Community, the Learn blog, and
+  the Microsoft Fabric blog
+
+Every list gets **global filtering and search** — Product, Area, Date, and Major
+Changes filters, plus case- and whitespace-insensitive matching against titles,
+product names, and message IDs.
+
+## Security response, at a glance
+
+The MSRC surface is the strongest example of the pattern. A month picker exposes
+every month MSRC has published a CVRF report for; choosing one re-fetches that
+month's CVE bundle. Each vulnerability expands to show the affected products,
+platform, impact, max CVSS severity, KB article links, downloads, and revision
+history — the same data you'd pull from the MSRC portal, minus the tab-switching.
+
+<Screenshot
+  src={msrc}
+  alt="Pulse 360 Microsoft Security Response Center updates page showing per-CVE cards with product, impact, and CVSS severity for July 2026"
+  caption="MSRC Security Updates — official CVRF data with a month picker and per-CVE cards showing product, impact, CVSS severity, KB articles, and downloads."
+/>
+
+## Product news, aggregated honestly
+
+The Product News hub folds 15+ Microsoft blogs into one filterable stream. Pick a
+category — Power Platform, AI + Machine Learning, Tech Community, Fabric, Dev
+Blogs, Windows — then narrow to a specific product. Every card is fully clickable
+and preserves its product and date context on the detail page.
+
+<Screenshot
+  src={productNews}
+  alt="Pulse 360 Product News page showing aggregated Power Apps news cards with titles, authors, dates, and read-more links"
+  caption="Product News aggregates 15+ official Microsoft blogs into one searchable stream — here, Power Apps announcements with author and publication date."
+/>
+
+## Release plans and roadmaps
+
+A single Release Plans hub routes into the Azure, Microsoft 365, Fabric, and
+Dynamics 365 / Power Platform planners, plus a combined roadmap view. Each planner
+carries its own filters — Products, Categories, Tags, Status, Date — so you can
+scope, for example, to _Generally Available_ Azure database features from the last
+quarter.
+
+<Screenshot
+  src={releasePlans}
+  alt="Pulse 360 Release Plans hub with cards for Power Platform & Dynamics, Azure, Microsoft 365, and Fabric"
+  caption="The Release Plans hub — a central launch point into the Azure, Microsoft 365, Fabric, and Dynamics 365 / Power Platform release planners."
+/>
+
+<Screenshot
+  src={azureUpdates}
+  alt="Pulse 360 Azure Release Plans list showing update cards with product, title, created date, last-modified date, and description"
+  caption="The Azure release planner with 100+ updates — filter by Products, Categories, Tags, Status, and Date, with GA and Public Preview clearly labeled per item."
+/>
+
+The Fabric roadmap groups upcoming and shipped features by area — Administration,
+Governance & Security; Data Engineering; Data Science; OneLake; Power BI — with a
+live update count per group and drill-through detail pages.
+
+<Screenshot
+  src={fabricRoadmap}
+  alt="Pulse 360 Microsoft Fabric Roadmap grouped by area with collapsible sections and per-group update counts"
+  caption="The Microsoft Fabric roadmap, grouped by product area with collapsible sections and per-group update counts sourced from the public Fabric roadmap."
+/>
+
+## How it's built
+
+The architecture is deliberately server-first:
+
+- **Server-first data fetching.** The Graph client (`src/lib/api.server.ts`) is
+  marked `server-only`, so secrets never reach the browser. The client talks to
+  `/api/messages`; the server holds the Entra app credentials and proxies Graph.
+- **App-only Graph auth.** Message Center uses the client-credentials flow — no
+  user sign-in required — and acquires a fresh access token per request rather
+  than persisting one.
+- **Graceful degradation.** If an upstream is down, list endpoints return `200`
+  with an empty array so the UI degrades instead of throwing a 5xx at the user.
+- **Caching by source.** Server fetches use Next.js `revalidate` hints — roughly
+  1 hour for news, 24 hours for Graph — tuned to each feed's cadence.
+
+## Security notes
+
+Because Pulse 360° proxies third-party feeds and Microsoft APIs, the untrusted
+edges get real attention:
+
+- **Allowlisted RSS proxy.** `/api/proxy-rss` only fetches HTTPS URLs whose
+  hostname is in a fixed `*.microsoft.com` set, and reads redirects manually to
+  prevent the proxy from being turned into an SSRF vector.
+- **Strict MSRC input validation.** `/api/msrc?monthId=...` rejects anything that
+  doesn't match `^\d{4}-[A-Za-z]{3}$` before forwarding, preventing path
+  injection.
+- **Feed HTML is sanitized** with `isomorphic-dompurify` before render to
+  mitigate stored XSS from upstream content.
+- **Hardened inline SVG.** Inline SVG is allowed but paired with a strict CSP
+  (`script-src 'none'; sandbox;`) and `Content-Disposition: attachment` to
+  neutralize active content.
+- **Secrets stay server-side**, `.env*` is broadly gitignored, and production
+  console output is silenced to avoid leaking upstream payloads into host logs.
+
+## Tech stack
+
+Next.js 16 (App Router, Server Components, Turbopack) and React 19 on TypeScript
+5.9, styled with Tailwind CSS 4 and `@tailwindcss/typography`. Radix UI provides
+the accordion, popover, and icon primitives; React Query 5 handles the client
+cache and Zustand 5 holds filter state. Feed parsing runs through
+`fast-xml-parser`, `xml2js`, and `rss-parser`, with an optional Prisma 7 /
+PostgreSQL layer for the pieces that need persistence. It's built for Vercel but
+runs anywhere Node 20.19+, 22.12+, or 24.x can host Next.js 16, and it's covered
+by Playwright across Chromium, Firefox, and WebKit.
+
+Explore it live at [mspulse360.app](https://www.mspulse360.app), or read the full
+setup and architecture notes in the [GitHub
+repository](https://github.com/russrimm/Pulse360).
