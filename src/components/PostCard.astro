@@ -18,7 +18,7 @@ const readTime = readingTimeLabel(post.body);
   class="group relative flex flex-col overflow-hidden rounded-2xl border border-ink-200 bg-white transition hover:-translate-y-1 hover:border-azure-300 hover:shadow-lg hover:shadow-azure-500/5 dark:border-ink-800 dark:bg-ink-900 dark:hover:border-azure-700"
 >
   {
-    heroImage && (
+    heroImage ? (
       <a href={url} class="block overflow-hidden" tabindex="-1">
         <Image
           src={heroImage}
@@ -27,6 +27,17 @@ const readTime = readingTimeLabel(post.body);
           height={450}
           class="aspect-[16/9] w-full object-cover transition duration-300 group-hover:scale-105"
         />
+      </a>
+    ) : (
+      <a
+        href={url}
+        tabindex="-1"
+        aria-hidden="true"
+        class="bg-grid relative flex aspect-[16/9] items-center justify-center overflow-hidden bg-gradient-to-br from-azure-50 to-teal-50 dark:from-ink-950 dark:to-ink-900"
+      >
+        <span class="font-mono text-4xl font-bold text-azure-600/30 transition duration-300 group-hover:scale-105 dark:text-azure-400/30">
+          {"</>"}
+        </span>
       </a>
     )
   }

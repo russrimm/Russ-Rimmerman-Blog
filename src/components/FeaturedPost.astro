@@ -13,6 +13,7 @@ const { post } = Astro.props;
 const { title, description, pubDate, heroImage, heroAlt, tags } = post.data;
 const url = `/blog/${post.id}`;
 const readTime = readingTimeLabel(post.body);
+const primaryTag = tags[0];
 ---
 
 <article
@@ -31,12 +32,25 @@ const readTime = readingTimeLabel(post.body);
       </a>
     ) : (
       <div
-        class="bg-grid relative hidden min-h-64 items-center justify-center bg-gradient-to-br from-azure-50 to-teal-50 md:flex dark:from-ink-950 dark:to-ink-900"
+        class="relative hidden min-h-64 flex-col justify-center overflow-hidden bg-gradient-to-br from-azure-50 to-teal-50 p-8 md:flex dark:from-ink-950 dark:to-ink-900"
         aria-hidden="true"
       >
-        <span class="text-gradient font-mono text-5xl font-bold opacity-40">
-          {"</>"}
-        </span>
+        <div class="bg-grid absolute inset-0 opacity-60" />
+        <div class="absolute -top-10 -right-10 h-40 w-40 rounded-full bg-azure-500/20 blur-3xl" />
+        <div class="relative rounded-xl border border-ink-200/70 bg-white/70 p-4 shadow-sm backdrop-blur dark:border-ink-700/70 dark:bg-ink-900/70">
+          <div class="flex gap-1.5">
+            <span class="h-2.5 w-2.5 rounded-full bg-red-400/70" />
+            <span class="h-2.5 w-2.5 rounded-full bg-amber-400/70" />
+            <span class="h-2.5 w-2.5 rounded-full bg-emerald-400/70" />
+          </div>
+          <p class="mt-3 font-mono text-sm text-ink-500 dark:text-ink-400">
+            <span class="text-azure-600 dark:text-azure-400">~</span> read --topic
+          </p>
+          <p class="mt-1 flex items-center font-mono text-lg font-semibold text-ink-800 dark:text-ink-100">
+            {primaryTag ?? "field-notes"}
+            <span class="ml-1 inline-block h-4 w-2 translate-y-px bg-azure-500/70" />
+          </p>
+        </div>
       </div>
     )
   }
@@ -58,7 +72,7 @@ const readTime = readingTimeLabel(post.body);
     </div>
 
     <h2
-      class="text-2xl font-bold tracking-tight text-ink-900 sm:text-3xl dark:text-white"
+      class="text-balance text-2xl font-bold tracking-tight text-ink-900 sm:text-3xl dark:text-white"
     >
       <a href={url} class="after:absolute after:inset-0">{title}</a>
     </h2>

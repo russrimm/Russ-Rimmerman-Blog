@@ -63,7 +63,7 @@ body {
   font-family: var(--font-sans);
 }
 
-/* Gradient text helper */
+/* Gradient text helper — reserved for the brand monogram only (see DESIGN.md) */
 .text-gradient {
   @apply bg-gradient-to-r from-azure-600 to-teal-400 bg-clip-text text-transparent;
 }
@@ -71,9 +71,15 @@ body {
 /* Subtle grid/glow backdrop used on hero sections */
 .bg-grid {
   background-image:
-    linear-gradient(to right, rgb(148 163 184 / 0.08) 1px, transparent 1px),
-    linear-gradient(to bottom, rgb(148 163 184 / 0.08) 1px, transparent 1px);
+    linear-gradient(to right, var(--color-ink-300) / 0.12 1px, transparent 1px),
+    linear-gradient(to bottom, var(--color-ink-300) / 0.12 1px, transparent 1px);
   background-size: 40px 40px;
+}
+
+:where(.dark) .bg-grid {
+  background-image:
+    linear-gradient(to right, var(--color-ink-600) / 0.15 1px, transparent 1px),
+    linear-gradient(to bottom, var(--color-ink-600) / 0.15 1px, transparent 1px);
 }
 
 /* Focus visibility */
@@ -82,9 +88,24 @@ body {
 }
 
 /* Prose (article) tweaks so it reads well in both themes */
+.prose {
+  text-wrap: pretty;
+}
 .prose :where(a):not(:where(.not-prose *)) {
   @apply text-azure-600 no-underline hover:underline dark:text-azure-400;
 }
 .prose :where(h1, h2, h3, h4):not(:where(.not-prose *)) {
   @apply scroll-mt-24;
+  text-wrap: balance;
+}
+
+/* Reduced motion: suppress transforms and scale animations */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }

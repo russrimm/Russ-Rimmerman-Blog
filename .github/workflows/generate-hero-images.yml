@@ -1,0 +1,81 @@
+name: Generate hero images
+
+# Auto-generates a topic-aware hero image for any blog post pushed to `main`
+# without a `heroImage`, then commits the WebP + frontmatter back to the repo.
+#
+# Auth is Microsoft Entra ID via OIDC (federated credential) — there is NO API
+# key and NO long-lived secret. It reuses the same identity as the deploy
+# workflow; that identity additionally needs the "Cognitive Services OpenAI
+# User" role on the Azure OpenAI resource. Endpoint + deployment are non-secret
+# repo *variables* (Settings → Secrets and variables → Actions → Variables):
+#   AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_IMAGE_DEPLOYMENT
+# and the same identity secrets as deploy:
+#   AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID
+# See "Auto-generating blog hero images" in README.md.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/content/blog/**"
+  workflow_dispatch:
+    inputs:
+      include_drafts:
+        description: "Also generate images for draft posts"
+        type: boolean
+        default: false
+
+# Never run two generation jobs at once (they both commit to main).
+concurrency:
+  group: generate-hero-images
+  cancel-in-progress: false
+
+permissions:
+  contents: write # commit generated images back to the repo
+  id-token: write # obtain the Entra ID OIDC token
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Federated OIDC login — no secrets, just the identity's client/tenant IDs.
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Generate missing hero images
+        env:
+          AZURE_OPENAI_ENDPOINT: ${{ vars.AZURE_OPENAI_ENDPOINT }}
+          AZURE_OPENAI_IMAGE_DEPLOYMENT: ${{ vars.AZURE_OPENAI_IMAGE_DEPLOYMENT }}
+        run: |
+          if [ "${{ github.event.inputs.include_drafts }}" = "true" ]; then
+            npm run hero -- --missing --include-drafts
+          else
+            npm run hero -- --missing
+          fi
+
+      - name: Commit generated images
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add -A
+            git commit -m "chore: auto-generate hero images for new posts [skip ci]"
+            git push
+          else
+            echo "No new hero images to commit."
+          fi

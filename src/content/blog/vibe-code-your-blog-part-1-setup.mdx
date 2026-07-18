@@ -1,5 +1,5 @@
 ---
-title: "Vibe Code Your Own Blog, Part 1: Getting Set Up"
+title: "Ready, Set, Create! (Using AI)"
 description: "A complete, beginner-proof setup guide for vibe coding your first project — a blog. GitHub, Git, VS Code Insiders, Node LTS, Copilot, and the agent/skills scaffolding you need before you write a single line."
 pubDate: 2026-07-15
 tags:
@@ -47,9 +47,9 @@ a finished app. It's a conversation: you set the direction, the AI proposes,
 you push back, and you converge on something real.
 
 I go deep on the mindset — plan mode, picking a model, knowing when the AI has
-wandered off — in [How a Microsoft Architect Who Can't Code Learned to Vibe
-Code](/blog/vibe-coding-lessons). Read that for the *why*. This post is the *how
-do I even get started*.
+wandered off — in [Coding with AI: A Neurodivergent Non-Coder's Guide to Building
+Real Apps](/blog/vibe-coding-lessons). Read that for the *why*. This post is the
+*how do I even get started*.
 
 ## Before you install anything: the plan
 
@@ -252,6 +252,79 @@ it in the browser or connect VS Code to it.
   a clean environment you can delete without a second thought. Many people do both:
   local for daily work, a Codespace when they're on a different computer.
 </Explain>
+
+## Using source control in VS Code
+
+Git is the safety net under everything you vibe code, and the best part is you
+rarely need to touch the command line to use it. VS Code has a built-in
+**Source Control** view that turns commits, branches, and syncing into a few
+clicks. This is worth learning early — it's your undo button, your backup, and
+your history all in one. The
+[official Source Control docs](https://code.visualstudio.com/docs/sourcecontrol/overview)
+and the
+[quickstart](https://code.visualstudio.com/docs/sourcecontrol/quickstart) go
+deeper; here are the parts you'll actually use every day.
+
+**Open the Source Control view** from the Activity Bar on the left (the icon that
+looks like a branching graph) or with `Ctrl+Shift+G` (`Cmd+Shift+G` on macOS).
+Everything below lives here.
+
+**The core loop is stage → commit → sync:**
+
+1. **See what changed.** Every file you've edited shows up under *Changes*. Click
+   one to open a side-by-side **diff** — old version on the left, your new version
+   on the right — so you can review exactly what you (or the AI) changed before
+   saving it.
+2. **Stage the changes you want to keep.** Hover a file and click the **+** to
+   stage it, or stage everything at once. Staging lets you commit some changes now
+   and leave others for later.
+3. **Write a commit message and commit.** Type a short description in the message
+   box at the top, then click the **✓ Commit** button (or press `Ctrl+Enter`). A
+   commit is a labeled snapshot you can always come back to.
+4. **Sync to GitHub.** Click **Sync Changes** (or Push) to send your commits to
+   your repo in the cloud. Now it's backed up and safe.
+
+<Explain title="What's the difference between staging and committing?">
+  **Staging** is choosing *which* changes go into the next snapshot; **committing**
+  actually takes the snapshot. The two-step exists so you can commit a focused set
+  of related changes — say, just the changes to one post — while leaving unrelated
+  edits for a separate commit. If that feels like overkill at first, VS Code lets
+  you commit everything at once: with nothing staged, hitting Commit offers to
+  stage all changes for you.
+</Explain>
+
+**Work on branches for anything risky.** A branch is a parallel copy of your
+project where you can experiment without touching your known-good version. Click
+the **branch name in the bottom-left status bar** to create a new branch or
+switch between existing ones. If the experiment works, you merge it back; if it
+doesn't, you just switch away and delete it — your main version was never touched.
+
+**Read your history two ways.** The **Source Control Graph** (in the Source
+Control view) shows the timeline of commits and branches so you can see how the
+project evolved. The **Timeline view** (in the Explorer, at the bottom) shows the
+history of a *single file* — handy for seeing every change to one blog post and
+restoring an earlier version if you need to.
+
+<Explain title="What are those colored bars in the editor margin?">
+  As you edit, VS Code shows **gutter indicators** — small colored marks next to
+  the line numbers. A green bar means a new line, blue means a modified line, and a
+  little triangle means deleted lines. Click one to preview the change inline,
+  revert just that block, or stage it. It's a live, at-a-glance view of everything
+  that's different since your last commit.
+</Explain>
+
+<Explain title="What happens if I hit a merge conflict?">
+  A conflict happens when two changes touch the same lines and Git can't decide
+  which to keep — common when you edit on two machines or branches. VS Code flags
+  the file and opens a **merge editor** that shows both versions side by side with
+  buttons to accept one, the other, or both. Pick what's right, save, and commit
+  the resolution. It sounds scary the first time; the visual editor makes it far
+  less so.
+</Explain>
+
+Between the AI writing code and VS Code making commits a two-click habit, source
+control stops being a chore and becomes what it should be: a constant, low-effort
+safety net you'll be glad exists the first time something breaks.
 
 ## Scaffold a home for your agents and skills
 

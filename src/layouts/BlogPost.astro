@@ -15,6 +15,13 @@ interface Props {
 const { post, readingTime } = Astro.props;
 const { title, description, pubDate, updatedDate, heroImage, heroAlt, tags } =
   post.data;
+
+// A trailing parenthetical (e.g. "Title (Subtitle)") renders on its own line
+// in the post heading, while `title` stays a single clean string everywhere
+// else (metadata, cards, RSS). Titles without one are unaffected.
+const titleMatch = title.match(/^(.*?)\s+(\(.*\))$/);
+const titleMain = titleMatch ? titleMatch[1] : title;
+const titleAside = titleMatch ? titleMatch[2] : null;
 ---
 
 <BaseLayout
@@ -32,9 +39,16 @@ const { title, description, pubDate, updatedDate, heroImage, heroAlt, tags } =
         &larr; Back to blog
       </a>
       <h1
-        class="text-3xl font-bold tracking-tight text-ink-900 sm:text-4xl dark:text-white"
+        class="text-balance text-3xl font-bold tracking-tight text-ink-900 sm:text-4xl dark:text-white"
       >
-        {title}
+        {titleMain}
+        {
+          titleAside && (
+            <span class="mt-1 block text-2xl text-ink-500 sm:text-3xl dark:text-ink-400">
+              {titleAside}
+            </span>
+          )
+        }
       </h1>
       <div
         class="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-ink-500 dark:text-ink-400"

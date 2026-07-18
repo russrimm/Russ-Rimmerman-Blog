@@ -14,6 +14,7 @@ deployed to [Azure Static Web Apps](https://learn.microsoft.com/azure/static-web
 - 💬 Giscus comments on blog posts (GitHub Discussions)
 - 📰 RSS feed + sitemap + Open Graph/SEO meta tags
 - 📧 Newsletter signup (placeholder — wire to a provider when ready)
+- 🖼️ AI-generated, topic-aware post hero images from your headshot (Entra ID / OIDC — no API key)
 - 🎨 Azure-inspired design system
 
 ## Getting started
@@ -29,8 +30,7 @@ npm run dev      # start the dev server at http://localhost:4321
 | ----------------- | ----------------------------------------------- |
 | `npm run dev`     | Start the local dev server                      |
 | `npm run build`   | Type-check (`astro check`) and build to `dist/` |
-| `npm run preview` | Preview the production build locally            |
-| `npm run format`  | Format the codebase with Prettier               |
+| `npm run preview` | Preview the production build locally            || `npm run hero`    | Generate topic-aware post hero images (see below) || `npm run format`  | Format the codebase with Prettier               |
 
 ## Writing a blog post
 
@@ -48,6 +48,12 @@ draft: false # set true to hide from the site
 
 Your content here…
 ```
+
+A post can carry its own `heroImage` (used on cards and the article header). You
+can supply one yourself, or **auto-generate a topic-aware illustration from your
+headshot** — see [Auto-generating blog hero images](#auto-generating-blog-hero-images).
+Posts without an image fall back to a branded placeholder, so nothing looks
+broken in the meantime.
 
 Add a project by creating a Markdown file in `src/content/projects/`.
 
@@ -99,6 +105,93 @@ states, and only reports success when the provider confirms it.
 
 To test the function locally, run the SWA CLI (`swa start dist --api-location
 api`) after `npm run build`; the plain `astro dev` server does not serve `/api`.
+
+
+## Auto-generating blog hero images
+
+Each blog post can have a `heroImage`. Instead of designing one by hand, the
+`npm run hero` generator turns your **headshot** into a topic-aware editorial
+illustration: it reads the post's title and tags, maps them to a scene (e.g.
+Copilot → pair-programming with an AI copilot; Intune → a bouncer checking API
+permission scopes), sends the headshot + prompt to **Azure OpenAI
+(`gpt-image-1`)**, optimizes the result to a WebP in `src/assets/blog/`, and
+writes the `heroImage` + `heroAlt` frontmatter for you.
+
+> **Why this is more secure:** authentication is **Microsoft Entra ID (OIDC)**,
+> not an API key. `DefaultAzureCredential` obtains a **short-lived, RBAC-scoped
+> access token** (`az login` locally; federated OIDC in CI). There is no
+> long-lived key to commit, leak, or rotate, and access is governed by a role
+> assignment you can revoke at any time. It also works in tenants where
+> key-based auth is disabled.
+
+This is deliberately a **local / CI generator, never a page-build step** \u2014 image
+generation costs money per call and is non-deterministic. Generate once, commit
+the static WebP, and every site build just serves the file.
+
+### One-time setup
+
+1. **Add your headshot** at `src/assets/author/headshot.jpg` (or point
+   `HEADSHOT_PATH` elsewhere).
+2. **Configure the endpoint + deployment** (non-secret). Locally, add them to
+   `.env` (already gitignored):
+
+   ```bash
+   AZURE_OPENAI_ENDPOINT=https://<resource>.openai.azure.com
+   AZURE_OPENAI_IMAGE_DEPLOYMENT=<your-gpt-image-1-deployment-name>
+   ```
+
+3. **Grant access.** Assign the identity you sign in as the **`Cognitive
+   Services OpenAI User`** role on the Azure OpenAI resource. No key required.
+4. **Sign in:** `az login` (device code in headless environments:
+   `az login --use-device-code`).
+
+### Generating images
+
+```bash
+npm run hero -- <post-slug>          # one post, e.g. vibe-coding-lessons
+npm run hero -- <post-slug> --dry-run  # preview the prompt only (no token/API call)
+npm run hero -- <post-slug> --force  # overwrite an existing image
+npm run hero -- --missing            # every published post that lacks an image
+npm run hero -- --missing --include-drafts   # ...including drafts
+npm run hero -- --list-missing       # just list posts without an image
+```
+
+Review the generated WebP, then commit it alongside the post. To change a
+post's scene, edit the `TOPIC_SCENES` map in
+[`scripts/generate-hero.mjs`](scripts/generate-hero.mjs) or reorder the post's
+tags (the most specific matching topic wins).
+
+### Fully automated (GitHub Actions)
+
+The workflow at
+[`.github/workflows/generate-hero-images.yml`](.github/workflows/generate-hero-images.yml)
+runs whenever a post is pushed to `main` without a `heroImage` (or on demand via
+**Run workflow**). It logs in with the **same Entra ID / OIDC federated identity
+as the deploy workflow** \u2014 no secrets \u2014 generates the missing images, and commits
+them back.
+
+To enable it:
+
+1. Reuse the deploy identity (see [Deploying to Azure Static Web Apps](#deploying-to-azure-static-web-apps))
+   and additionally grant it the **`Cognitive Services OpenAI User`** role on the
+   Azure OpenAI resource:
+
+   ```bash
+   OPENAI_ID=$(az cognitiveservices account show --name "<openai-resource>" --resource-group "<rg>" --query id -o tsv)
+   APP_ID=$(az ad app list --display-name "russrimmerman-blog-deploy" --query "[0].appId" -o tsv)
+   az role assignment create --assignee "$APP_ID" --role "Cognitive Services OpenAI User" --scope "$OPENAI_ID"
+   ```
+
+2. Add two repo **Variables** (not secrets \u2014 they're not sensitive) under
+   **Settings \u2192 Secrets and variables \u2192 Actions \u2192 Variables**:
+   `AZURE_OPENAI_ENDPOINT` and `AZURE_OPENAI_IMAGE_DEPLOYMENT`. The identity
+   secrets (`AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`) are
+   shared with the deploy workflow.
+
+> The auto-commit is made with the built-in `GITHUB_TOKEN`, which by design does
+> **not** re-trigger other workflows \u2014 so the deploy workflow won't run on that
+> commit. Re-run the deploy manually, or push any follow-up change, to publish
+> the new images.
 
 
 ## Deploying to Azure Static Web Apps

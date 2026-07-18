@@ -7,474 +7,72 @@ interface Props {
 }
 
 const { topics = [] } = Astro.props;
+const displayTopics = topics.slice(0, 4);
 ---
 
 <section class="relative overflow-hidden">
   <div class="bg-grid absolute inset-0 -z-10 opacity-60"></div>
   <div
-    class="absolute -top-32 left-1/4 -z-10 h-72 w-[36rem] -translate-x-1/2 rounded-full bg-azure-500/20 blur-3xl dark:bg-azure-600/20"
-  >
-  </div>
-  <div
-    class="absolute -top-24 right-0 -z-10 h-64 w-96 rounded-full bg-teal-400/10 blur-3xl dark:bg-teal-500/10"
+    class="absolute -top-32 left-1/3 -z-10 h-80 w-[40rem] -translate-x-1/2 rounded-full bg-azure-500/15 blur-3xl dark:bg-azure-600/15"
+    aria-hidden="true"
   >
   </div>
 
-  <div
-    class="mx-auto grid max-w-5xl items-center gap-10 px-4 py-12 sm:px-6 sm:py-16 lg:grid-cols-[1.1fr_0.9fr] lg:gap-12"
-  >
-    <div class="max-w-2xl">
-      <span
-        class="inline-flex items-center gap-2 rounded-full border border-azure-200 bg-azure-50 px-3 py-1 text-xs font-medium text-azure-700 dark:border-ink-700 dark:bg-ink-800 dark:text-azure-300"
+  <div class="mx-auto max-w-5xl px-4 py-16 sm:px-6 sm:py-24 lg:py-28">
+    <span
+      class="inline-flex items-center gap-2 rounded-full border border-azure-200 bg-azure-50 px-3 py-1 text-xs font-medium text-azure-700 dark:border-ink-700 dark:bg-ink-800 dark:text-azure-300"
+    >
+      <span class="h-1.5 w-1.5 rounded-full bg-teal-500"></span>
+      {SITE_TAGLINE}
+    </span>
+
+    <h1
+      class="mt-6 max-w-3xl text-balance text-5xl font-bold tracking-tight text-ink-900 sm:text-6xl dark:text-white"
+    >
+      Where I dump what I learn, to{" "}
+      <span class="text-azure-600 dark:text-azure-400">help you</span>
+    </h1>
+
+    <p
+      class="mt-6 max-w-2xl text-pretty text-lg text-ink-600 sm:text-xl sm:leading-relaxed dark:text-ink-300"
+    >
+      Field-tested guidance on Azure, identity, Copilot, agents, and modern
+      development — written by Russ Rimmerman, Principal Cloud Solution
+      Architect at Microsoft.
+    </p>
+
+    <div class="mt-8 flex flex-wrap items-center gap-4">
+      <a
+        href="/blog"
+        class="rounded-lg bg-azure-600 px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-azure-700 focus-visible:ring-2 focus-visible:ring-azure-500/40"
       >
-        <span class="h-1.5 w-1.5 rounded-full bg-teal-500"></span>
-        {SITE_TAGLINE}
-      </span>
-
-      <h1
-        class="mt-5 text-4xl font-bold tracking-tight text-balance text-ink-900 sm:text-5xl dark:text-white"
+        Read the latest
+      </a>
+      <a
+        href="/topics"
+        class="rounded-lg border border-ink-300 px-6 py-3.5 text-sm font-semibold text-ink-700 transition hover:border-azure-400 hover:text-azure-600 dark:border-ink-700 dark:text-ink-200 dark:hover:border-azure-500 dark:hover:text-azure-400"
       >
-        The Blog Home of{" "}
-        <span class="text-gradient">Russ Rimmerman</span>
-      </h1>
-
-      <p class="mt-5 text-lg text-pretty text-ink-600 dark:text-ink-300">
-        Practical, field-tested guidance on identity, Copilot, agents,
-        automation, and modern development — all blog content written by Russ
-        Rimmerman, Principal Cloud Solution Architect.
-      </p>
-
-      <div class="mt-7 flex flex-wrap items-center gap-3">
-        <a
-          href="/blog"
-          class="rounded-lg bg-azure-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-azure-700 focus-visible:ring-2 focus-visible:ring-azure-500/40"
-        >
-          Explore the latest
-        </a>
-        <a
-          href="/topics"
-          class="rounded-lg border border-ink-300 px-5 py-3 text-sm font-semibold text-ink-700 transition hover:border-azure-400 hover:text-azure-600 dark:border-ink-700 dark:text-ink-200 dark:hover:border-azure-500 dark:hover:text-azure-400"
-        >
-          Browse topics
-        </a>
-      </div>
-
-      {
-        topics.length > 0 && (
-          <div class="mt-8">
-            <p class="text-xs font-medium tracking-wide text-ink-500 uppercase dark:text-ink-400">
-              Popular topics
-            </p>
-            <ul class="mt-3 flex flex-wrap gap-2">
-              {topics.map((topic) => (
-                <li>
-                  <a
-                    href={topic.href}
-                    class="inline-flex items-center rounded-full border border-ink-200 bg-white px-3 py-1 text-xs font-medium text-ink-600 transition hover:border-azure-400 hover:text-azure-600 dark:border-ink-700 dark:bg-ink-900 dark:text-ink-300 dark:hover:border-azure-500 dark:hover:text-azure-400"
-                  >
-                    {topic.label}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )
-      }
+        Browse by topic
+      </a>
     </div>
 
-    <!-- Technical visual: an animated "vibe coding" agent session -->
-    <div class="relative hidden lg:block" aria-hidden="true">
-      <!-- Orbiting signal nodes around the panel -->
-      <div class="vibe-orbit">
-        <span class="vibe-node vibe-node--1"></span>
-        <span class="vibe-node vibe-node--2"></span>
-        <span class="vibe-node vibe-node--3"></span>
-      </div>
-
-      <div class="vibe-panel">
-        <div class="vibe-panel__inner">
-          <!-- Header -->
-          <div class="vibe-header">
-            <span class="vibe-agent-orb">
-              <span class="vibe-agent-ring"></span>
-              <span class="vibe-agent-ring vibe-agent-ring--2"></span>
-              <span class="vibe-agent-core"></span>
-            </span>
-            <span class="vibe-header__label">vibe&nbsp;·&nbsp;agent session</span>
-            <span class="vibe-status">
-              <span class="vibe-status__dot"></span>live
-            </span>
-          </div>
-
-          <!-- Natural-language prompt -->
-          <div class="vibe-prompt">
-            <span class="vibe-prompt__caret">›</span>
-            <span class="vibe-prompt__type">build a Foundry agent, least privilege</span>
-          </div>
-
-          <!-- Streaming generated code -->
-          <pre class="vibe-code"><code><span class="vibe-line vibe-line--1"><span class="c-key">const</span> <span class="c-var">agent</span> = <span class="c-key">await</span> <span class="c-fn">foundry</span>.<span class="c-fn">create</span>(&#123;</span>
-<span class="vibe-line vibe-line--2">  name: <span class="c-str">"copilot-ops"</span>,</span>
-<span class="vibe-line vibe-line--3">  model: <span class="c-str">"gpt-4.1"</span>,</span>
-<span class="vibe-line vibe-line--4">  identity: <span class="c-str">"managed"</span>, <span class="c-cmt">// no secrets</span></span>
-<span class="vibe-line vibe-line--5">  grounding: [<span class="c-str">"learn.microsoft.com"</span>],</span>
-<span class="vibe-line vibe-line--6">&#125;);<span class="vibe-cursor"></span></span></code></pre>
-
-          <!-- Footer signal -->
-          <div class="vibe-footer">
-            <span class="vibe-chip"><span class="vibe-chip__dot"></span>shipped in one prompt</span>
-          </div>
-        </div>
-      </div>
-    </div>
+    {
+      displayTopics.length > 0 && (
+        <nav class="mt-10" aria-label="Popular topics">
+          <ul class="flex flex-wrap gap-2">
+            {displayTopics.map((topic) => (
+              <li>
+                <a
+                  href={topic.href}
+                  class="inline-flex items-center rounded-full border border-ink-200 bg-white px-4 py-2.5 text-sm font-medium text-ink-600 transition hover:border-azure-400 hover:text-azure-600 sm:px-3.5 sm:py-1.5 dark:border-ink-700 dark:bg-ink-900 dark:text-ink-300 dark:hover:border-azure-500 dark:hover:text-azure-400"
+                >
+                  {topic.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      )
+    }
   </div>
 </section>
-
-<style>
-  /* --------------------------------------------------------------- *
-   * Vibe-coding hero animation — pure CSS, theme-aware, and
-   * fully disabled under prefers-reduced-motion.
-   * --------------------------------------------------------------- */
-
-  .vibe-panel {
-    position: relative;
-    border-radius: 1.25rem;
-    padding: 1px; /* room for the animated gradient border */
-    background:
-      conic-gradient(
-        from var(--beam-angle, 0deg),
-        transparent 0deg,
-        color-mix(in oklab, var(--color-azure-500) 70%, transparent) 60deg,
-        color-mix(in oklab, var(--color-teal-400) 70%, transparent) 120deg,
-        transparent 200deg,
-        transparent 360deg
-      );
-    box-shadow:
-      0 20px 45px -20px color-mix(in oklab, var(--color-azure-600) 45%, transparent);
-    animation: vibe-beam 6s linear infinite, vibe-float 9s ease-in-out infinite;
-  }
-
-  .vibe-panel__inner {
-    border-radius: calc(1.25rem - 1px);
-    background: color-mix(in oklab, #fff 88%, transparent);
-    backdrop-filter: blur(10px);
-    padding: 1rem 1.15rem 1.15rem;
-    overflow: hidden;
-  }
-
-  :global(.dark) .vibe-panel__inner {
-    background: color-mix(in oklab, var(--color-ink-900) 90%, transparent);
-  }
-
-  /* Header ------------------------------------------------------- */
-  .vibe-header {
-    display: flex;
-    align-items: center;
-    gap: 0.55rem;
-    padding-bottom: 0.85rem;
-    border-bottom: 1px solid color-mix(in oklab, var(--color-ink-300) 35%, transparent);
-  }
-
-  :global(.dark) .vibe-header {
-    border-color: color-mix(in oklab, var(--color-ink-700) 60%, transparent);
-  }
-
-  .vibe-header__label {
-    font-family: var(--font-mono);
-    font-size: 0.72rem;
-    letter-spacing: 0.02em;
-    color: var(--color-ink-500);
-  }
-
-  :global(.dark) .vibe-header__label {
-    color: var(--color-ink-400);
-  }
-
-  .vibe-status {
-    margin-left: auto;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    font-family: var(--font-mono);
-    font-size: 0.65rem;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--color-teal-500);
-  }
-
-  .vibe-status__dot {
-    width: 0.45rem;
-    height: 0.45rem;
-    border-radius: 9999px;
-    background: var(--color-teal-400);
-    box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-teal-400) 70%, transparent);
-    animation: vibe-ping 2s ease-out infinite;
-  }
-
-  /* Agent orb ---------------------------------------------------- */
-  .vibe-agent-orb {
-    position: relative;
-    display: inline-flex;
-    width: 1.6rem;
-    height: 1.6rem;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .vibe-agent-core {
-    width: 0.7rem;
-    height: 0.7rem;
-    border-radius: 9999px;
-    background: radial-gradient(circle at 30% 30%, var(--color-azure-400), var(--color-azure-600));
-    box-shadow: 0 0 12px color-mix(in oklab, var(--color-azure-500) 80%, transparent);
-    animation: vibe-glow 2.4s ease-in-out infinite;
-  }
-
-  .vibe-agent-ring {
-    position: absolute;
-    inset: 0;
-    border-radius: 9999px;
-    border: 1px solid color-mix(in oklab, var(--color-azure-500) 60%, transparent);
-    animation: vibe-ripple 2.8s ease-out infinite;
-  }
-
-  .vibe-agent-ring--2 {
-    animation-delay: 1.4s;
-    border-color: color-mix(in oklab, var(--color-teal-400) 60%, transparent);
-  }
-
-  /* Prompt ------------------------------------------------------- */
-  .vibe-prompt {
-    display: flex;
-    align-items: baseline;
-    gap: 0.5rem;
-    margin-top: 0.9rem;
-    font-family: var(--font-mono);
-    font-size: 0.8rem;
-    color: var(--color-ink-700);
-  }
-
-  :global(.dark) .vibe-prompt {
-    color: var(--color-ink-100);
-  }
-
-  .vibe-prompt__caret {
-    color: var(--color-teal-500);
-    font-weight: 700;
-  }
-
-  .vibe-prompt__type {
-    display: inline-block;
-    overflow: hidden;
-    white-space: nowrap;
-    border-right: 2px solid var(--color-azure-500);
-    max-width: 100%;
-    animation:
-      vibe-typing 4.5s steps(38, end) infinite,
-      vibe-blink 0.9s step-end infinite;
-  }
-
-  /* Code stream -------------------------------------------------- */
-  .vibe-code {
-    margin-top: 0.9rem;
-    font-family: var(--font-mono);
-    font-size: 0.78rem;
-    line-height: 1.65;
-    color: var(--color-ink-700);
-    overflow: hidden;
-  }
-
-  :global(.dark) .vibe-code {
-    color: var(--color-ink-200);
-  }
-
-  .vibe-line {
-    display: block;
-    opacity: 0;
-    transform: translateY(4px);
-    animation: vibe-reveal 4.5s ease-out infinite;
-  }
-
-  .vibe-line--1 { animation-delay: 1.4s; }
-  .vibe-line--2 { animation-delay: 1.75s; }
-  .vibe-line--3 { animation-delay: 2.1s; }
-  .vibe-line--4 { animation-delay: 2.45s; }
-  .vibe-line--5 { animation-delay: 2.8s; }
-  .vibe-line--6 { animation-delay: 3.15s; }
-
-  .c-key { color: var(--color-azure-600); }
-  .c-fn  { color: var(--color-teal-500); }
-  .c-var { color: var(--color-ink-900); }
-  .c-str { color: #16a34a; }
-  .c-cmt { color: var(--color-ink-400); font-style: italic; }
-
-  :global(.dark) .c-key { color: var(--color-azure-400); }
-  :global(.dark) .c-fn  { color: var(--color-teal-400); }
-  :global(.dark) .c-var { color: #fff; }
-  :global(.dark) .c-str { color: #4ade80; }
-
-  .vibe-cursor {
-    display: inline-block;
-    width: 0.5rem;
-    height: 1rem;
-    margin-left: 2px;
-    vertical-align: text-bottom;
-    background: var(--color-azure-500);
-    animation: vibe-blink 0.9s step-end infinite;
-  }
-
-  /* Footer ------------------------------------------------------- */
-  .vibe-footer {
-    margin-top: 0.9rem;
-  }
-
-  .vibe-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    border-radius: 9999px;
-    padding: 0.25rem 0.7rem;
-    font-family: var(--font-mono);
-    font-size: 0.68rem;
-    color: var(--color-azure-700);
-    background: color-mix(in oklab, var(--color-azure-500) 12%, transparent);
-    border: 1px solid color-mix(in oklab, var(--color-azure-500) 25%, transparent);
-  }
-
-  :global(.dark) .vibe-chip {
-    color: var(--color-azure-300);
-  }
-
-  .vibe-chip__dot {
-    width: 0.4rem;
-    height: 0.4rem;
-    border-radius: 9999px;
-    background: var(--color-teal-400);
-    animation: vibe-glow 2s ease-in-out infinite;
-  }
-
-  /* Orbiting nodes ----------------------------------------------- */
-  .vibe-orbit {
-    position: absolute;
-    inset: -1.5rem;
-    z-index: -1;
-    pointer-events: none;
-  }
-
-  .vibe-node {
-    position: absolute;
-    width: 0.55rem;
-    height: 0.55rem;
-    border-radius: 9999px;
-    background: var(--color-azure-500);
-    box-shadow: 0 0 10px color-mix(in oklab, var(--color-azure-500) 80%, transparent);
-    opacity: 0.7;
-  }
-
-  .vibe-node--1 {
-    top: 8%;
-    right: 6%;
-    background: var(--color-teal-400);
-    animation: vibe-drift-1 7s ease-in-out infinite;
-  }
-
-  .vibe-node--2 {
-    bottom: 12%;
-    left: 4%;
-    animation: vibe-drift-2 8.5s ease-in-out infinite;
-  }
-
-  .vibe-node--3 {
-    top: 55%;
-    right: 2%;
-    width: 0.4rem;
-    height: 0.4rem;
-    animation: vibe-drift-3 6s ease-in-out infinite;
-  }
-
-  /* Keyframes ---------------------------------------------------- */
-  @keyframes vibe-beam {
-    to { --beam-angle: 360deg; }
-  }
-
-  @property --beam-angle {
-    syntax: "<angle>";
-    inherits: false;
-    initial-value: 0deg;
-  }
-
-  @keyframes vibe-float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-8px); }
-  }
-
-  @keyframes vibe-typing {
-    0% { width: 0; }
-    35%, 55% { width: 100%; }
-    92%, 100% { width: 0; }
-  }
-
-  @keyframes vibe-blink {
-    50% { border-color: transparent; background-color: transparent; }
-  }
-
-  @keyframes vibe-reveal {
-    0%, 25% { opacity: 0; transform: translateY(4px); }
-    38%, 78% { opacity: 1; transform: translateY(0); }
-    92%, 100% { opacity: 0; transform: translateY(4px); }
-  }
-
-  @keyframes vibe-ping {
-    0% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-teal-400) 70%, transparent); }
-    70%, 100% { box-shadow: 0 0 0 6px transparent; }
-  }
-
-  @keyframes vibe-glow {
-    0%, 100% { opacity: 0.7; filter: brightness(1); }
-    50% { opacity: 1; filter: brightness(1.3); }
-  }
-
-  @keyframes vibe-ripple {
-    0% { transform: scale(0.6); opacity: 0.9; }
-    100% { transform: scale(1.6); opacity: 0; }
-  }
-
-  @keyframes vibe-drift-1 {
-    0%, 100% { transform: translate(0, 0); }
-    50% { transform: translate(-10px, 14px); }
-  }
-
-  @keyframes vibe-drift-2 {
-    0%, 100% { transform: translate(0, 0); }
-    50% { transform: translate(12px, -10px); }
-  }
-
-  @keyframes vibe-drift-3 {
-    0%, 100% { transform: translate(0, 0); }
-    50% { transform: translate(-8px, -12px); }
-  }
-
-  /* Respect reduced motion — freeze into a clean static state. */
-  @media (prefers-reduced-motion: reduce) {
-    .vibe-panel,
-    .vibe-status__dot,
-    .vibe-agent-core,
-    .vibe-agent-ring,
-    .vibe-prompt__type,
-    .vibe-line,
-    .vibe-cursor,
-    .vibe-chip__dot,
-    .vibe-node {
-      animation: none !important;
-    }
-
-    .vibe-prompt__type {
-      border-right-color: transparent;
-    }
-
-    .vibe-line {
-      opacity: 1;
-      transform: none;
-    }
-  }
-</style>
