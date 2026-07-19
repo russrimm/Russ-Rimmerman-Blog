@@ -1,5 +1,5 @@
 ---
-title: "My Favorite AI Tools for Vibe Coding"
+title: "My Favorite Tools for Vibe Coding"
 description: "The AI tools I reach for on every vibe-coding project — beginning with Impeccable, the design skill that makes AI-built interfaces actually look designed instead of generic. Plus the model, MCP, and reviewer setup that ships the rest."
 pubDate: 2026-07-17
 tags: ["Vibe Coding", "AI", "Tools", "Design", "Copilot"]
@@ -174,12 +174,37 @@ rendering untrusted HTML straight into the page with no sanitization. A live
 cross-site-scripting hole the demo would never surface. Now a reviewer pass is
 non-negotiable on anything I ship publicly.
 
+### Squad: a whole AI team, not one assistant
+
+A reviewer in the loop is one specialist doing one job. [Squad](https://github.com/bradygaster/squad)
+takes that idea and runs with it. It's an open-source framework for standing up a
+team of AI agents for any project — a lead, a frontend, a backend, a tester, a
+reviewer — that live in your repo, coordinate the work, and hand tasks back and
+forth instead of you narrating everything to a single general-purpose assistant.
+
+What earns it a spot:
+
+- **A persistent cast, not a fresh stranger every session.** The team and its
+  roles live in the repo, so each agent stays in its lane and picks up context
+  the next time instead of starting cold.
+- **Real handoffs.** Work routes to the specialist that should own it — the tester
+  writes tests, the reviewer reviews — rather than one model half-doing every
+  role at once.
+- **Review gates built in.** The reviewer-in-the-loop habit I keep preaching
+  stops being something I remember to do and becomes something the structure
+  enforces.
+
+It's the natural next step once you've felt how much a single dedicated reviewer
+changes the output: instead of bolting on judgment one specialist at a time, you
+start with a team that has it baked in.
+
 ## The through-line
 
 Every tool on this list does the same thing from a different angle: it closes the
 gap between what an AI produces on instinct and what a professional would actually
 approve. Impeccable closes it on design. The right model closes it on reasoning.
-MCPs close it on facts and secure defaults. A reviewer closes it on safety.
+MCPs close it on facts and secure defaults. A reviewer — or a whole Squad of
+them — closes it on safety.
 
 Vibe coding isn't about walking away and letting the AI cook. It's about
 surrounding the AI with enough good judgment — some of it yours, most of it

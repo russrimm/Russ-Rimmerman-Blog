@@ -7,12 +7,7 @@
 ```bash
 cp -r /path/to/seo-blog-writer .squad/skills/
 ```
-
-(Or from the persisted location if using the Grok skills dir.)
-
-2. Restart or re-cast the Squad so agents discover the new skill.
-
-3. Invoke naturally:
+2. Invoke naturally:
 
 ```
 @Squad use the seo-blog-writer skill to create a full SEO blog post.

@@ -1,0 +1,39 @@
+{
+  "agents": {
+    "editorial-lead": {
+      "persistent_name": "Danny",
+      "universe": "Ocean's Eleven",
+      "created_at": "2026-07-19T00:00:00Z",
+      "legacy_named": false,
+      "status": "active"
+    },
+    "trend-scout": {
+      "persistent_name": "Saul",
+      "universe": "Ocean's Eleven",
+      "created_at": "2026-07-19T00:00:00Z",
+      "legacy_named": false,
+      "status": "active"
+    },
+    "writer": {
+      "persistent_name": "Linus",
+      "universe": "Ocean's Eleven",
+      "created_at": "2026-07-19T00:00:00Z",
+      "legacy_named": false,
+      "status": "active"
+    },
+    "editor": {
+      "persistent_name": "Reuben",
+      "universe": "Ocean's Eleven",
+      "created_at": "2026-07-19T00:00:00Z",
+      "legacy_named": false,
+      "status": "active"
+    },
+    "web-publishing": {
+      "persistent_name": "Basher",
+      "universe": "Ocean's Eleven",
+      "created_at": "2026-07-19T00:00:00Z",
+      "legacy_named": false,
+      "status": "active"
+    }
+  }
+}
