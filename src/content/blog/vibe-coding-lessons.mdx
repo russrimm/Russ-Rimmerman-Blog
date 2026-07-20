@@ -8,13 +8,15 @@ featured: false
 draft: false
 ---
 
+import Term from "@/components/Term.astro";
+
 Let me get the confession out of the way first: I can't really code.
 
 I'm a Microsoft architect, so I know my way around PowerShell. I can string
 together a script to bulk-edit some Entra users or pull a report out of Graph.
 But sitting down to *learn to code* — proper application development, data
 structures, the whole thing — I never had the attention span or the patience
-for it. Every time I tried, I bounced off somewhere around the third tutorial.
+for it. Every time I'd try, the dreaded squirrel interrupted my train of thought.
 
 That's not laziness, and I've stopped pretending it is. My whole life, holding
 focus on a single thing from start to finish has been a fight. Between the idea
@@ -24,7 +26,7 @@ traditional path into coding demands long, unbroken stretches of exactly the
 kind of focus my brain doesn't hand out for free. For a neurodivergent mind,
 that path isn't just hard. It's practically designed to lose you.
 
-And yet, over the last few months, I've built real, working software. Multiple
+And yet, over the last year or so, I've built real, working software. Multiple
 apps. The thing that changed wasn't me suddenly growing discipline. It was
 learning how to *vibe code* — describing what I want in plain language and
 letting AI do the heavy lifting, then steering it until the thing actually works.
@@ -81,11 +83,11 @@ Think of skills as promoting your best prompts from throwaway messages into
 permanent, reusable capabilities. The first time you catch yourself explaining
 the same thing twice, that's your signal to make a skill.
 
-## Lesson 3: When the skill you need doesn't exist, build it
+## Lesson 3: When the skill you need doesn't exist, build them
 
 Here's where it gets fun. There's no rule that says you can only use the skills
 someone else made. When I hit a workflow that didn't have a skill — a specific
-way I wanted to scaffold a project, or a checklist I run before deploying — I
+way I wanted to <Term def="Automatically generate the starter files and folder structure for a project so you don't have to build it all by hand.">scaffold</Term> a project, or a checklist I run before deploying — I
 just had the AI help me *write the skill itself*.
 
 That's the moment vibe coding clicked for me. I wasn't just building apps; I was
@@ -111,9 +113,9 @@ Here's my rough rule of thumb:
   untangling a bug that spans several files, I want the deepest thinker in the
   room, even if it's slower.
 - **Fast, well-defined edits** — a lighter, quicker model is perfect. Renaming
-  things, small tweaks, boilerplate, "add a button here" — you don't need a
+  things, small tweaks, <Term def="Repetitive, standardized code that you have to include to make something work, but that doesn't involve any real decisions.">boilerplate</Term>, "add a button here" — you don't need a
   sledgehammer for a thumbtack.
-- **Long, sprawling context** — pick the model that handles big context windows
+- **Long, sprawling context** — pick the model that handles big <Term def="How much text an AI can consider at once — the prompt, your files, and the conversation so far. A bigger window lets it reason over more of your codebase at a time.">context windows</Term>
   gracefully when I'm asking it to reason across a whole codebase.
 
 The meta-lesson: **treat models like tools in a belt, not a single hammer.**
@@ -140,7 +142,7 @@ Two that changed how I work:
   touches Azure, having the AI grounded in the actual services and shapes I'm
   working with beats hand-copying details back and forth. It also ships an
   **Azure best-practices tool** the AI can call before it writes or deploys — so
-  I get secure defaults like managed identities, Key Vault, and least-privilege
+  I get secure defaults like <Term def="A way for an Azure service to prove who it is and get access to other services automatically, so you never store a password or key in your code.">managed identities</Term>, <Term def="A secure Azure vault for storing secrets like passwords, keys, and certificates, instead of leaving them in your code or config files.">Key Vault</Term>, and <Term def="Granting each account or service only the exact permissions it needs and nothing more, to limit the damage if it's ever compromised.">least-privilege</Term>
   roles instead of the hard-coded-secret shortcuts a model reaches for on its
   own. I make a habit of telling it to *check Azure best practices first*, and I
   lead my instructions with security so it stays the priority, not an afterthought.
@@ -163,7 +165,7 @@ That reviewer earned its keep almost immediately. The builder agents had wired u
 the feed rendering and it *worked* — the pages looked great. But the reviewer
 flagged something the demo would never surface: **eight different components were
 rendering untrusted HTML from external feeds straight into the page with no
-sanitization.** On a public site, that's a live cross-site-scripting hole. One
+<Term def="Cleaning incoming data to strip out anything dangerous — like scripts hidden in text — before you display or store it.">sanitization</Term>.** On a public site, that's a live <Term def="Often shortened to XSS: a web attack where malicious code is smuggled into a page and runs in another visitor's browser, letting the attacker hijack their session.">cross-site-scripting</Term> hole. One
 poisoned feed item and any visitor's session is fair game.
 
 We stopped everything. The fix — centralized server-side sanitization, an image

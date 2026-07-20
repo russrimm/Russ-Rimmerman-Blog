@@ -13,6 +13,7 @@ export const AUTHOR = {
 export const SOCIALS = {
   linkedin: "https://www.linkedin.com/in/russrimm",
   github: "https://www.github.com/russrimm",
+  buymeacoffee: "https://www.buymeacoffee.com/russrimm",
 };
 
 export const NAV_LINKS = [

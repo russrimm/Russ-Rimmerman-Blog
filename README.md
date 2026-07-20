@@ -41,7 +41,7 @@ Create a Markdown file in `src/content/blog/`:
 title: "My Post Title"
 description: "A short summary used for cards, SEO, and RSS."
 pubDate: 2026-07-08
-tags: ["Azure", "AI"]
+tags: ["Azure", "AI", "AI Foundry", "Agents", "MCP", "Copilot", "Copilot Studio", "Microsoft Graph", "Intune", "Power Platform", "Identity", "Security", "Vibe Coding", "Tools", "Design", "Microsoft", "Getting Started", "Projects"]
 featured: false # set true to surface on the home page
 draft: false # set true to hide from the site
 ---
@@ -198,25 +198,49 @@ To enable it:
 
 A GitHub Actions workflow is included at
 [`.github/workflows/azure-static-web-apps.yml`](.github/workflows/azure-static-web-apps.yml).
-It authenticates to Azure with **Microsoft Entra ID via OIDC** (federated
-credentials) instead of a deployment token — so it works even when access-key /
-deployment-token auth is disabled on the subscription, and there's no long-lived
-secret to rotate.
+It signs in to Azure with **Microsoft Entra ID via OIDC** (federated
+credentials) — so **no long-lived secret is ever stored in GitHub**. It then
+uses that short-lived, least-privilege sign-in to read the Static Web App's
+deployment token **at runtime** and publish. Nothing sensitive is committed,
+stored as a repo secret, or left to rotate.
 
-1. Create an **Azure Static Web App** resource (build preset: **Astro**, or use
-   the custom values `app_location: "/"`, `api_location: "api"`,
-   `output_location: "dist"`).
-2. Create an **Entra ID identity** (app registration or user-assigned managed
-   identity) with a **federated credential** for this repo, then grant it the
-   **Website Contributor** role on the Static Web App. See the CLI below.
-3. Add three repo secrets — `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, and
-   `AZURE_SUBSCRIPTION_ID` (these are identifiers, not access keys).
-4. Push to `main` — the workflow logs in with OIDC, builds, and deploys
-   automatically.
+### The easy way — one command
+
+Sign in to Azure and GitHub, then run the provisioning script. It's idempotent
+(safe to re-run) and creates **everything**: the resource group, the Static Web
+App, the deployment identity, its federated credentials, a custom
+least-privilege role, and all the GitHub configuration.
+
+```bash
+az login        # or: az login --use-device-code   (Codespaces/containers)
+gh auth login   # needs the `repo` scope + repo admin
+
+./scripts/setup-azure-swa.sh
+```
+
+Override any default with an environment variable:
+
+```bash
+SWA_NAME=my-blog RESOURCE_GROUP=my-blog-rg LOCATION=westeurope \
+  ./scripts/setup-azure-swa.sh
+```
+
+Then push to `main` — the workflow builds and deploys automatically. That's it.
 
 > Forked-PR preview environments still won't deploy: pull requests from forks
 > can't obtain an OIDC token. Pushes to `main` and PRs from branches in this repo
 > work.
+
+### What the script sets up (and why)
+
+| # | Resource | Why it exists |
+|---|----------|---------------|
+| 1 | Resource group | A container so every resource is managed and deleted together. |
+| 2 | Static Web App (Free) | Hosts the built site and the `/api` functions. |
+| 3 | Entra app registration + service principal | The identity GitHub Actions "becomes" — scoped, auditable, revocable. |
+| 4 | Two federated credentials | Let GitHub prove its identity to Azure with a short-lived OIDC token instead of a secret. One trusts the `main` branch, one trusts pull requests. |
+| 5 | Custom least-privilege role | Grants the identity exactly one permission — read this one SWA's deployment token — and nothing else. |
+| 6 | 3 secrets + 2 variables | Non-sensitive identifiers telling the workflow which identity to use and which SWA to deploy to. |
 
 #### One-time identity setup — let your coding agent do it
 
@@ -230,28 +254,27 @@ else.
 > **Prompt to give your agent:**
 >
 > "Set up OIDC deployment for this repo's Azure Static Web App. I've already run
-> `az login` and `gh auth login`. Using the Azure CLI and GitHub CLI, create an
-> Entra app registration named `russrimmerman-blog-deploy`, add federated
-> credentials for the `main` branch and pull requests of
-> `russrimm/Russ-Rimmerman-Blog`, assign it the **Website Contributor** role on
-> my Static Web App (ask me for the resource group and Static Web App name if you
-> don't know them), then set the `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, and
-> `AZURE_SUBSCRIPTION_ID` GitHub Actions secrets. Show me each command before you
-> run it and stop if any command fails."
+> `az login` and `gh auth login`. Run `./scripts/setup-azure-swa.sh` (ask me for
+> the Static Web App name, resource group, and region first if they aren't the
+> defaults). Show me each command before you run it and stop if any command
+> fails."
 
-The commands the agent will run (the same ones you'd run manually):
+If you'd rather run the steps by hand instead of the script, these are the exact
+commands it runs:
 
 ```bash
 APP_NAME="russrimmerman-blog-deploy"
 RESOURCE_GROUP="<your-resource-group>"
 SWA_NAME="<your-static-web-app-name>"
+REPO="russrimm/Russ-Rimmerman-Blog"
 
-# 1. Create the app registration + service principal
+# 1. Create the app registration + service principal (the CI/CD identity)
 az ad app create --display-name "$APP_NAME"
 APP_ID=$(az ad app list --display-name "$APP_NAME" --query "[0].appId" -o tsv)
 az ad sp create --id "$APP_ID"
 
-# 2. Federated credentials — one for the main branch, one for pull requests
+# 2. Federated credentials — one for the main branch, one for pull requests.
+#    This is how GitHub proves its identity to Azure with no stored secret.
 az ad app federated-credential create --id "$APP_ID" --parameters '{
   "name": "github-main-branch",
   "issuer": "https://token.actions.githubusercontent.com",
@@ -265,19 +288,29 @@ az ad app federated-credential create --id "$APP_ID" --parameters '{
   "audiences": ["api://AzureADTokenExchange"]
 }'
 
-# 3. Grant the identity least-privilege access to the Static Web App
+# 3. Custom least-privilege role — the identity can ONLY read this one SWA's
+#    deployment token, nothing else. The workflow reads that token at runtime.
 SWA_ID=$(az staticwebapp show --name "$SWA_NAME" --resource-group "$RESOURCE_GROUP" --query id -o tsv)
-az role assignment create --assignee "$APP_ID" --role "Website Contributor" --scope "$SWA_ID"
+az role definition create --role-definition "{
+  \"Name\": \"SWA Deployment Token Reader ($SWA_NAME)\",
+  \"IsCustom\": true,
+  \"Description\": \"Read one Static Web App's deployment token for CI/CD.\",
+  \"Actions\": [\"Microsoft.Web/staticSites/read\", \"Microsoft.Web/staticSites/listSecrets/action\"],
+  \"AssignableScopes\": [\"$SWA_ID\"]
+}"
+az role assignment create --assignee "$APP_ID" --role "SWA Deployment Token Reader ($SWA_NAME)" --scope "$SWA_ID"
 
-# 4. Store the identifiers as GitHub Actions secrets
-gh secret set AZURE_CLIENT_ID --body "$APP_ID"
-gh secret set AZURE_TENANT_ID --body "$(az account show --query tenantId -o tsv)"
-gh secret set AZURE_SUBSCRIPTION_ID --body "$(az account show --query id -o tsv)"
+# 4. Store identifiers (not access keys) as GitHub Actions secrets + variables
+gh secret set AZURE_CLIENT_ID       --repo "$REPO" --body "$APP_ID"
+gh secret set AZURE_TENANT_ID       --repo "$REPO" --body "$(az account show --query tenantId -o tsv)"
+gh secret set AZURE_SUBSCRIPTION_ID --repo "$REPO" --body "$(az account show --query id -o tsv)"
+gh variable set SWA_NAME            --repo "$REPO" --body "$SWA_NAME"
+gh variable set SWA_RESOURCE_GROUP  --repo "$REPO" --body "$RESOURCE_GROUP"
 ```
 
-If the old `AZURE_STATIC_WEB_APPS_API_TOKEN` secret still exists, tell the agent
-to delete it (`gh secret delete AZURE_STATIC_WEB_APPS_API_TOKEN`) — the workflow
-no longer uses it.
+If the old `AZURE_STATIC_WEB_APPS_API_TOKEN` secret still exists, delete it
+(`gh secret delete AZURE_STATIC_WEB_APPS_API_TOKEN`) — the workflow no longer
+uses it, and an unused secret is needless attack surface.
 
 ##### What the agent can't do (and how to unblock it)
 
@@ -296,10 +329,11 @@ privileges. Handle these and the agent can run the rest unattended.
   registration to admins. **If it fails** with an authorization error, either ask
   a Global/Application Administrator to grant you the role (or to run step 1 and
   hand you the resulting `appId`), then let the agent continue from step 2.
-- **Assigning the RBAC role.** `az role assignment create` requires **Owner** or
-  **User Access Administrator** on the Static Web App (or its resource group /
-  subscription). **If it fails** with `AuthorizationFailed`, ask an owner of that
-  scope to run just step 3 with your `APP_ID`, then let the agent finish step 4.
+- **Creating and assigning the custom role.** `az role definition create` and
+  `az role assignment create` both require **Owner** or **User Access
+  Administrator** on the Static Web App (or its resource group / subscription).
+  **If either fails** with `AuthorizationFailed`, ask an owner of that scope to
+  run step 3 with your `APP_ID`, then let the agent finish step 4.
 - **Setting GitHub secrets.** `gh secret set` needs **admin** on the repo and a
   `gh` session with the `repo` scope. **If it fails**, run
   `gh auth refresh -h github.com -s repo` (or add the secrets manually under

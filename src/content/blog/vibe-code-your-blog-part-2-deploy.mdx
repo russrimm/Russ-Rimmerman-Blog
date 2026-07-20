@@ -1,0 +1,312 @@
+---
+title: "Vibe Code Your Blog, Part 2: Build It, Then Ship It to Azure"
+description: "Part 2 of the series: turn your local Astro blog into a live site on Azure Static Web Apps — the secure way. A one-command setup, plus a plain-language walkthrough of every resource it creates, why each one is required, and the security implications of every choice (OIDC vs deployment tokens, custom least-privilege roles vs Contributor, and the errors I actually hit)."
+pubDate: 2026-07-20
+tags:
+  [
+    "Vibe Coding",
+    "Vibe Coding Blog Series",
+    "Azure",
+    "Static Web Apps",
+    "DevOps",
+    "Security",
+    "Getting Started",
+  ]
+featured: false
+draft: false
+---
+
+import Explain from "@/components/Explain.astro";
+import Term from "@/components/Term.astro";
+
+In [Part 1](/blog/vibe-code-your-blog-part-1-setup) you set up the tools and
+scaffolding. Now the site actually exists on your laptop — but a blog nobody can
+reach isn't a blog yet. This post is the other half: **building** the site and
+**deploying** it to [Azure Static Web Apps](https://learn.microsoft.com/azure/static-web-apps/overview),
+the secure way, with everything provisioned for you.
+
+I'm writing this the way I wish someone had written it for me. When I first did
+this, I hit a wall of confusing errors — an empty-secret login failure, an MFA
+"claims challenge," an authorization error deep inside a deploy step. You won't
+have to guess through any of that. There's a **single command** that stands up
+every Azure resource, and then a plain-language explanation of *what* each piece
+is, *why* it's required, and *what the security trade-offs are*.
+
+<Explain title="Do I need to be a cloud engineer for this?">
+  No. You need an Azure subscription and the ability to run two sign-in commands.
+  The script does the rest. The long explanations after it are optional — read
+  them when you want to understand *why*, not because you need to type any of it.
+</Explain>
+
+## What you'll end up with
+
+- Your Astro blog **built** into static files (plus an `/api` for the newsletter
+  form)
+- A live **Azure Static Web App** serving it on `https://<something>.azurestaticapps.net`
+- A **GitHub Actions** pipeline that rebuilds and redeploys every time you push
+  to `main`
+- **Zero long-lived secrets** stored anywhere — deployment authenticates with a
+  short-lived, least-privilege identity
+
+## Step 1: Build the site locally
+
+Before you deploy anything, make sure it builds. From your project folder:
+
+```bash
+npm install
+npm run dev     # live preview at http://localhost:4321
+npm run build   # produces the production site in dist/
+```
+
+`npm run dev` is your writing loop — edit a post, watch it update instantly.
+`npm run build` is the real test: it's exactly what the cloud will run. If it
+builds clean locally, it'll build clean in the pipeline.
+
+<Explain title="What is a 'build,' and why isn't my Markdown just… the website?">
+  Your posts are <Term def="A lightweight way to write formatted text — headings, links, bold — that's easier to read and write than HTML.">Markdown</Term>,
+  and the site uses <Term def="A modern web framework that turns your content and components into fast, plain HTML at build time.">Astro</Term>.
+  A build compiles all of that — posts, layouts, styles, images — into plain
+  HTML, CSS, and JavaScript in a `dist/` folder. That folder is what actually
+  gets served to visitors. Building ahead of time is why the site loads fast and
+  has almost nothing to attack at runtime.
+</Explain>
+
+## Step 2: Deploy to Azure — the easy way
+
+Here's the whole thing. Sign in to Azure and GitHub, then run one script:
+
+```bash
+az login        # or: az login --use-device-code  (Codespaces / containers)
+gh auth login   # choose GitHub.com, HTTPS, and authenticate in the browser
+
+./scripts/setup-azure-swa.sh
+```
+
+That's it. The script is **idempotent** — safe to run again if something was
+half-finished — and it prints each step as it goes. When it's done, it hands you
+the live URL. Push to `main` and the site deploys automatically.
+
+<Explain title="Why do I have to sign in first — can't the script do it?">
+  Signing in is the one thing a script (or an AI agent) genuinely can't do for
+  you: it needs *your* browser and *your* second factor. `az login` and
+  `gh auth login` prove **you** are you. Everything after that is just API calls
+  the script can make on your behalf. In a headless environment like Codespaces,
+  use <code>az login --use-device-code</code> so you can complete sign-in on any
+  device.
+</Explain>
+
+> **Heads-up on permissions.** The script creates a *custom role* and assigns it,
+> which requires **Owner** or **User Access Administrator** on your subscription
+> or resource group. Creating the app registration needs a directory role that
+> can register apps (**Application Developer** or higher). If you're on a locked-
+> down corporate tenant, you may need an admin to run one or two steps — the
+> script stops on the first failure and tells you which one.
+
+## Step 3: Understand what just happened (and why it's secure)
+
+The script created six things. None of it is magic, and every choice was made for
+a security reason. Here's each one, in plain language.
+
+### 1. A resource group
+
+A <Term def="A logical container in Azure that holds related resources so you can manage, secure, and delete them together.">resource group</Term>
+is just a folder for your Azure resources. Everything for the blog lives in one,
+so you can see it all in one place — and delete it all in one click if you ever
+want to start over.
+
+**Why it's required:** every Azure resource must live in a resource group.
+
+**Security angle:** grouping resources lets you scope permissions and policies to
+*just this blog* instead of your whole subscription. Smaller blast radius.
+
+### 2. A Static Web App (Free tier)
+
+This is the actual hosting service. It serves your built HTML globally and runs
+the small `/api` function behind the newsletter form.
+
+**Why it's required:** it's the thing visitors connect to.
+
+**Security angle:** Static Web Apps serves **pre-built static files**, so there's
+no server-side app to exploit at runtime — no database, no CMS admin panel, no
+long-running process. It's HTTPS by default. The attack surface is about as small
+as web hosting gets.
+
+<Explain title="Free tier — what's the catch?">
+  For a personal blog, essentially none. The Free tier includes global
+  distribution, free SSL certificates, and custom domains. You step up to
+  Standard only if you need things like private endpoints, a bring-your-own
+  Azure Functions backend, or an SLA. Start Free; upgrade if you ever outgrow it.
+</Explain>
+
+### 3. A dedicated deployment identity
+
+The script creates an <Term def="An identity in Microsoft Entra ID that represents an application or automation, rather than a human user.">Entra ID app registration</Term>
+and its <Term def="The account that actually gets permissions assigned to it — the app registration's presence inside your tenant.">service principal</Term>.
+This is the identity your GitHub Actions pipeline "becomes" when it talks to
+Azure.
+
+**Why it's required:** something has to authenticate to Azure to deploy. That
+something should not be *you* personally.
+
+**Security angle:** this is a big one. Using a **dedicated, non-human identity**
+means:
+
+- If it's ever compromised, you revoke *it* — not your personal account.
+- Its access is **scoped** to exactly one job (more on that below), so it can't
+  wander around your subscription.
+- Every action it takes is **auditable** and attributable to the pipeline.
+
+Compare that to the old-school alternative: pasting a shared deployment key into
+a settings box. Keys leak, get committed by accident, and never expire on their
+own. A dedicated identity is strictly safer.
+
+### 4. Two federated credentials (the secret-less part)
+
+This is the cleverest — and most secure — piece. Instead of giving GitHub a
+password or key, we set up <Term def="A trust relationship where one system accepts short-lived identity tokens issued by another, instead of a shared secret.">OpenID Connect (OIDC) federation</Term>.
+
+Here's the flow: when the pipeline runs, GitHub mints a **short-lived token** that
+says, in effect, *"I am the `main` branch of `your-repo`."* Azure has been told to
+trust that exact statement — and only that. It exchanges the token for temporary
+Azure access that expires in minutes.
+
+We create **two** of these trust rules: one for the `main` branch (real deploys)
+and one for pull requests (preview builds).
+
+**Why it's required:** it's how GitHub proves who it is without a stored secret.
+
+**Security angle — this is the headline:**
+
+- **No long-lived secret exists.** There's nothing in GitHub to steal, leak, or
+  rotate. A leaked deployment token is a real incident; a *missing* one can't be.
+- **Tightly scoped trust.** Azure only accepts a token whose subject exactly
+  matches `repo:your-org/your-repo:ref:refs/heads/main` (or `:pull_request`). A
+  different repo, a different branch, a fork — none of them can impersonate your
+  pipeline.
+- **Short lifetime.** Even the temporary token that *is* issued is useless minutes
+  later.
+
+<Explain title="OIDC vs. a deployment token — what's the actual difference?">
+  A **deployment token** is a long-lived password you paste into GitHub secrets.
+  It works, but it sits there forever until you remember to rotate it, and anyone
+  who reads it can deploy. **OIDC federation** stores *nothing* sensitive —
+  GitHub proves its identity fresh on every run and gets a credential that
+  expires almost immediately. Same result, dramatically smaller risk. It's the
+  approach Microsoft and GitHub both recommend for CI/CD.
+</Explain>
+
+### 5. A custom, least-privilege role
+
+The deploy action still needs the Static Web App's deployment token to publish
+files — but instead of *storing* that token, the pipeline **reads it fresh at
+runtime** using the identity we just created. To do that, the identity needs
+exactly **one** permission: read this one app's deployment secret.
+
+Rather than hand it a broad built-in role, the script creates a **custom role**
+that allows only `Microsoft.Web/staticSites/listSecrets` (and read) on **this one
+Static Web App**.
+
+**Why it's required:** fetching the token at runtime needs *a* permission — so we
+grant the smallest one that works.
+
+**Security angle — least privilege in action:**
+
+- The obvious shortcut is the built-in **Contributor** role. It works, but it
+  lets the identity create, modify, and delete resources — far more than "read
+  one token." If that identity were ever misused, Contributor is a bad day.
+- The custom role can do **literally one thing on one resource**. Even fully
+  compromised, it can't spin up crypto-mining VMs, read other resources, or touch
+  anything outside this blog.
+- Scoping to the **single Static Web App** (not the resource group or
+  subscription) is the tightest boundary Azure offers.
+
+<Explain title="Why fetch the token at runtime instead of just storing it?">
+  Storing the deployment token would reintroduce exactly the long-lived secret we
+  worked to eliminate. Fetching it fresh each run means the only durable thing in
+  your GitHub settings is a set of *identifiers* — not a credential. The token
+  lives only in memory, during a single job, and is masked in the logs.
+</Explain>
+
+### 6. Non-sensitive configuration in GitHub
+
+Finally the script stores three **secrets** — `AZURE_CLIENT_ID`,
+`AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID` — and two **variables** —
+`SWA_NAME` and `SWA_RESOURCE_GROUP`.
+
+**Why it's required:** the pipeline needs to know *which* identity to sign in as
+and *which* app to deploy to.
+
+**Security angle:** despite living in "secrets," these three values are **not
+passwords** — they're public-ish identifiers (GUIDs). They tell the workflow
+*who* to authenticate as, but they grant no access on their own; the actual
+authentication still requires the OIDC trust from step 4. They're kept in secrets
+mostly to keep them tidy and out of logs, not because exposure would be dangerous.
+
+## What the pipeline actually does
+
+Open [`.github/workflows/azure-static-web-apps.yml`](https://github.com/russrimm/Russ-Rimmerman-Blog/blob/main/.github/workflows/azure-static-web-apps.yml)
+and you'll see the whole flow in plain YAML. On every push to `main`, it:
+
+1. **Checks out** your code and installs dependencies.
+2. **Builds** the site (`npm run build` → `dist/`).
+3. **Signs in to Azure with OIDC** — no secret, using the federated identity.
+4. **Reads the deployment token at runtime** with the least-privilege role, and
+   immediately masks it from the logs.
+5. **Deploys** the built `dist/` and the `api/` to your Static Web App.
+
+Pull requests from branches in your repo get their own **preview deployment**;
+when the PR closes, that preview is torn down automatically.
+
+<Explain title="Why don't pull requests from forks deploy?">
+  A fork can't be issued an OIDC token for *your* repo's identity — by design.
+  That's a feature, not a bug: it means a stranger's pull request can never
+  authenticate as your pipeline or reach your Azure resources. Pushes to `main`
+  and PRs from branches in your own repo work normally.
+</Explain>
+
+## Security scorecard
+
+If you're weighing options, here's how the choices in this setup stack up:
+
+| Choice | Alternative | Why this is safer |
+| --- | --- | --- |
+| OIDC federated identity | Stored deployment token | No long-lived secret to leak or rotate; tokens are short-lived and scoped to one repo/branch. |
+| Custom `listSecrets`-only role | Built-in **Contributor** | Identity can do one thing on one resource, not manage your subscription. |
+| Fetch token at runtime | Store token in GitHub secrets | The durable footprint is identifiers, never a credential. |
+| Dedicated deploy identity | Personal account / shared key | Revocable, auditable, and blast-radius-limited. |
+| Static Web App (prebuilt) | Server-rendered app | Almost no runtime attack surface; HTTPS by default. |
+
+## The errors I hit — so you don't have to
+
+Every one of these is a real error from setting this up. If you see one, here's
+what it means.
+
+**`azure/login@v2` fails: "Ensure 'client-id' and 'tenant-id' are supplied."**
+Your `AZURE_*` secrets are missing or empty. Re-run the setup script, or set the
+three secrets by hand, then re-run the workflow.
+
+**`AADSTS50076: ... you must use multi-factor authentication`** during
+`az login`. A <Term def="A policy that can require extra verification (like MFA) before granting a token for a specific resource.">Conditional Access</Term>
+policy wants MFA for the management API. Re-run the exact `az login` command Azure
+prints in the error (it includes a one-time claims challenge) and complete MFA in
+the browser.
+
+**`AuthorizationFailed ... listSecrets` inside the Deploy job.** The identity
+can't read the deployment token yet — the role assignment hasn't propagated, or
+it's missing. Give it a minute and re-run; if it persists, re-run the setup
+script's role step.
+
+**`Failed to find a default file in the app artifacts folder`.** The deploy is
+looking in the wrong place for `index.html`. With a pre-built site, the action's
+`app_location` must point at your build output (`dist`), which this repo's
+workflow already does.
+
+## You're live
+
+Push a commit to `main`, watch the Actions tab go green, and open your
+`azurestaticapps.net` URL. From here the fun part is just… writing. Want a custom
+domain? Azure Static Web Apps gives you free managed certificates — add your
+domain in the portal and point a CNAME at it.
+
+That's the series: Part 1 set up the workshop, Part 2 shipped the product. Now go
+write something.

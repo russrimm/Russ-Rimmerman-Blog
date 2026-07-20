@@ -1,0 +1,39 @@
+---
+// Inline "hover to define" tooltip for jargon and acronyms, so a non-coder
+// reader can hover (or tap/focus) any technical term and get a plain-language
+// explanation without leaving the sentence.
+//
+// Usage in MDX:
+//   import Term from "@/components/Term.astro";
+//   You'll <Term def="Automatically generating the starter files and folder
+//   structure for a project so you don't build it by hand.">scaffold</Term> a
+//   home for your agents.
+//
+// The word between the tags is what the reader sees; `def` is the tooltip text.
+interface Props {
+  /** Plain-language definition shown in the tooltip. */
+  def: string;
+}
+const { def } = Astro.props;
+const id = `term-${Math.random().toString(36).slice(2, 9)}`;
+---
+
+<span class="term group not-prose relative inline-block">
+  <button
+    type="button"
+    aria-describedby={id}
+    class="cursor-help border-0 bg-transparent p-0 font-[inherit] text-[inherit] underline decoration-azure-500/60 decoration-dotted underline-offset-4 transition-colors hover:decoration-azure-500 focus-visible:outline-none focus-visible:decoration-azure-500"
+  >
+    <slot />
+  </button>
+  <span
+    id={id}
+    role="tooltip"
+    class="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 w-64 max-w-[80vw] -translate-x-1/2 rounded-lg border border-ink-200 bg-white px-3 py-2 text-left text-sm font-normal not-italic leading-relaxed text-ink-700 opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 dark:border-ink-700 dark:bg-ink-900 dark:text-ink-200"
+  >
+    {def}
+    <span
+      class="absolute left-1/2 top-full h-2 w-2 -translate-x-1/2 -translate-y-1/2 rotate-45 border-b border-r border-ink-200 bg-white dark:border-ink-700 dark:bg-ink-900"
+    ></span>
+  </span>
+</span>
