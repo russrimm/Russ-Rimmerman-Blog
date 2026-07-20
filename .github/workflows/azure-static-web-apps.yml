@@ -53,9 +53,27 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
+      # The static-web-apps-deploy action still requires a deployment token; it
+      # can't authenticate with the OIDC login alone. Fetch a fresh token at
+      # runtime via the RBAC-authorized identity so nothing long-lived is stored
+      # as a repo secret.
+      - name: Get deployment token
+        id: swa_token
+        run: |
+          TOKEN=$(az staticwebapp secrets list \
+            --name "$SWA_NAME" \
+            --resource-group "$SWA_RESOURCE_GROUP" \
+            --query "properties.apiKey" -o tsv)
+          echo "::add-mask::$TOKEN"
+          echo "token=$TOKEN" >> "$GITHUB_OUTPUT"
+        env:
+          SWA_NAME: russrimmerman-blog
+          SWA_RESOURCE_GROUP: russrimmerman-blog-rg
+
       - name: Deploy
         uses: Azure/static-web-apps-deploy@v1
         with:
+          azure_static_web_apps_api_token: ${{ steps.swa_token.outputs.token }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: upload
           app_location: "/"
@@ -75,7 +93,21 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
+      - name: Get deployment token
+        id: swa_token
+        run: |
+          TOKEN=$(az staticwebapp secrets list \
+            --name "$SWA_NAME" \
+            --resource-group "$SWA_RESOURCE_GROUP" \
+            --query "properties.apiKey" -o tsv)
+          echo "::add-mask::$TOKEN"
+          echo "token=$TOKEN" >> "$GITHUB_OUTPUT"
+        env:
+          SWA_NAME: russrimmerman-blog
+          SWA_RESOURCE_GROUP: russrimmerman-blog-rg
+
       - name: Close Pull Request
         uses: Azure/static-web-apps-deploy@v1
         with:
+          azure_static_web_apps_api_token: ${{ steps.swa_token.outputs.token }}
           action: close
