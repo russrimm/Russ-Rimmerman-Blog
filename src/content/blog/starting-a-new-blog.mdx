@@ -1,11 +1,19 @@
 ---
 title: "I'm Finally Starting a Blog (and Here's What I've Been Building)"
-description: "After years of 'I should really start a blog,' here it is. A quick tour of what I've been building lately — Pulse360, Portal of Portals, and the Microsoft Communications Portal."
+description: "After years of 'I should really start a blog,' here it is. A quick tour of what I've been building lately — Pulse 360°, Portal 360°, and the Microsoft Communications Portal."
 pubDate: 2026-07-10
 tags: ["Microsoft", "Azure", "Power Platform", "Vibe Coding", "Projects"]
 featured: true
 draft: false
 ---
+
+import Screenshot from "@/components/Screenshot.astro";
+import portalDashboard from "@/assets/projects/portal-of-portals/dashboard.png";
+import portalEntraUsers from "@/assets/projects/portal-of-portals/entra-users.png";
+import portalDevices from "@/assets/projects/portal-of-portals/devices.png";
+import portalAzureResources from "@/assets/projects/portal-of-portals/azure-resources.png";
+import portalPowerPlatform from "@/assets/projects/portal-of-portals/power-platform-environments.png";
+import portalServiceHealth from "@/assets/projects/portal-of-portals/service-health.png";
 
 I've been saying "I should really start a blog" for about three years now. The
 domain has been sitting there. The half-written intro posts have come and gone.
@@ -18,7 +26,7 @@ wasn't a LinkedIn post buried by the algorithm ten minutes after I hit publish.
 If you work anywhere near the Microsoft cloud — Microsoft 365, Azure, Power
 Platform — a few of these might be useful to you too. Here's a tour.
 
-## Pulse360 — one dashboard for every Microsoft update stream
+## Pulse 360° — one dashboard for every Microsoft update stream
 
 If you've ever tried to keep up with Microsoft's pace of change, you know the
 problem: the news lives in a dozen different places. Message Center, the M365
@@ -26,7 +34,7 @@ roadmap, Azure Updates, the Fabric roadmap, the Power Platform release planner,
 MSRC security advisories, a pile of product blogs. Nobody has time to check all
 of them.
 
-[**Pulse360**](/projects/pulse360) is my answer to that. It pulls all of those official Microsoft
+[**Pulse 360°**](/projects/pulse360) is my answer to that. It pulls all of those official Microsoft
 update streams — Microsoft 365, Azure, Fabric, Power Platform, Dynamics 365,
 Copilot, and MSRC — into a single, fast, filterable dashboard. It's dark-mode
 first, everything is sorted newest-first, and there's a global search and
@@ -37,23 +45,96 @@ Tailwind CSS 4). Server Components do the heavy lifting and route handlers act
 as a server-side proxy for the cross-origin and bot-protected feeds. If you
 want to poke at it, it's live at [mspulse360.app](https://www.mspulse360.app).
 
-{/* TODO: Add Pulse360 screenshots. The repo currently ships without screenshots
+{/* TODO: Add Pulse 360° screenshots. The repo currently ships without screenshots
     in public/images/. Drop your best 2–3 captures (dashboard + a filtered feed)
     into this post and reference them here. */}
 
 You can find the source on GitHub:
 [github.com/russrimm/Pulse360](https://github.com/russrimm/Pulse360).
 
-## Portal of Portals — a hub for all the hubs
+## Portal 360° — one console for every Microsoft admin portal
 
-This one's still cooking, so I'll keep it brief. **Portal of Portals** is exactly
-what it sounds like: a single landing spot that ties together the various portals
-and tools I've been building, so there's one front door instead of a bookmark
-folder full of them.
+This one's still cooking, so I'll keep it brief. [**Portal 360°**](/projects/portal-of-portals)
+folds a dozen Microsoft admin portals — Entra, Intune, Azure, Power Platform, and
+collaboration — into a single authenticated, audit-friendly workspace. Instead of
+bouncing between the Entra, Intune, Azure, Power Platform, and Exchange admin
+centers, IT and MSP teams get one console with centralized visibility,
+cross-service actions, and audit-ready operations.
 
-It's a private repo for now while I get it into shape, but it's the connective
-tissue for a lot of the other projects here — and I'll write a proper deep-dive
-once it's ready to show off.
+It's a Next.js 16 / React 19 / TypeScript app with **700+ API routes**, secured
+with NextAuth (Auth.js) v5. It runs on a **Backend-for-Frontend** architecture,
+so every privileged call stays server-side, behind per-route authentication and
+least-privilege scopes drawn from a single centralized map. It's a private repo
+for now while I harden it — 700+ routes across this many privileged APIs is a big
+attack surface, and I'd rather ship it when the security story is airtight.
+
+Here's the home dashboard — service health and platform tiles for every
+Microsoft cloud in one place:
+
+<Screenshot
+  src={portalDashboard}
+  alt="Portal 360° home dashboard showing service health and platform tiles for Microsoft 365, Exchange, Azure, Power Platform, and device management"
+  caption="The Portal 360° home dashboard — service health and platform tiles for Microsoft 365, Exchange, Azure, Power Platform, and device management."
+/>
+
+The identity surface covers users, groups, apps, PIM, Conditional Access, and
+audit logs, all backed by Microsoft Graph:
+
+<Screenshot
+  src={portalEntraUsers}
+  alt="Portal 360° tenant-wide user list with search, status badges, and quick actions to create users and invite guests"
+  caption="Tenant-wide user management, backed by Microsoft Graph — search, status badges, and quick actions for creating users and inviting guests."
+/>
+
+Microsoft Intune drives the device surface — inventory, compliance, and
+configuration state for every managed device:
+
+<Screenshot
+  src={portalDevices}
+  alt="Portal 360° Intune managed devices inventory listing enrolled devices with OS, ownership, and compliance status"
+  caption="Intune managed device inventory — every enrolled device in one list, with OS, ownership, and compliance status at a glance."
+/>
+
+Azure coverage spans resources, networking, VMs, policy, cost, and monitoring,
+with an Azure Resource Graph explorer:
+
+<Screenshot
+  src={portalAzureResources}
+  alt="Portal 360° Azure Resource Graph query interface showing tenant-wide resource inventory across subscriptions"
+  caption="Tenant-wide resource inventory via Azure Resource Graph — custom KQL queries, type filtering, and CSV export across all subscriptions."
+/>
+
+The Power Platform surface handles environments, Copilot Studio, DLP,
+governance, and Dataverse analytics:
+
+<Screenshot
+  src={portalPowerPlatform}
+  alt="Portal 360° Power Platform environment management showing environment counts by type and capacity consumption"
+  caption="Power Platform environment management — capacity, state, and resource inventory with managed-environment controls."
+/>
+
+A handful of other surfaces round out the console:
+
+- **Secure Score monitoring** — current posture, improvement actions, and
+  category breakdown, optionally enriched by Defender for Endpoint.
+- **Collaboration** — Exchange mailboxes and folders, Teams, and SharePoint.
+- **Vulnerability data** — CVE search over the NIST NVD API, joined against
+  Intune `managedDevices` to estimate exposure, with an optional Defender for
+  Endpoint Plan 2 path for authoritative per-CVE machine counts.
+- **Real-time service health** — issue counts, degraded and extended-recovery
+  tracking, and clickable incident detail.
+- **Security by default** — RBAC on top of Entra sign-in, CSRF protection with
+  constant-time token comparison, a Redis-backed sliding-window rate limiter,
+  and server-side token storage the browser never sees.
+- **Self-healing schema mirrors** — a weekly GitHub Actions workflow diffs the
+  Power Platform tenant-settings registry against Microsoft's upstream sources
+  and opens a PR when they drift.
+
+<Screenshot
+  src={portalServiceHealth}
+  alt="Portal 360° real-time Microsoft service health monitoring with issue counts and degraded service tracking"
+  caption="Real-time Microsoft service health — issue counts, degraded and extended-recovery tracking, and clickable incident details."
+/>
 
 ## Microsoft Communications Portal — a single pane of glass you can self-host
 

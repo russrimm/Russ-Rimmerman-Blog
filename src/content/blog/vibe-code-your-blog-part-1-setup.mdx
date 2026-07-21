@@ -130,6 +130,10 @@ newest Copilot and AI-agent features before anyone else. Download it from
 When you first open it, sign in with your GitHub account (bottom-left account
 icon). This connects the editor to your identity and, in a moment, to Copilot.
 
+{/* TODO: Screenshot — VS Code Insiders bottom-left Activity Bar with the
+    account icon menu open, showing the "Sign in with GitHub" option. Crop tight
+    to the lower-left corner so the icon and menu are the focus. */}
+
 ## Step 4: Install Node.js (LTS) and confirm npm works
 
 A modern blog is built and previewed by **Node.js**, and Node ships with
@@ -152,6 +156,10 @@ found:
 node --version
 npm --version
 ```
+
+{/* TODO: Screenshot — a terminal showing `node --version` and `npm --version`
+    each returning a clean version number, so readers know exactly what a
+    successful check looks like. */}
 
 You should see version numbers (for example, `v22.x.x` and `10.x.x`). If instead
 you see something like `'npm' is not recognized` or `command not found`, your
@@ -185,6 +193,9 @@ you see something like `'npm' is not recognized` or `command not found`, your
 Copilot is the AI you'll be steering. In VS Code Insiders, open the Extensions
 panel, search **GitHub Copilot**, and install it. Then click the Copilot icon and
 sign in with your GitHub account.
+
+{/* TODO: Screenshot — the VS Code Extensions panel with "GitHub Copilot"
+    searched and the official extension highlighted, Install button visible. */}
 
 <Explain title="Do I have to pay for Copilot?">
   There's a **free tier** that's enough to get started, plus paid plans that
@@ -275,6 +286,10 @@ Everything below lives here.
    one to open a side-by-side **diff** — old version on the left, your new version
    on the right — so you can review exactly what you (or the AI) changed before
    saving it.
+
+   {/* TODO: Screenshot — the VS Code Source Control view with a couple of
+       changed files under "Changes" and a side-by-side diff open, so the
+       stage → commit → sync loop is visible in one shot. */}
 2. **Stage the changes you want to keep.** Hover a file and click the **+** to
    stage it, or stage everything at once. Staging lets you commit some changes now
    and leave others for later.
@@ -389,6 +404,10 @@ The AI will propose a command (it'll be something like `mkdir -p
 ~/.agents/skills`), wait for you to approve it, and then run it in the terminal.
 Reading and approving that command *before* it runs is exactly the safe habit
 you'll rely on for the rest of this series.
+
+{/* TODO: Screenshot — Copilot Chat in Agent mode having proposed the `mkdir`
+    command, with the Continue/approve button showing. Capture the mode picker
+    at the bottom too so "Agent mode" is visible. */}
 
 <Explain title="What's 'Agent mode'?">
   Copilot Chat has a few modes. **Agent mode** lets the AI take actions on your
@@ -567,6 +586,10 @@ Then open **http://localhost:4321/keystatic** in your browser. You'll see
 collections for **Blog Posts** and **Projects**. Click one to edit it, or use
 **+ Create** to start a new post — fill in the fields, write the body, and save.
 Keystatic writes the `.mdx` file into `src/content/` for you.
+
+{/* TODO: Screenshot — the Keystatic admin UI at /keystatic showing the Blog
+    Posts collection, and a second capture of the post editor with the title,
+    date, tags, and body fields filled in. */}
 
 <Explain title="Why a separate `npm run cms` instead of the normal dev server?">
   The everyday `npm run dev` server stays a pure, fast static site with no admin
