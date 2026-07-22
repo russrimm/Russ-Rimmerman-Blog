@@ -15,6 +15,9 @@
 // Configuration (via .env locally, or environment variables in CI):
 //   AZURE_OPENAI_ENDPOINT          https://<resource>.openai.azure.com
 //   AZURE_OPENAI_IMAGE_DEPLOYMENT  deployment name for a gpt-image-1 model
+//   AZURE_OPENAI_CHAT_DEPLOYMENT   optional, a chat model (e.g. gpt-4o) used to
+//                                  derive a unique scene from each post's content.
+//                                  Without it, a static topic map is used instead.
 //   AZURE_OPENAI_API_VERSION       optional, defaults to 2025-04-01-preview
 //   HEADSHOT_PATH                  optional, defaults to src/assets/author/headshot.jpg
 //
@@ -59,8 +62,73 @@ const TOPIC_SCENES = [
 const BASE_STYLE =
   "Editorial tech illustration. Dark navy background with a subtle grid and a soft azure-and-teal glow. " +
   "Render the subject as a friendly, semi-realistic caricature that clearly resembles the person in the reference photo. " +
-  "Clean flat-vector-meets-cinematic style, warm and approachable, a touch of humour, no text or logos, " +
-  "wide landscape 3:2 composition with the subject slightly off-centre.";
+  "Clean flat-vector-meets-cinematic style, warm and approachable, a touch of humour, no text or logos other than the Microsoft emblem noted above.";
+
+// Randomised framing so heroes don't all share the same angle. One is picked per
+// image. Every option keeps the wide landscape 3:2 aspect the site crops to.
+const COMPOSITIONS = [
+  "Wide landscape 3:2 composition; subject on the left third, dramatic low-angle heroic view.",
+  "Wide landscape 3:2 composition; subject on the right third, gentle high-angle looking down on the scene.",
+  "Wide landscape 3:2 composition; centered subject, strong symmetry and deep background perspective.",
+  "Wide landscape 3:2 composition; dynamic slight dutch-angle tilt with the subject caught mid-action.",
+  "Wide landscape 3:2 composition; over-the-shoulder view from behind the subject looking into the scene.",
+  "Wide landscape 3:2 composition; close three-quarter portrait framing with the scene softly blurred behind.",
+  "Wide landscape 3:2 composition; the subject small within an expansive, atmospheric wide shot.",
+  "Wide landscape 3:2 composition; eye-level medium shot, subject off-center, props filling the foreground.",
+];
+
+function pickComposition() {
+  return COMPOSITIONS[Math.floor(Math.random() * COMPOSITIONS.length)];
+}
+
+// Pool of distinctive costumes used when a post's topic doesn't clearly imply
+// one. Combined with the used-outfit tracking below, every post ends up with a
+// visibly different outfit.
+const RANDOM_OUTFITS = [
+  "a vintage explorer's khaki field jacket",
+  "a retro-futuristic astronaut suit",
+  "a detective's tan trench coat",
+  "a pilot's leather bomber jacket",
+  "a professor's tweed blazer with elbow patches",
+  "a mechanic's oil-stained coveralls",
+  "a deep-sea diver's suit",
+  "a mountaineer's insulated expedition gear",
+  "a jazz musician's midnight-blue tuxedo",
+  "a painter's smock speckled with colour",
+  "a safari ranger's outfit and wide-brim hat",
+  "a train conductor's pinstripe uniform",
+  "a chef's crisp white jacket and toque",
+  "a race-car driver's fitted racing suit",
+  "a lighthouse keeper's rugged raincoat",
+  "a 1920s newsreel reporter's suit and press hat",
+  "a cyberpunk techwear jacket with neon trim",
+  "a botanist's linen gardening apron",
+  "a snowboarder's bright winter shell",
+  "a stage magician's cape and waistcoat",
+];
+
+// Slugs are generated in one process, but single-post runs happen separately, so
+// uniqueness is tracked in each post's `heroOutfit` frontmatter as well as this
+// in-memory set for the current batch.
+const usedOutfits = new Set();
+
+async function loadUsedOutfits() {
+  const slugs = await listPosts();
+  for (const slug of slugs) {
+    const p = await resolvePostPath(slug);
+    if (!p) continue;
+    const fm = parseFrontmatter(await readFile(p, "utf8"));
+    if (fm?.heroOutfit) usedOutfits.add(fm.heroOutfit.toLowerCase());
+  }
+}
+
+function pickUnusedOutfit() {
+  const available = RANDOM_OUTFITS.filter(
+    (o) => !usedOutfits.has(o.toLowerCase()),
+  );
+  const pool = available.length ? available : RANDOM_OUTFITS;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
 
 // --- Helpers -----------------------------------------------------------------
 function fail(message) {
@@ -87,6 +155,11 @@ function parseFrontmatter(raw) {
     ? titleMatch[1].trim().replace(/^['"]|['"]$/g, "")
     : "";
 
+  const descMatch = body.match(/^description:\s*(.+)$/m);
+  const description = descMatch
+    ? descMatch[1].trim().replace(/^['"]|['"]$/g, "")
+    : "";
+
   const tagsBlock = body.match(/^tags:\s*([\s\S]*?)(?=^\w|\Z)/m);
   const tags = tagsBlock
     ? [...tagsBlock[1].matchAll(/["']([^"']+)["']/g)].map((m) => m[1])
@@ -94,10 +167,27 @@ function parseFrontmatter(raw) {
 
   return {
     title,
+    description,
     tags,
+    heroOutfit: (body.match(/^heroOutfit:\s*(.+)$/m)?.[1] || "")
+      .trim()
+      .replace(/^['"]|['"]$/g, ""),
     hasHero: /^heroImage:\s*\S/m.test(body),
     draft: /^draft:\s*true\s*$/m.test(body),
   };
+}
+
+// Strip frontmatter, imports, JSX tags and code fences to get readable prose
+// for the scene model to reason about.
+function extractBody(raw) {
+  return raw
+    .replace(/^---\n[\s\S]*?\n---\n?/, "")
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/^import .*$/gm, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/[#>*_`]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function pickScene(tags, title) {
@@ -106,6 +196,82 @@ function pickScene(tags, title) {
     if (haystacks.some((h) => h.includes(key))) return scene;
   }
   return "the person sharing what they have learned from a glowing laptop, ideas taking flight around them";
+}
+
+// Ask a chat model to turn THIS post into one concrete, unique visual scene so
+// every hero looks different. Returns null on any failure so callers fall back
+// to the static topic map.
+async function deriveScene({ title, description, body }, cfg) {
+  if (!cfg?.chatDeployment) return null;
+
+  const url =
+    `${cfg.endpoint.replace(/\/$/, "")}/openai/deployments/${cfg.chatDeployment}` +
+    `/chat/completions?api-version=${cfg.apiVersion}`;
+
+  const system =
+    "You design editorial hero illustrations for a technical blog. Given a post, respond with ONLY a " +
+    'compact JSON object: {"scene": string, "outfit": string|null}. ' +
+    '"scene" is ONE vivid, concrete visual metaphor for what the recurring author is DOING, specific to ' +
+    "this post's exact topic and story: a single clause that starts with 'the person', names concrete " +
+    "objects/actions, 12-30 words. Make different posts look clearly different. Do NOT default to robots " +
+    "surrounding someone, holding a pointer, or presenting slides. " +
+    '"outfit" is a short (2-8 word) themed costume that clearly fits the post topic (e.g. a detective ' +
+    "trench coat for a security investigation, an architect's hard hat and blueprints for building " +
+    "something, a race kit for a getting-started sprint, a lab coat for experiments). Use null when the " +
+    "topic does not clearly suggest a costume. No text, logos, camera terms, markdown, or commentary.";
+  const user =
+    `Title: ${title}\n\nSummary: ${description}\n\nExcerpt:\n${body.slice(0, 2000)}`;
+
+  try {
+    const token = await getAccessToken();
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        messages: [
+          { role: "system", content: system },
+          { role: "user", content: user },
+        ],
+        temperature: 0.9,
+        max_tokens: 160,
+      }),
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      console.warn(`  ! scene model returned ${res.status} ${res.statusText}; using topic fallback.\n${text}`);
+      return null;
+    }
+    const json = await res.json();
+    const content = json?.choices?.[0]?.message?.content?.trim();
+    if (!content) return null;
+
+    // Strip any accidental code fences, then parse. Fall back to treating the
+    // whole reply as the scene with no outfit.
+    const cleaned = content
+      .replace(/^```(?:json)?/i, "")
+      .replace(/```$/, "")
+      .trim();
+    let parsed;
+    try {
+      parsed = JSON.parse(cleaned);
+    } catch {
+      const scene = cleaned.replace(/^["']|["']$/g, "").replace(/\.$/, "").trim();
+      return scene ? { scene, outfit: null } : null;
+    }
+
+    const scene = (parsed.scene || "").toString().replace(/\.$/, "").trim();
+    if (!scene) return null;
+    let outfit = parsed.outfit;
+    outfit = typeof outfit === "string" ? outfit.trim() : "";
+    if (!outfit || /^(null|none|n\/a)$/i.test(outfit)) outfit = null;
+    return { scene, outfit };
+  } catch (err) {
+    console.warn(`  ! scene model failed (${err.message}); using topic fallback.`);
+    return null;
+  }
 }
 
 async function resolvePostPath(slug) {
@@ -160,12 +326,33 @@ async function generatePost(slug, { force, dryRun, cfg }) {
     return "skipped";
   }
 
-  const scene = pickScene(fm.tags, fm.title);
-  const prompt = `Scene: ${scene}. ${BASE_STYLE}`;
+  const derived = await deriveScene(
+    { title: fm.title, description: fm.description, body: extractBody(raw) },
+    cfg,
+  );
+  const scene = derived?.scene || pickScene(fm.tags, fm.title);
+
+  // Prefer an outfit derived from the topic/content; otherwise assign a random
+  // one. Either way it must be unique across posts, so don't count this post's
+  // own existing outfit against itself when regenerating.
+  if (fm.heroOutfit) usedOutfits.delete(fm.heroOutfit.toLowerCase());
+  let outfit = derived?.outfit || null;
+  if (!outfit || usedOutfits.has(outfit.toLowerCase())) {
+    outfit = pickUnusedOutfit();
+  }
+  usedOutfits.add(outfit.toLowerCase());
+
+  const composition = pickComposition();
+  const outfitLine =
+    `Dress the subject as ${outfit}, keeping their face clearly recognisable. ` +
+    "Place a small, tasteful Microsoft logo (the four coloured squares) in an appropriate spot on " +
+    "the subject's shirt or outerwear, such as a chest emblem or sleeve patch, correctly proportioned.";
+  const prompt = `Scene: ${scene}. ${outfitLine} ${BASE_STYLE} ${composition}`;
   const alt = `Illustration of Russ Rimmerman \u2014 ${scene}.`;
 
   console.log(`\n\u25b6 ${fm.title || slug}`);
   console.log(`  tags:   ${fm.tags.join(", ") || "(none)"}`);
+  console.log(`  outfit: ${outfit}`);
   console.log(`  prompt: ${prompt}`);
 
   if (dryRun) {
@@ -219,10 +406,11 @@ async function generatePost(slug, { force, dryRun, cfg }) {
   const relFromPost = `../../assets/blog/${slug}.webp`;
   const cleaned = raw
     .replace(/^heroImage:.*$\n?/m, "")
-    .replace(/^heroAlt:.*$\n?/m, "");
+    .replace(/^heroAlt:.*$\n?/m, "")
+    .replace(/^heroOutfit:.*$\n?/m, "");
   const patched = cleaned.replace(
     /^(title:.*)$/m,
-    `$1\nheroImage: ${relFromPost}\nheroAlt: ${JSON.stringify(alt)}`,
+    `$1\nheroImage: ${relFromPost}\nheroAlt: ${JSON.stringify(alt)}\nheroOutfit: ${JSON.stringify(outfit)}`,
   );
   await writeFile(postPath, patched);
   console.log(`  \u2714 set heroImage + heroAlt in ${path.relative(ROOT, postPath)}`);
@@ -275,6 +463,7 @@ let cfg = null;
 if (!dryRun) {
   const endpoint = process.env.AZURE_OPENAI_ENDPOINT;
   const deployment = process.env.AZURE_OPENAI_IMAGE_DEPLOYMENT;
+  const chatDeployment = process.env.AZURE_OPENAI_CHAT_DEPLOYMENT || null;
   const apiVersion = process.env.AZURE_OPENAI_API_VERSION || "2025-04-01-preview";
   const headshotPath = path.resolve(
     ROOT,
@@ -289,10 +478,17 @@ if (!dryRun) {
   if (!(await exists(headshotPath))) {
     fail(`Headshot not found at ${headshotPath}. Add it or set HEADSHOT_PATH.`);
   }
-  cfg = { endpoint, deployment, apiVersion, headshotPath };
+  if (!chatDeployment) {
+    console.warn(
+      "! AZURE_OPENAI_CHAT_DEPLOYMENT is not set \u2014 falling back to the static " +
+        "topic map, so hero scenes will be less content-specific.",
+    );
+  }
+  cfg = { endpoint, deployment, chatDeployment, apiVersion, headshotPath };
 }
 
 const results = { generated: 0, skipped: 0, failed: 0, "dry-run": 0 };
+await loadUsedOutfits();
 for (const slug of targets) {
   const status = await generatePost(slug, { force, dryRun, cfg });
   results[status] = (results[status] ?? 0) + 1;
