@@ -13,7 +13,7 @@
     "build": "astro check && astro build",
     "preview": "astro preview --host",
     "astro": "astro",
-    "hero": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/generate-hero.mjs",
+    "hero": "node --env-file-if-exists=.env.local --env-file-if-exists=.env scripts/generate-hero.mjs",
     "format": "prettier --write \"**/*.{astro,ts,js,mjs,css,md,mdx,json}\""
   },
   "dependencies": {

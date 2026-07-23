@@ -69,6 +69,8 @@ This skill helps you write compelling, well-structured blog posts that engage re
 
 8. **Edit for web readability.** Short sentences. Active voice. Bullet lists for steps. Bold key terms. Cut every word that doesn't earn its place.
 
+9. **Run the Humanizer pass (required).** Before the post is done, run the `humanizer` skill (`.github/skills/humanizer/SKILL.md`) over the full draft. Strip AI-tell openers, empty transitions, marketing hype, and formulaic closes, and rewrite anything that sounds robotic into a warm, specific, human voice. A generated post is not finished until it passes the Humanizer definition of done.
+
 ## Examples
 
 ### Example 1: Tech Tutorial Post

@@ -1,8 +1,7 @@
 ---
 title: "Ready, Set, Create! (Using AI)"
 heroImage: ../../assets/blog/vibe-code-your-blog-part-1-setup.webp
-heroAlt: "Illustration of Russ Rimmerman — the person assembling a complex, colorful toolkit of software icons connected by glowing cables over a digital workbench."
-heroOutfit: "tech-savvy coder casual"
+heroAlt: "Cinematic enterprise hero image representing AI-Powered Development Setup — enterprise architecture workspace."
 description: "A complete, beginner-proof setup guide for vibe coding your first project — a blog. GitHub, Git, VS Code Insiders, Node LTS, Copilot, and the agent/skills scaffolding you need before you write a single line."
 pubDate: 2026-07-15
 tags:
@@ -56,14 +55,15 @@ Real Apps](/blog/vibe-coding-lessons). Read that for the *why*. This post is the
 
 ## Before you install anything: the plan
 
-You're going to set up five things, in this order, because each one builds on the
+You're going to set up six things, in this order, because each one builds on the
 last:
 
 1. **A GitHub account** — your home base for code, history, and hosting.
 2. **Git** — the tool that actually tracks your changes locally.
-3. **VS Code Insiders** — the editor where the vibe coding happens.
-4. **Node LTS + npm** — the engine that runs a modern website.
-5. **GitHub Copilot** — the AI you'll be steering.
+3. **The GitHub Copilot app** — vibe coding from anywhere, no editor required.
+4. **VS Code Insiders** — the editor where the deeper vibe coding happens.
+5. **Node LTS + npm** — the engine that runs a modern website.
+6. **GitHub Copilot** — the AI you'll be steering inside the editor.
 
 Then you'll scaffold a home for your agents and skills so the AI works *with*
 you instead of guessing. Let's go.
@@ -116,7 +116,30 @@ git config --global user.email "you@example.com"
   label on your history.
 </Explain>
 
-## Step 3: Install VS Code Insiders
+## Step 3: Install the GitHub Copilot app
+
+Before you install a full editor, install the
+[GitHub Copilot app](https://github.com/features/ai/github-app). It's the piece
+that changed how much of my work happens *outside* VS Code. The app lets you
+steer Copilot's coding agent from wherever you are — the web, your phone, or
+GitHub itself — so you can kick off changes, review what the AI proposes, and
+approve pull requests without opening a code editor at all.
+
+- **Windows / macOS / Linux / mobile:** install the app from
+  [github.com/features/ai/github-app](https://github.com/features/ai/github-app)
+  and sign in with the GitHub account you just created.
+
+<Explain title="Why install this before the editor?">
+  Because it genuinely reduces how much you need the editor. A huge share of my
+  vibe coding now starts as a plain-language request to the Copilot agent — from a
+  browser tab or my phone — which then does the work on a branch and opens a pull
+  request for me to review. VS Code is still where I go for hands-on, line-by-line
+  work, but the app handles "describe it, let the agent build it, review the PR"
+  without me sitting in front of an editor at all. Installing it now means you have
+  that option from day one.
+</Explain>
+
+## Step 4: Install VS Code Insiders
 
 VS Code is the editor. **Insiders** is the daily-updated version that gets the
 newest Copilot and AI-agent features before anyone else. Download it from
@@ -130,14 +153,14 @@ newest Copilot and AI-agent features before anyone else. Download it from
   fallback — your projects work in both.
 </Explain>
 
-When you first open it, sign in with your GitHub account (bottom-left account
+When you first open it, sign in with the same GitHub account (bottom-left account
 icon). This connects the editor to your identity and, in a moment, to Copilot.
 
 {/* TODO: Screenshot — VS Code Insiders bottom-left Activity Bar with the
     account icon menu open, showing the "Sign in with GitHub" option. Crop tight
     to the lower-left corner so the icon and menu are the focus. */}
 
-## Step 4: Install Node.js (LTS) and confirm npm works
+## Step 5: Install Node.js (LTS) and confirm npm works
 
 A modern blog is built and previewed by **Node.js**, and Node ships with
 **npm**, the tool that installs the building blocks your site depends on.
@@ -191,7 +214,7 @@ you see something like `'npm' is not recognized` or `command not found`, your
   the entire class of "npm not found" problems instead of patching one instance.
 </Explain>
 
-## Step 5: Turn on GitHub Copilot
+## Step 6: Turn on GitHub Copilot
 
 Copilot is the AI you'll be steering. In VS Code Insiders, open the Extensions
 panel, search **GitHub Copilot**, and install it. Then click the Copilot icon and

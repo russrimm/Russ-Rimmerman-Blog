@@ -14,7 +14,7 @@ deployed to [Azure Static Web Apps](https://learn.microsoft.com/azure/static-web
 - 💬 Giscus comments on blog posts (GitHub Discussions)
 - 📰 RSS feed + sitemap + Open Graph/SEO meta tags
 - 📧 Newsletter signup (placeholder — wire to a provider when ready)
-- 🖼️ AI-generated, topic-aware post hero images from your headshot (Entra ID / OIDC — no API key)
+- 🖼️ AI-generated, topic-aware photorealistic enterprise post hero images (Entra ID / OIDC — no API key)
 - 🎨 Azure-inspired design system
 
 ## Getting started
@@ -50,8 +50,8 @@ Your content here…
 ```
 
 A post can carry its own `heroImage` (used on cards and the article header). You
-can supply one yourself, or **auto-generate a topic-aware illustration from your
-headshot** — see [Auto-generating blog hero images](#auto-generating-blog-hero-images).
+can supply one yourself, or **auto-generate a topic-aware photorealistic
+enterprise image** — see [Auto-generating blog hero images](#auto-generating-blog-hero-images).
 Posts without an image fall back to a branded placeholder, so nothing looks
 broken in the meantime.
 
@@ -110,12 +110,14 @@ api`) after `npm run build`; the plain `astro dev` server does not serve `/api`.
 ## Auto-generating blog hero images
 
 Each blog post can have a `heroImage`. Instead of designing one by hand, the
-`npm run hero` generator turns your **headshot** into a topic-aware editorial
-illustration: it reads the post's title and tags, maps them to a scene (e.g.
-Copilot → pair-programming with an AI copilot; Intune → a bouncer checking API
-permission scopes), sends the headshot + prompt to **Azure OpenAI
-(`gpt-image-1`)**, optimizes the result to a WebP in `src/assets/blog/`, and
-writes the `heroImage` + `heroAlt` frontmatter for you.
+`npm run hero` generator produces a topic-aware, photorealistic **"Portal 360"
+enterprise hero image**: it reads the post's title, summary, and tags, maps them
+to a cinematic enterprise scene (e.g. Copilot Studio → an intelligent business
+operations center orchestrating AI agents; Identity → a secure identity gateway
+verifying tokens), sends the prompt to **Azure OpenAI (`gpt-image-1`)**, optimizes
+the result to a WebP in `src/assets/blog/`, and writes the `heroImage` +
+`heroAlt` frontmatter for you. Images are pure text-to-image — no headshot,
+logos, or on-image text.
 
 > **Why this is more secure:** authentication is **Microsoft Entra ID (OIDC)**,
 > not an API key. `DefaultAzureCredential` obtains a **short-lived, RBAC-scoped
@@ -130,9 +132,7 @@ the static WebP, and every site build just serves the file.
 
 ### One-time setup
 
-1. **Add your headshot** at `src/assets/author/headshot.jpg` (or point
-   `HEADSHOT_PATH` elsewhere).
-2. **Configure the endpoint + deployment** (non-secret). Locally, add them to
+1. **Configure the endpoint + deployment** (non-secret). Locally, add them to
    `.env` (already gitignored):
 
    ```bash
@@ -140,9 +140,9 @@ the static WebP, and every site build just serves the file.
    AZURE_OPENAI_IMAGE_DEPLOYMENT=<your-gpt-image-1-deployment-name>
    ```
 
-3. **Grant access.** Assign the identity you sign in as the **`Cognitive
+2. **Grant access.** Assign the identity you sign in as the **`Cognitive
    Services OpenAI User`** role on the Azure OpenAI resource. No key required.
-4. **Sign in:** `az login` (device code in headless environments:
+3. **Sign in:** `az login` (device code in headless environments:
    `az login --use-device-code`).
 
 ### Generating images

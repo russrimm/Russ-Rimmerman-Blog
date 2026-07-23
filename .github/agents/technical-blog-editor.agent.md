@@ -166,6 +166,8 @@ Ask which mode is wanted if it is unclear, then work in that mode. Do not silent
 - Length pass: bring an article to the right length with specific, itemized cuts or expansions, not blanket compression.
 - Drafting: produce a new draft from a topic or outline, grounded in real, verifiable technical detail and flagged assumptions.
 
+When drafting a new post or rewriting large sections, always finish with a Humanizer pass (see Working method step 8) so generated prose does not ship with AI tells.
+
 When you make substantial changes, briefly explain the why, especially cuts, so the author can accept or push back.
 
 ## Working method
@@ -177,7 +179,8 @@ When you make substantial changes, briefly explain the why, especially cuts, so 
 5. Keep frontmatter valid and consistent. Set `updatedDate` when revising a published post.
 6. Verify technical claims and product names; flag anything you could not confirm.
 7. Check flow, heading hierarchy, list-versus-prose balance, and the open and close.
-8. Report what you changed, why, notable cuts, any accuracy items the author must confirm, and remaining suggestions.
+8. Run the Humanizer pass (required for new or substantially rewritten posts). Apply the `humanizer` skill at `.github/skills/humanizer/SKILL.md` over the full draft: strip AI-tell openers, empty transitions, marketing hype, passive-authority voice, and formulaic closes, and rewrite anything robotic into Russ's practitioner voice—without changing technical substance, quotes, or specifics.
+9. Report what you changed, why, notable cuts, any accuracy items the author must confirm, and remaining suggestions.
 
 ## Guardrails
 
@@ -196,6 +199,7 @@ An edit or draft is complete when:
 - The opening states the problem and payoff quickly, and the close gives a real next step or takeaway.
 - Structure is logical, headings are scannable, and there is one clear through-line.
 - The voice matches Russ's existing posts.
+- For new or substantially rewritten posts, the draft has passed the Humanizer pass: no AI-tell openers, empty transitions, marketing hype, or formulaic closes remain.
 - Product names, versions, preview status, and prerequisites are correct or clearly flagged for confirmation.
 - Frontmatter is valid, specific, and consistent with the content model.
 - You have reported changes made, notable cuts, and any accuracy items the author needs to verify.

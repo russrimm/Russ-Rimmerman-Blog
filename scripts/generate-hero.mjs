@@ -1,4 +1,8 @@
-// Generate topic-aware WebP hero images for blog posts from a headshot.
+// Generate premium, photorealistic enterprise WebP hero images for blog posts.
+// Each post becomes a cinematic "Portal 360" enterprise scene themed to its
+// topic. When a scene includes a human figure, the author's headshot
+// (src/assets/author/headshot.jpg) is passed to the image-edit endpoint as a
+// likeness reference so the person in the hero resembles the author.
 //
 // Usage:
 //   npm run hero -- <slug>              generate one post's image
@@ -16,10 +20,10 @@
 //   AZURE_OPENAI_ENDPOINT          https://<resource>.openai.azure.com
 //   AZURE_OPENAI_IMAGE_DEPLOYMENT  deployment name for a gpt-image-1 model
 //   AZURE_OPENAI_CHAT_DEPLOYMENT   optional, a chat model (e.g. gpt-4o) used to
-//                                  derive a unique scene from each post's content.
-//                                  Without it, a static topic map is used instead.
+//                                  art-direct a unique enterprise brief from each
+//                                  post's content. Without it, a static topic map
+//                                  is used instead.
 //   AZURE_OPENAI_API_VERSION       optional, defaults to 2025-04-01-preview
-//   HEADSHOT_PATH                  optional, defaults to src/assets/author/headshot.jpg
 //
 // Auth is Microsoft Entra ID — NO API KEY. DefaultAzureCredential resolves a
 // token from, in order: environment / workload identity / managed identity, the
@@ -37,97 +41,157 @@ import { DefaultAzureCredential } from "@azure/identity";
 
 const ROOT = path.resolve(fileURLToPath(import.meta.url), "../..");
 const BLOG_DIR = path.join(ROOT, "src/content/blog");
+const HEADSHOT_PATH = path.join(ROOT, "src/assets/author/headshot.jpg");
 
-// --- Topic → scene map -------------------------------------------------------
+// Words that indicate a human figure is part of a scene's subjects. When a hero
+// scene includes a person, we render that person to resemble the site author by
+// passing headshot.jpg as a reference image to the image-edit endpoint. Short
+// words use word boundaries so "man" doesn't match "command"/"human", etc.
+const HUMAN_RE =
+  /\b(developer|architect|analyst|engineer|maker|person|people|human|professional|team|worker|woman|women|man|men|employee|executive|colleague|designer|specialist|technician|scientist|operator|staff|leader|manager|pairing|collaborating)\b/i;
+
+function sceneHasHuman(brief) {
+  return HUMAN_RE.test(brief?.subjects || "");
+}
+
+// --- Topic → enterprise scene map --------------------------------------------
 // The most specific matching topic wins (list runs specific → generic). Keys are
 // matched case-insensitively as substrings against the post's tags, then title.
+// Each entry supplies an enterprise ENVIRONMENT, SUBJECTS, and the TECHNOLOGY to
+// make the visual centerpiece — all rendered abstractly, never as logos.
 const TOPIC_SCENES = [
-  ["vibe coding", "the person calmly conducting a small orchestra of friendly AI robot assistants, each holding a different tool"],
-  ["copilot studio", "the person holding one master key in front of a row of app-labelled doors"],
-  ["copilot", "the person pair-programming beside a glowing, helpful AI copilot floating over a laptop"],
-  ["foundry", "the person as an architect in a hard hat assembling a friendly robot agent from labelled blueprint parts"],
-  ["agent", "the person directing a small team of specialised robot agents around a holographic project board"],
-  ["intune", "the person as a calm bouncer at a velvet-rope API door, checking a clipboard of permission scopes"],
-  ["entra", "the person guarding a glowing identity gateway, handing out access badges"],
-  ["identity", "the person guarding a glowing identity gateway, handing out access badges"],
-  ["security", "the person as a vigilant reviewer shining a flashlight on hidden flaws behind clean-looking code"],
-  ["azure", "the person at a mission-control console wiring up glowing Azure cloud services"],
-  ["power platform", "the person snapping together low-code building blocks into a working app"],
-  ["mcp", "the person plugging live data cables into an AI model to ground it in real sources"],
-  ["getting started", "the person crouched at a sprinter's starting line where the running track is a glowing code editor"],
-  ["ai", "the person collaborating with a glowing, friendly artificial-intelligence presence"],
-  ["microsoft", "the person at a mission-control console surrounded by Microsoft cloud service icons"],
+  ["vibe coding", {
+    environment: "an AI innovation lab bathed in soft volumetric light",
+    subjects: "a developer collaborating with a generative-AI presence that assembles glowing, weightless code structures in mid-air",
+    technology: "generative AI systems and intelligent, conversational code generation",
+  }],
+  ["copilot studio", {
+    environment: "an intelligent business operations center",
+    subjects: "an architect orchestrating conversational AI agents that route glowing request threads to the right business systems",
+    technology: "low-code AI agent orchestration and secured connections to enterprise data sources",
+  }],
+  ["copilot", {
+    environment: "a modern enterprise architecture workspace",
+    subjects: "a developer pairing with an ambient AI assistant that surfaces suggestions as luminous, structured guidance",
+    technology: "AI copilots grounded in enterprise knowledge and context",
+  }],
+  ["foundry", {
+    environment: "an AI model factory visualized as a clean, cathedral-like assembly hall",
+    subjects: "an architect assembling an AI agent from modular, glowing building blocks on a holographic blueprint",
+    technology: "AI model deployment, agent building, and orchestration pipelines",
+  }],
+  ["agent", {
+    environment: "a digital transformation command center",
+    subjects: "autonomous AI agents depicted as coordinated points of light orchestrating workflows across a layered architecture",
+    technology: "agentic automation and event-driven workflow orchestration",
+  }],
+  ["intune", {
+    environment: "a secure enterprise access gateway visualization",
+    subjects: "a stream of device and permission tokens passing through a precise, glowing policy checkpoint",
+    technology: "endpoint governance, scoped permissions, and least-privilege access control",
+  }],
+  ["entra", {
+    environment: "a secure identity gateway rendered as a luminous architectural threshold",
+    subjects: "identity tokens flowing through a trust boundary where each request is verified before it proceeds",
+    technology: "enterprise identity, single sign-on, and per-user authentication trust chains",
+  }],
+  ["identity", {
+    environment: "a secure identity gateway rendered as a luminous architectural threshold",
+    subjects: "identity tokens flowing through a trust boundary where each request is verified before it proceeds",
+    technology: "enterprise identity, single sign-on, and per-user authentication trust chains",
+  }],
+  ["servicenow", {
+    environment: "a hybrid enterprise integration hub",
+    subjects: "two large enterprise platforms connected by a verified, per-user identity bridge carrying glowing request threads",
+    technology: "cross-platform integration governed by user identity, roles, and audit trails",
+  }],
+  ["security", {
+    environment: "a secure cloud operations center with a calm, watchful atmosphere",
+    subjects: "an analyst reviewing a layered defense architecture where a subtle flaw is caught and isolated before it spreads",
+    technology: "defense-in-depth, threat detection, and secure-by-default architecture",
+  }],
+  ["power platform", {
+    environment: "an enterprise low-code studio",
+    subjects: "a maker snapping together modular low-code building blocks into a working automated business process",
+    technology: "low-code app building, automation, and connected business data",
+  }],
+  ["mcp", {
+    environment: "a data-grounding operations center",
+    subjects: "live data conduits connecting an AI model to trusted enterprise sources so its answers stay grounded",
+    technology: "model context grounding, tool connections, and retrieval over enterprise data",
+  }],
+  ["azure", {
+    environment: "a modern cloud operations center",
+    subjects: "an architect wiring together glowing cloud services across a layered, interconnected digital architecture",
+    technology: "cloud infrastructure, connected services, and scalable enterprise architecture",
+  }],
+  ["ai", {
+    environment: "an AI innovation lab bathed in soft volumetric light",
+    subjects: "an engineer shaping a luminous generative-AI system that turns raw data into structured intelligence",
+    technology: "generative AI systems, models, and knowledge graphs",
+  }],
+  ["microsoft", {
+    environment: "a modern cloud operations center",
+    subjects: "an architect at a mission-control console coordinating a connected estate of glowing cloud services",
+    technology: "an integrated enterprise cloud platform and its connected services",
+  }],
 ];
 
-const BASE_STYLE =
-  "Editorial tech illustration. Dark navy background with a subtle grid and a soft azure-and-teal glow. " +
-  "Render the subject as a friendly, semi-realistic caricature that clearly resembles the person in the reference photo. " +
-  "Clean flat-vector-meets-cinematic style, warm and approachable, a touch of humour, no text or logos other than the Microsoft emblem noted above.";
+const GENERIC_SCENE = {
+  environment: "a modern enterprise architecture workspace",
+  subjects: "an architect reviewing a large holographic architecture diagram that maps ideas into a clean, connected system",
+  technology: "enterprise cloud architecture and connected digital services",
+};
 
 // Randomised framing so heroes don't all share the same angle. One is picked per
-// image. Every option keeps the wide landscape 3:2 aspect the site crops to.
+// image. Each keeps large negative space on one side for a title overlay.
 const COMPOSITIONS = [
-  "Wide landscape 3:2 composition; subject on the left third, dramatic low-angle heroic view.",
-  "Wide landscape 3:2 composition; subject on the right third, gentle high-angle looking down on the scene.",
-  "Wide landscape 3:2 composition; centered subject, strong symmetry and deep background perspective.",
-  "Wide landscape 3:2 composition; dynamic slight dutch-angle tilt with the subject caught mid-action.",
-  "Wide landscape 3:2 composition; over-the-shoulder view from behind the subject looking into the scene.",
-  "Wide landscape 3:2 composition; close three-quarter portrait framing with the scene softly blurred behind.",
-  "Wide landscape 3:2 composition; the subject small within an expansive, atmospheric wide shot.",
-  "Wide landscape 3:2 composition; eye-level medium shot, subject off-center, props filling the foreground.",
+  "Keep large, clean negative space on the LEFT for a title overlay; anchor the focal point in the right two-thirds with strong leading lines.",
+  "Keep large, clean negative space on the RIGHT for a title overlay; anchor the focal point in the left two-thirds with strong leading lines.",
+  "Keep generous open sky/atmosphere in the UPPER-LEFT for a title overlay; ground the architecture in the lower two-thirds.",
+  "Keep generous open atmosphere in the UPPER-RIGHT for a title overlay; ground the architecture in the lower-left with layered depth.",
 ];
 
 function pickComposition() {
   return COMPOSITIONS[Math.floor(Math.random() * COMPOSITIONS.length)];
 }
 
-// Pool of distinctive costumes used when a post's topic doesn't clearly imply
-// one. Combined with the used-outfit tracking below, every post ends up with a
-// visibly different outfit.
-const RANDOM_OUTFITS = [
-  "a vintage explorer's khaki field jacket",
-  "a retro-futuristic astronaut suit",
-  "a detective's tan trench coat",
-  "a pilot's leather bomber jacket",
-  "a professor's tweed blazer with elbow patches",
-  "a mechanic's oil-stained coveralls",
-  "a deep-sea diver's suit",
-  "a mountaineer's insulated expedition gear",
-  "a jazz musician's midnight-blue tuxedo",
-  "a painter's smock speckled with colour",
-  "a safari ranger's outfit and wide-brim hat",
-  "a train conductor's pinstripe uniform",
-  "a chef's crisp white jacket and toque",
-  "a race-car driver's fitted racing suit",
-  "a lighthouse keeper's rugged raincoat",
-  "a 1920s newsreel reporter's suit and press hat",
-  "a cyberpunk techwear jacket with neon trim",
-  "a botanist's linen gardening apron",
-  "a snowboarder's bright winter shell",
-  "a stage magician's cape and waistcoat",
-];
-
-// Slugs are generated in one process, but single-post runs happen separately, so
-// uniqueness is tracked in each post's `heroOutfit` frontmatter as well as this
-// in-memory set for the current batch.
-const usedOutfits = new Set();
-
-async function loadUsedOutfits() {
-  const slugs = await listPosts();
-  for (const slug of slugs) {
-    const p = await resolvePostPath(slug);
-    if (!p) continue;
-    const fm = parseFrontmatter(await readFile(p, "utf8"));
-    if (fm?.heroOutfit) usedOutfits.add(fm.heroOutfit.toLowerCase());
-  }
-}
-
-function pickUnusedOutfit() {
-  const available = RANDOM_OUTFITS.filter(
-    (o) => !usedOutfits.has(o.toLowerCase()),
-  );
-  const pool = available.length ? available : RANDOM_OUTFITS;
-  return pool[Math.floor(Math.random() * pool.length)];
+// Assemble the full art-direction prompt for one post from its filled-in brief.
+function buildPrompt({
+  title,
+  primaryTopic,
+  secondaryTopics,
+  summary,
+  technologies,
+  brief,
+  composition,
+  withHeadshot,
+}) {
+  return [
+    'Award-winning enterprise technology photography and concept art. Generate a premium, photorealistic, cinematic 16:9 hero image for "Portal 360", a Microsoft Cloud Solution Architect technical blog. The image must visually represent the article\'s primary topic and read like the cover of a premium Microsoft architecture whitepaper or keynote — it tells a story, it is NOT generic AI art.',
+    `Article title: ${title}.`,
+    `Primary topic and visual centerpiece: ${primaryTopic}.`,
+    secondaryTopics ? `Secondary topics: ${secondaryTopics}.` : "",
+    summary ? `The image must communicate: ${summary}.` : "",
+    technologies
+      ? `Key technologies (represent abstractly — never as logos, product names, or readable UI): ${technologies}.`
+      : "",
+    `Environment: ${brief.environment}.`,
+    `Subjects: ${brief.subjects}.`,
+    withHeadshot
+      ? "IMPORTANT: A single human figure is present in this scene. Render that one person to closely resemble the individual in the provided reference photograph \u2014 matching their facial features, hair, skin tone, and overall likeness \u2014 as a natural, candid part of the scene, shown in professional enterprise attire and integrated realistically with matching lighting and perspective. Do not add any other recognizable human faces, and never show the reference photo itself."
+      : "",
+    `Technology focus: ${brief.technology}, depicted as abstract architectural forms — flowing data, connected cloud services, holographic architecture diagrams, digital workflows, knowledge graphs — never literal UI or screenshots.`,
+    "Style: photorealistic, ultra high detail, editorial quality, modern architecture visualization, Microsoft-inspired, subtly futuristic but not science fiction or cyberpunk.",
+    `Composition: wide cinematic 16:9 shot, one strong focal point, leading lines, layered foreground/midground/background, clean visual hierarchy, no clutter. ${composition}`,
+    "Lighting: professional cinematic lighting, cool Azure-inspired blues, subtle indigo/purple AI accents, clean white enterprise light, soft volumetric light, natural reflections, premium studio quality.",
+    "Color palette: Azure blue, indigo, white, slate gray, glass and steel, small accents of cyan with occasional AI-purple highlights, minimal warm color.",
+    "Camera: 35mm lens, wide shot, slightly elevated perspective, photorealistic depth of field, high dynamic range, professional architectural photography.",
+    "Mood: innovative, confident, intelligent, trustworthy, enterprise-ready, visionary.",
+    "Absolutely NO text, words, letters, numbers, logos, brand names, watermarks, UI screenshots, fake dashboards, clip art, cartoons, or anime. No robots unless robotics is the topic. No distorted hands, duplicated objects, oversaturated colors, neon cyberpunk look, fantasy, or stock-photo appearance.",
+  ]
+    .filter(Boolean)
+    .join(" ");
 }
 
 // --- Helpers -----------------------------------------------------------------
@@ -169,9 +233,6 @@ function parseFrontmatter(raw) {
     title,
     description,
     tags,
-    heroOutfit: (body.match(/^heroOutfit:\s*(.+)$/m)?.[1] || "")
-      .trim()
-      .replace(/^['"]|['"]$/g, ""),
     hasHero: /^heroImage:\s*\S/m.test(body),
     draft: /^draft:\s*true\s*$/m.test(body),
   };
@@ -192,16 +253,16 @@ function extractBody(raw) {
 
 function pickScene(tags, title) {
   const haystacks = [...tags, title].map((t) => t.toLowerCase());
-  for (const [key, scene] of TOPIC_SCENES) {
-    if (haystacks.some((h) => h.includes(key))) return scene;
+  for (const [key, brief] of TOPIC_SCENES) {
+    if (haystacks.some((h) => h.includes(key))) return brief;
   }
-  return "the person sharing what they have learned from a glowing laptop, ideas taking flight around them";
+  return GENERIC_SCENE;
 }
 
-// Ask a chat model to turn THIS post into one concrete, unique visual scene so
+// Ask a chat model to art-direct THIS post into one concrete enterprise brief so
 // every hero looks different. Returns null on any failure so callers fall back
 // to the static topic map.
-async function deriveScene({ title, description, body }, cfg) {
+async function deriveBrief({ title, description, body }, cfg) {
   if (!cfg?.chatDeployment) return null;
 
   const url =
@@ -209,16 +270,16 @@ async function deriveScene({ title, description, body }, cfg) {
     `/chat/completions?api-version=${cfg.apiVersion}`;
 
   const system =
-    "You design editorial hero illustrations for a technical blog. Given a post, respond with ONLY a " +
-    'compact JSON object: {"scene": string, "outfit": string|null}. ' +
-    '"scene" is ONE vivid, concrete visual metaphor for what the recurring author is DOING, specific to ' +
-    "this post's exact topic and story: a single clause that starts with 'the person', names concrete " +
-    "objects/actions, 12-30 words. Make different posts look clearly different. Do NOT default to robots " +
-    "surrounding someone, holding a pointer, or presenting slides. " +
-    '"outfit" is a short (2-8 word) themed costume that clearly fits the post topic (e.g. a detective ' +
-    "trench coat for a security investigation, an architect's hard hat and blueprints for building " +
-    "something, a race kit for a getting-started sprint, a lab coat for experiments). Use null when the " +
-    "topic does not clearly suggest a costume. No text, logos, camera terms, markdown, or commentary.";
+    "You art-direct premium, photorealistic enterprise technology hero images for a Microsoft " +
+    "cloud architecture blog. Given a post, respond with ONLY a compact JSON object: " +
+    '{"primaryTopic": string, "environment": string, "subjects": string, "technology": string}. ' +
+    '"primaryTopic" is 2-6 words naming the article\'s core subject. ' +
+    '"environment" is ONE enterprise setting that fits (e.g. modern cloud operations center, AI ' +
+    "innovation lab, enterprise architecture workspace, secure datacenter visualization, executive " +
+    'briefing room). "subjects" is the concrete focal elements/people/architecture in the scene, ' +
+    '8-20 words, specific to this post. "technology" is the single technology or concept to make the ' +
+    "visual centerpiece, described abstractly with NO product logos, names, or readable UI. Make " +
+    "different posts look clearly different. No text, logos, camera terms, markdown, or commentary.";
   const user =
     `Title: ${title}\n\nSummary: ${description}\n\nExcerpt:\n${body.slice(0, 2000)}`;
 
@@ -236,20 +297,18 @@ async function deriveScene({ title, description, body }, cfg) {
           { role: "user", content: user },
         ],
         temperature: 0.9,
-        max_tokens: 160,
+        max_tokens: 220,
       }),
     });
     if (!res.ok) {
       const text = await res.text().catch(() => "");
-      console.warn(`  ! scene model returned ${res.status} ${res.statusText}; using topic fallback.\n${text}`);
+      console.warn(`  ! brief model returned ${res.status} ${res.statusText}; using topic fallback.\n${text}`);
       return null;
     }
     const json = await res.json();
     const content = json?.choices?.[0]?.message?.content?.trim();
     if (!content) return null;
 
-    // Strip any accidental code fences, then parse. Fall back to treating the
-    // whole reply as the scene with no outfit.
     const cleaned = content
       .replace(/^```(?:json)?/i, "")
       .replace(/```$/, "")
@@ -258,18 +317,18 @@ async function deriveScene({ title, description, body }, cfg) {
     try {
       parsed = JSON.parse(cleaned);
     } catch {
-      const scene = cleaned.replace(/^["']|["']$/g, "").replace(/\.$/, "").trim();
-      return scene ? { scene, outfit: null } : null;
+      return null;
     }
 
-    const scene = (parsed.scene || "").toString().replace(/\.$/, "").trim();
-    if (!scene) return null;
-    let outfit = parsed.outfit;
-    outfit = typeof outfit === "string" ? outfit.trim() : "";
-    if (!outfit || /^(null|none|n\/a)$/i.test(outfit)) outfit = null;
-    return { scene, outfit };
+    const clean = (v) => (typeof v === "string" ? v.trim().replace(/\.$/, "") : "");
+    const environment = clean(parsed.environment);
+    const subjects = clean(parsed.subjects);
+    const technology = clean(parsed.technology);
+    const primaryTopic = clean(parsed.primaryTopic);
+    if (!environment && !subjects && !technology) return null;
+    return { primaryTopic, environment, subjects, technology };
   } catch (err) {
-    console.warn(`  ! scene model failed (${err.message}); using topic fallback.`);
+    console.warn(`  ! brief model failed (${err.message}); using topic fallback.`);
     return null;
   }
 }
@@ -306,6 +365,64 @@ async function getAccessToken() {
   return cachedToken;
 }
 
+// --- Headshot reference ------------------------------------------------------
+// Load the author headshot once and normalise it to a PNG buffer suitable as a
+// reference image for the image-edit endpoint. Returns null (with a warning) if
+// the file is missing so generation can still proceed without a likeness.
+let cachedHeadshot;
+async function loadHeadshotPng() {
+  if (cachedHeadshot !== undefined) return cachedHeadshot;
+  if (!(await exists(HEADSHOT_PATH))) {
+    console.warn(
+      `  ! headshot not found at ${path.relative(ROOT, HEADSHOT_PATH)} \u2014 ` +
+        "generating without author likeness.",
+    );
+    cachedHeadshot = null;
+    return cachedHeadshot;
+  }
+  cachedHeadshot = await sharp(HEADSHOT_PATH)
+    .resize(1024, 1024, { fit: "inside", withoutEnlargement: true })
+    .png()
+    .toBuffer();
+  return cachedHeadshot;
+}
+
+// Request one image from Azure OpenAI. When a headshot buffer is supplied, use
+// the image-edit endpoint (multipart) so the person in the scene resembles the
+// author; otherwise use pure text-to-image generation.
+async function requestImage({ cfg, prompt, headshot }) {
+  const token = await getAccessToken();
+  const base =
+    `${cfg.endpoint.replace(/\/$/, "")}/openai/deployments/${cfg.deployment}`;
+
+  if (headshot) {
+    const form = new FormData();
+    form.append("prompt", prompt);
+    form.append("size", "1536x1024");
+    form.append("quality", "medium");
+    form.append("n", "1");
+    form.append(
+      "image",
+      new Blob([headshot], { type: "image/png" }),
+      "headshot.png",
+    );
+    return fetch(`${base}/images/edits?api-version=${cfg.apiVersion}`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: form,
+    });
+  }
+
+  return fetch(`${base}/images/generations?api-version=${cfg.apiVersion}`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ prompt, size: "1536x1024", quality: "medium", n: 1 }),
+  });
+}
+
 // --- Generation --------------------------------------------------------------
 async function generatePost(slug, { force, dryRun, cfg }) {
   const postPath = await resolvePostPath(slug);
@@ -326,33 +443,39 @@ async function generatePost(slug, { force, dryRun, cfg }) {
     return "skipped";
   }
 
-  const derived = await deriveScene(
+  const derived = await deriveBrief(
     { title: fm.title, description: fm.description, body: extractBody(raw) },
     cfg,
   );
-  const scene = derived?.scene || pickScene(fm.tags, fm.title);
-
-  // Prefer an outfit derived from the topic/content; otherwise assign a random
-  // one. Either way it must be unique across posts, so don't count this post's
-  // own existing outfit against itself when regenerating.
-  if (fm.heroOutfit) usedOutfits.delete(fm.heroOutfit.toLowerCase());
-  let outfit = derived?.outfit || null;
-  if (!outfit || usedOutfits.has(outfit.toLowerCase())) {
-    outfit = pickUnusedOutfit();
-  }
-  usedOutfits.add(outfit.toLowerCase());
+  const fallback = pickScene(fm.tags, fm.title);
+  const brief = {
+    environment: derived?.environment || fallback.environment,
+    subjects: derived?.subjects || fallback.subjects,
+    technology: derived?.technology || fallback.technology,
+  };
+  const primaryTopic = derived?.primaryTopic || fm.tags[0] || fm.title;
+  const secondaryTopics = fm.tags
+    .filter((t) => t.toLowerCase() !== primaryTopic.toLowerCase())
+    .join(", ");
+  const technologies = fm.tags.join(", ");
 
   const composition = pickComposition();
-  const outfitLine =
-    `Dress the subject as ${outfit}, keeping their face clearly recognisable. ` +
-    "Place a small, tasteful Microsoft logo (the four coloured squares) in an appropriate spot on " +
-    "the subject's shirt or outerwear, such as a chest emblem or sleeve patch, correctly proportioned.";
-  const prompt = `Scene: ${scene}. ${outfitLine} ${BASE_STYLE} ${composition}`;
-  const alt = `Illustration of Russ Rimmerman \u2014 ${scene}.`;
+  const withHeadshot = sceneHasHuman(brief);
+  const prompt = buildPrompt({
+    title: fm.title,
+    primaryTopic,
+    secondaryTopics,
+    summary: fm.description,
+    technologies,
+    brief,
+    composition,
+    withHeadshot,
+  });
+  const alt = `Cinematic enterprise hero image representing ${primaryTopic} \u2014 ${brief.environment}.`;
 
   console.log(`\n\u25b6 ${fm.title || slug}`);
   console.log(`  tags:   ${fm.tags.join(", ") || "(none)"}`);
-  console.log(`  outfit: ${outfit}`);
+  console.log(`  topic:  ${primaryTopic}`);
   console.log(`  prompt: ${prompt}`);
 
   if (dryRun) {
@@ -360,28 +483,16 @@ async function generatePost(slug, { force, dryRun, cfg }) {
     return "dry-run";
   }
 
-  const headshot = await readFile(cfg.headshotPath);
-  const form = new FormData();
-  form.append("prompt", prompt);
-  form.append("size", "1536x1024");
-  form.append("quality", "medium");
-  form.append("n", "1");
-  form.append(
-    "image",
-    new Blob([headshot], { type: "image/jpeg" }),
-    path.basename(cfg.headshotPath),
-  );
+  const headshot = withHeadshot ? await loadHeadshotPng() : null;
+  if (withHeadshot) {
+    console.log(
+      headshot
+        ? "  human:  yes \u2014 using headshot.jpg as the person's likeness reference."
+        : "  human:  yes \u2014 headshot unavailable, generating without likeness.",
+    );
+  }
 
-  const url =
-    `${cfg.endpoint.replace(/\/$/, "")}/openai/deployments/${cfg.deployment}` +
-    `/images/edits?api-version=${cfg.apiVersion}`;
-
-  const token = await getAccessToken();
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${token}` },
-    body: form,
-  });
+  const res = await requestImage({ cfg, prompt, headshot });
 
   if (!res.ok) {
     const text = await res.text().catch(() => "");
@@ -406,11 +517,10 @@ async function generatePost(slug, { force, dryRun, cfg }) {
   const relFromPost = `../../assets/blog/${slug}.webp`;
   const cleaned = raw
     .replace(/^heroImage:.*$\n?/m, "")
-    .replace(/^heroAlt:.*$\n?/m, "")
-    .replace(/^heroOutfit:.*$\n?/m, "");
+    .replace(/^heroAlt:.*$\n?/m, "");
   const patched = cleaned.replace(
     /^(title:.*)$/m,
-    `$1\nheroImage: ${relFromPost}\nheroAlt: ${JSON.stringify(alt)}\nheroOutfit: ${JSON.stringify(outfit)}`,
+    `$1\nheroImage: ${relFromPost}\nheroAlt: ${JSON.stringify(alt)}`,
   );
   await writeFile(postPath, patched);
   console.log(`  \u2714 set heroImage + heroAlt in ${path.relative(ROOT, postPath)}`);
@@ -465,18 +575,11 @@ if (!dryRun) {
   const deployment = process.env.AZURE_OPENAI_IMAGE_DEPLOYMENT;
   const chatDeployment = process.env.AZURE_OPENAI_CHAT_DEPLOYMENT || null;
   const apiVersion = process.env.AZURE_OPENAI_API_VERSION || "2025-04-01-preview";
-  const headshotPath = path.resolve(
-    ROOT,
-    process.env.HEADSHOT_PATH || "src/assets/author/headshot.jpg",
-  );
   if (!endpoint || !deployment) {
     fail(
       "Missing Azure OpenAI config. Set AZURE_OPENAI_ENDPOINT and " +
         "AZURE_OPENAI_IMAGE_DEPLOYMENT (in .env locally, or as CI env vars).",
     );
-  }
-  if (!(await exists(headshotPath))) {
-    fail(`Headshot not found at ${headshotPath}. Add it or set HEADSHOT_PATH.`);
   }
   if (!chatDeployment) {
     console.warn(
@@ -484,11 +587,10 @@ if (!dryRun) {
         "topic map, so hero scenes will be less content-specific.",
     );
   }
-  cfg = { endpoint, deployment, chatDeployment, apiVersion, headshotPath };
+  cfg = { endpoint, deployment, chatDeployment, apiVersion };
 }
 
 const results = { generated: 0, skipped: 0, failed: 0, "dry-run": 0 };
-await loadUsedOutfits();
 for (const slug of targets) {
   const status = await generatePost(slug, { force, dryRun, cfg });
   results[status] = (results[status] ?? 0) + 1;
