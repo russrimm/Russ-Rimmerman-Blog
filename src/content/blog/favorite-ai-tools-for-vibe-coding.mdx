@@ -237,6 +237,25 @@ It's the natural next step once you've felt how much a single dedicated reviewer
 changes the output: instead of bolting on judgment one specialist at a time, you
 start with a team that has it baked in.
 
+### Power Platform Skills: every Power Platform plugin in one install
+
+If you build on Microsoft Power Platform, the
+[Power Platform Skills](https://github.com/microsoft/power-platform-skills)
+repo is the plugin marketplace for GitHub Copilot (and Claude Code). It bundles
+every available skill — Power Pages, Model-driven Apps, Canvas Apps, Code Apps,
+Copilot Studio, ALM, and more — so the AI can scaffold, deploy, and manage Power
+Platform solutions through natural-language prompts instead of you memorizing
+each service's quirks.
+
+One command installs the lot:
+
+```powershell
+iwr https://raw.githubusercontent.com/microsoft/power-platform-skills/main/scripts/install.js -OutFile install.js; node install.js; del install.js
+```
+
+After that, the plugins auto-update and you can start building Power Platform
+apps by describing what you want.
+
 ## The through-line
 
 Every tool on this list does the same thing from a different angle: it closes the
