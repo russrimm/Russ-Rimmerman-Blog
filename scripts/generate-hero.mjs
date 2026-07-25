@@ -152,8 +152,45 @@ const COMPOSITIONS = [
   "Keep generous open atmosphere in the UPPER-RIGHT for a title overlay; ground the architecture in the lower-left with layered depth.",
 ];
 
-function pickComposition() {
-  return COMPOSITIONS[Math.floor(Math.random() * COMPOSITIONS.length)];
+// Wardrobe variety so the author is not wearing the same outfit in every hero.
+// Each entry is a self-contained wardrobe brief that reads as one confident,
+// modern, professional look for a Microsoft-adjacent cloud architect — never
+// costumey, never repeating the same silhouette twice.
+const OUTFITS = [
+  "a fitted charcoal wool blazer over a crisp white oxford shirt, open collar, no tie",
+  "a slate-blue merino crewneck sweater layered over a light grey collared shirt",
+  "a heather grey quarter-zip pullover in soft technical fabric over a plain tee",
+  "a navy Oxford button-down, sleeves rolled once, worn with a matte black analog watch",
+  "a black turtleneck under an unstructured deep-navy overcoat draped naturally over one shoulder",
+  "a warm cognac-brown suede bomber jacket over a black henley",
+  "a matte black merino polo shirt with a subtle woven texture",
+  "a deep forest green flannel overshirt worn open over a charcoal tee",
+  "a soft cream cable-knit sweater with rolled sleeves",
+  "a two-tone technical vest in dark navy and slate over a long-sleeve grey shirt",
+  "a fitted denim jacket in washed indigo over a plain white tee, with dark selvedge jeans",
+  "a slim dark plum blazer over a black crewneck",
+  "a lightweight steel-blue chambray shirt, sleeves cuffed, worn untucked over dark chinos",
+  "a chunky ribbed oatmeal cardigan over a soft heather tee, casually unbuttoned",
+  "a black bomber jacket with a subtle olive undertone over a slim grey henley",
+  "a warm terracotta sweatshirt in premium French terry, layered over a white tee",
+];
+
+// Deterministic pick from a slug hash so re-runs of the same post get the same
+// look, but each post in the series gets its own outfit.
+function hashSlug(slug) {
+  let h = 0;
+  for (let i = 0; i < slug.length; i += 1) {
+    h = (h * 31 + slug.charCodeAt(i)) >>> 0;
+  }
+  return h;
+}
+
+function pickComposition(slug) {
+  return COMPOSITIONS[hashSlug(`${slug}::composition`) % COMPOSITIONS.length];
+}
+
+function pickOutfit(slug) {
+  return OUTFITS[hashSlug(`${slug}::outfit`) % OUTFITS.length];
 }
 
 // Assemble the full art-direction prompt for one post from its filled-in brief.
@@ -166,6 +203,8 @@ function buildPrompt({
   brief,
   composition,
   withHeadshot,
+  outfit,
+  hasReferenceImages,
 }) {
   return [
     "You are an award-winning creative director known for Microsoft Build keynotes, Apple product launches, Wired magazine covers, Pixar storytelling, and blockbuster movie posters.",
@@ -187,7 +226,10 @@ function buildPrompt({
     "Color language (keep consistent across the series): deep navy, electric cyan, and soft violet, with one warm accent (amber or soft coral) used sparingly for emotional highlights. Subtle Microsoft-inspired aesthetics only \u2014 clean geometry and confident luminosity. Never include actual Microsoft, Azure, Copilot, or product logos, wordmarks, or exact UI.",
     "Tone: smart, slightly irreverent humor or playful exaggeration is encouraged when it serves the idea. The humor should feel like something a senior cloud architect would actually smile at \u2014 never cartoonish, meme-like, or childish. Remain technically relevant.",
     withHeadshot
-      ? "IMPORTANT: A single human figure appears in this scene. Render that one person to closely resemble the individual in the provided reference photograph \u2014 matching their facial features, hair, skin tone, and overall likeness \u2014 as a natural, cinematic part of the scene, in professional enterprise attire, integrated realistically with matching lighting and perspective. Do not add any other recognizable human faces, and never show the reference photo itself."
+      ? `IMPORTANT: A single human figure appears in this scene. Render that one person to closely resemble the individual in the provided reference headshot photograph \u2014 matching their facial features, hair, skin tone, and overall likeness \u2014 as a natural, cinematic part of the scene. Dress that person specifically in ${outfit}. Do not default to a generic suit; do not repeat a look from another image in this series. Integrate them realistically with matching lighting and perspective. Do not add any other recognizable human faces, and never show the reference photo itself.`
+      : "",
+    hasReferenceImages
+      ? "Additional attached images are visual context lifted directly from the article (screenshots, diagrams, product shots). Treat them ONLY as loose inspiration for palette, subject matter, materials, and mood so the hero visually echoes the story. Do NOT reproduce readable UI, dashboards, chrome, text, numbers, or logos from them. Reinterpret whatever they depict into the cinematic metaphor described above."
       : "",
     "Strictly avoid all common AI-image cliches: people typing on laptops, floating cloud icons, glowing brains, stock business people in suits, random holograms, circuit board backgrounds, generic robots, blue abstract technology backgrounds, and overly literal product screenshots or dashboards. No text, words, letters, numbers, logos, brand names, or watermarks anywhere in the image.",
     "Describe and render the final scene in rich, specific visual detail: lighting, atmosphere, composition, materials, and the single witty or unexpected detail that makes the image memorable.",
@@ -389,25 +431,125 @@ async function loadHeadshotPng() {
   return cachedHeadshot;
 }
 
-// Request one image from Azure OpenAI. When a headshot buffer is supplied, use
-// the image-edit endpoint (multipart) so the person in the scene resembles the
-// author; otherwise use pure text-to-image generation.
-async function requestImage({ cfg, prompt, headshot }) {
+// --- Article reference images -------------------------------------------------
+// Scan a post's raw MDX for image references (both `import x from "@/assets/..."`
+// and markdown `![alt](url)`) so we can pass those images to the image-edit
+// endpoint alongside the headshot. The model then uses them as visual context —
+// palette, subject matter, mood — without literally reproducing UI or text.
+const REF_IMAGE_EXTS = /\.(png|jpe?g|webp|gif|bmp|avif)$/i;
+const MAX_REFERENCE_IMAGES = 3;
+
+function collectPostImages(slug, raw) {
+  const refs = [];
+  const seen = new Set();
+
+  const push = (source) => {
+    if (!source) return;
+    const key = source.trim();
+    if (!key || seen.has(key)) return;
+    seen.add(key);
+    refs.push(key);
+  };
+
+  const importRe =
+    /import\s+[^\n;]*?from\s+["'](@\/[^"']+?\.(?:png|jpe?g|webp|gif|bmp|avif))["']/gi;
+  for (const m of raw.matchAll(importRe)) push(m[1]);
+
+  const mdRe = /!\[[^\]]*\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g;
+  for (const m of raw.matchAll(mdRe)) push(m[1]);
+
+  return refs.slice(0, MAX_REFERENCE_IMAGES);
+}
+
+function resolveImageRef(ref) {
+  if (!ref) return null;
+  if (ref.startsWith("data:")) return null;
+  if (/^https?:\/\//i.test(ref)) return { kind: "remote", value: ref };
+  if (ref.startsWith("@/")) {
+    return { kind: "local", value: path.join(ROOT, "src", ref.slice(2)) };
+  }
+  if (ref.startsWith("/")) {
+    return { kind: "local", value: path.join(ROOT, "public", ref.replace(/^\/+/, "")) };
+  }
+  return {
+    kind: "local",
+    value: path.join(BLOG_DIR, ref.replace(/^\.\//, "")),
+  };
+}
+
+async function loadReferenceImagePng(ref) {
+  const resolved = resolveImageRef(ref);
+  if (!resolved) return null;
+  const cleanPath = resolved.value.split("?")[0];
+  if (!REF_IMAGE_EXTS.test(cleanPath)) return null;
+
+  try {
+    let source;
+    if (resolved.kind === "remote") {
+      const res = await fetch(resolved.value);
+      if (!res.ok) {
+        console.warn(`  ! reference image ${resolved.value} returned ${res.status} \u2014 skipping.`);
+        return null;
+      }
+      source = Buffer.from(await res.arrayBuffer());
+    } else {
+      if (!(await exists(resolved.value))) {
+        console.warn(`  ! reference image not found: ${path.relative(ROOT, resolved.value)} \u2014 skipping.`);
+        return null;
+      }
+      source = resolved.value;
+    }
+
+    const buffer = await sharp(source)
+      .resize(1024, 1024, { fit: "inside", withoutEnlargement: true })
+      .png()
+      .toBuffer();
+    const base = path
+      .basename(cleanPath)
+      .replace(/\.[^.]+$/, "")
+      .replace(/[^a-z0-9_-]+/gi, "-")
+      .slice(0, 40) || "ref";
+    return { buffer, filename: `${base}.png` };
+  } catch (err) {
+    console.warn(`  ! reference image ${ref} failed to load: ${err.message}`);
+    return null;
+  }
+}
+
+async function loadReferenceImages(slug, raw) {
+  const refs = collectPostImages(slug, raw);
+  if (refs.length === 0) return [];
+  const loaded = await Promise.all(refs.map((r) => loadReferenceImagePng(r)));
+  return loaded.filter(Boolean);
+}
+
+// Request one image from Azure OpenAI. When any reference images are supplied
+// (author headshot, article screenshots), use the image-edit endpoint
+// (multipart) so the model can lean on them for likeness and visual context;
+// otherwise use pure text-to-image generation.
+async function requestImage({ cfg, prompt, headshot, refImages = [] }) {
   const token = await getAccessToken();
   const base =
     `${cfg.endpoint.replace(/\/$/, "")}/openai/deployments/${cfg.deployment}`;
 
-  if (headshot) {
+  const images = [];
+  if (headshot) images.push({ buffer: headshot, filename: "headshot.png" });
+  for (const r of refImages) images.push(r);
+
+  if (images.length > 0) {
     const form = new FormData();
     form.append("prompt", prompt);
     form.append("size", "1536x1024");
     form.append("quality", "medium");
     form.append("n", "1");
-    form.append(
-      "image",
-      new Blob([headshot], { type: "image/png" }),
-      "headshot.png",
-    );
+    const field = images.length > 1 ? "image[]" : "image";
+    for (const img of images) {
+      form.append(
+        field,
+        new Blob([img.buffer], { type: "image/png" }),
+        img.filename,
+      );
+    }
     return fetch(`${base}/images/edits?api-version=${cfg.apiVersion}`, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
@@ -461,8 +603,10 @@ async function generatePost(slug, { force, dryRun, cfg }) {
     .join(", ");
   const technologies = fm.tags.join(", ");
 
-  const composition = pickComposition();
+  const composition = pickComposition(slug);
+  const outfit = pickOutfit(slug);
   const withHeadshot = sceneHasHuman(brief);
+  const refImages = await loadReferenceImages(slug, raw);
   const prompt = buildPrompt({
     title: fm.title,
     primaryTopic,
@@ -472,12 +616,18 @@ async function generatePost(slug, { force, dryRun, cfg }) {
     brief,
     composition,
     withHeadshot,
+    outfit,
+    hasReferenceImages: refImages.length > 0,
   });
   const alt = `Cinematic enterprise hero image representing ${primaryTopic} \u2014 ${brief.environment}.`;
 
   console.log(`\n\u25b6 ${fm.title || slug}`);
   console.log(`  tags:   ${fm.tags.join(", ") || "(none)"}`);
   console.log(`  topic:  ${primaryTopic}`);
+  if (withHeadshot) console.log(`  outfit: ${outfit}`);
+  if (refImages.length > 0) {
+    console.log(`  refs:   ${refImages.length} article image(s) attached as visual context.`);
+  }
   console.log(`  prompt: ${prompt}`);
 
   if (dryRun) {
@@ -494,7 +644,7 @@ async function generatePost(slug, { force, dryRun, cfg }) {
     );
   }
 
-  const res = await requestImage({ cfg, prompt, headshot });
+  const res = await requestImage({ cfg, prompt, headshot, refImages });
 
   if (!res.ok) {
     const text = await res.text().catch(() => "");
