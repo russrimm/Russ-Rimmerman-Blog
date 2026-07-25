@@ -24,6 +24,10 @@ on:
         description: "Also generate images for draft posts"
         type: boolean
         default: false
+      regenerate_all:
+        description: "Regenerate hero images for ALL posts (overwrites existing)"
+        type: boolean
+        default: false
 
 # Never run two generation jobs at once (they both commit to main).
 concurrency:
@@ -57,15 +61,37 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Generate missing hero images
+      - name: Generate hero images
         env:
           AZURE_OPENAI_ENDPOINT: ${{ vars.AZURE_OPENAI_ENDPOINT }}
           AZURE_OPENAI_IMAGE_DEPLOYMENT: ${{ vars.AZURE_OPENAI_IMAGE_DEPLOYMENT }}
         run: |
+          extra_args=""
           if [ "${{ github.event.inputs.include_drafts }}" = "true" ]; then
-            npm run hero -- --missing --include-drafts
+            extra_args="--include-drafts"
+          fi
+
+          if [ "${{ github.event.inputs.regenerate_all }}" = "true" ]; then
+            # Regenerate every post (filter out drafts unless include_drafts=true,
+            # since positional slugs bypass the script's built-in draft filter).
+            include_drafts="${{ github.event.inputs.include_drafts }}"
+            slugs=""
+            while IFS= read -r file; do
+              if [ "$include_drafts" != "true" ] && grep -qE '^draft:\s*true\s*$' "$file"; then
+                echo "Skipping draft: $file"
+                continue
+              fi
+              slug=$(basename "$file")
+              slugs="$slugs ${slug%.*}"
+            done < <(find src/content/blog -maxdepth 1 -type f \( -name '*.mdx' -o -name '*.md' \) | sort)
+            if [ -z "$slugs" ]; then
+              echo "No blog posts to regenerate."; exit 0
+            fi
+            echo "Regenerating hero images for:$slugs"
+            # shellcheck disable=SC2086
+            npm run hero -- $slugs --force
           else
-            npm run hero -- --missing
+            npm run hero -- --missing $extra_args
           fi
 
       - name: Commit generated images
@@ -74,7 +100,11 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add -A
-            git commit -m "chore: auto-generate hero images for new posts [skip ci]"
+            if [ "${{ github.event.inputs.regenerate_all }}" = "true" ]; then
+              git commit -m "chore: regenerate all hero images [skip ci]"
+            else
+              git commit -m "chore: auto-generate hero images for new posts [skip ci]"
+            fi
             git push
           else
             echo "No new hero images to commit."

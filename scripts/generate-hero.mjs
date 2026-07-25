@@ -168,27 +168,29 @@ function buildPrompt({
   withHeadshot,
 }) {
   return [
-    'Award-winning enterprise technology photography and concept art. Generate a premium, photorealistic, cinematic 16:9 hero image for "Portal 360", a Microsoft Cloud Solution Architect technical blog. The image must visually represent the article\'s primary topic and read like the cover of a premium Microsoft architecture whitepaper or keynote — it tells a story, it is NOT generic AI art.',
+    "You are an award-winning creative director known for Microsoft Build keynotes, Apple product launches, Wired magazine covers, Pixar storytelling, and blockbuster movie posters.",
+    "Your job is NOT to simply illustrate the article. Your job is to create a single hero image that makes cloud architects, AI developers, and Microsoft professionals immediately stop scrolling and click.",
+    "Read the article context below carefully. Identify the single biggest idea. Then invent one memorable visual metaphor that communicates that idea with clarity and impact. The image must feel clever, cinematic, bold, and visually unexpected. Prefer metaphor over literal representation whenever a stronger visual exists.",
     `Article title: ${title}.`,
-    `Primary topic and visual centerpiece: ${primaryTopic}.`,
-    secondaryTopics ? `Secondary topics: ${secondaryTopics}.` : "",
-    summary ? `The image must communicate: ${summary}.` : "",
+    `Primary idea and visual centerpiece: ${primaryTopic}.`,
+    secondaryTopics ? `Secondary themes: ${secondaryTopics}.` : "",
+    summary ? `What the article is really about: ${summary}.` : "",
     technologies
-      ? `Key technologies (represent abstractly — never as logos, product names, or readable UI): ${technologies}.`
+      ? `Underlying technologies to reference conceptually (never as logos, wordmarks, or readable UI): ${technologies}.`
       : "",
-    `Environment: ${brief.environment}.`,
-    `Subjects: ${brief.subjects}.`,
+    `Scene seed \u2014 world/environment: ${brief.environment}.`,
+    `Scene seed \u2014 subjects/action: ${brief.subjects}.`,
+    `Scene seed \u2014 technology focus (treat as metaphor, not literal UI): ${brief.technology}.`,
+    "Subject handling: if the article discusses architecture, represent it as a physical world or structure; if it discusses automation, visualize it as a living machine; if it discusses AI agents, depict them as distinct characters with clear roles collaborating toward a shared mission.",
+    "Style direction: blockbuster movie poster energy fused with high-end editorial illustration and AAA concept art. Cinematic lighting, dramatic perspective, strong color contrast, and clear visual depth. One obvious focal point. Excellent thumbnail readability.",
+    `Composition: single 16:9 hero frame with one strong focal point and clean negative space suitable for a blog title overlay. ${composition}`,
+    "Color language (keep consistent across the series): deep navy, electric cyan, and soft violet, with one warm accent (amber or soft coral) used sparingly for emotional highlights. Subtle Microsoft-inspired aesthetics only \u2014 clean geometry and confident luminosity. Never include actual Microsoft, Azure, Copilot, or product logos, wordmarks, or exact UI.",
+    "Tone: smart, slightly irreverent humor or playful exaggeration is encouraged when it serves the idea. The humor should feel like something a senior cloud architect would actually smile at \u2014 never cartoonish, meme-like, or childish. Remain technically relevant.",
     withHeadshot
-      ? "IMPORTANT: A single human figure is present in this scene. Render that one person to closely resemble the individual in the provided reference photograph \u2014 matching their facial features, hair, skin tone, and overall likeness \u2014 as a natural, candid part of the scene, shown in professional enterprise attire and integrated realistically with matching lighting and perspective. Do not add any other recognizable human faces, and never show the reference photo itself."
+      ? "IMPORTANT: A single human figure appears in this scene. Render that one person to closely resemble the individual in the provided reference photograph \u2014 matching their facial features, hair, skin tone, and overall likeness \u2014 as a natural, cinematic part of the scene, in professional enterprise attire, integrated realistically with matching lighting and perspective. Do not add any other recognizable human faces, and never show the reference photo itself."
       : "",
-    `Technology focus: ${brief.technology}, depicted as abstract architectural forms — flowing data, connected cloud services, holographic architecture diagrams, digital workflows, knowledge graphs — never literal UI or screenshots.`,
-    "Style: photorealistic, ultra high detail, editorial quality, modern architecture visualization, Microsoft-inspired, subtly futuristic but not science fiction or cyberpunk.",
-    `Composition: wide cinematic 16:9 shot, one strong focal point, leading lines, layered foreground/midground/background, clean visual hierarchy, no clutter. ${composition}`,
-    "Lighting: professional cinematic lighting, cool Azure-inspired blues, subtle indigo/purple AI accents, clean white enterprise light, soft volumetric light, natural reflections, premium studio quality.",
-    "Color palette: Azure blue, indigo, white, slate gray, glass and steel, small accents of cyan with occasional AI-purple highlights, minimal warm color.",
-    "Camera: 35mm lens, wide shot, slightly elevated perspective, photorealistic depth of field, high dynamic range, professional architectural photography.",
-    "Mood: innovative, confident, intelligent, trustworthy, enterprise-ready, visionary.",
-    "Absolutely NO text, words, letters, numbers, logos, brand names, watermarks, UI screenshots, fake dashboards, clip art, cartoons, or anime. No robots unless robotics is the topic. No distorted hands, duplicated objects, oversaturated colors, neon cyberpunk look, fantasy, or stock-photo appearance.",
+    "Strictly avoid all common AI-image cliches: people typing on laptops, floating cloud icons, glowing brains, stock business people in suits, random holograms, circuit board backgrounds, generic robots, blue abstract technology backgrounds, and overly literal product screenshots or dashboards. No text, words, letters, numbers, logos, brand names, or watermarks anywhere in the image.",
+    "Describe and render the final scene in rich, specific visual detail: lighting, atmosphere, composition, materials, and the single witty or unexpected detail that makes the image memorable.",
   ]
     .filter(Boolean)
     .join(" ");
