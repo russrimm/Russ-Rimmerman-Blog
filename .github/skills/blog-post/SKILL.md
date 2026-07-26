@@ -69,7 +69,53 @@ This skill helps you write compelling, well-structured blog posts that engage re
 
 8. **Edit for web readability.** Short sentences. Active voice. Bullet lists for steps. Bold key terms. Cut every word that doesn't earn its place.
 
-9. **Run the Humanizer pass (required).** Before the post is done, run the `humanizer` skill (`.github/skills/humanizer/SKILL.md`) over the full draft. Strip AI-tell openers, empty transitions, marketing hype, and formulaic closes, and rewrite anything that sounds robotic into a warm, specific, human voice. A generated post is not finished until it passes the Humanizer definition of done.
+9. **Generate the hero image prompt.** When producing a hero image prompt for the post, follow the Hero Image Prompt Rules section below. The prompt must be tailored to the specific post — never reused verbatim — and must vary the subject's pose, expression, and setting between posts so hero images don't look interchangeable.
+
+10. **Run the Humanizer pass (required).** Before the post is done, run the `humanizer` skill (`.github/skills/humanizer/SKILL.md`) over the full draft. Strip AI-tell openers, empty transitions, marketing hype, and formulaic closes, and rewrite anything that sounds robotic into a warm, specific, human voice. A generated post is not finished until it passes the Humanizer definition of done.
+
+## Hero Image Prompt Rules
+
+Every hero image prompt generated for a post must follow these rules. They exist so the blog's hero images feel distinct, on-topic, and visually credible — not like the same stock template with the title swapped out.
+
+### Markerboard (content side of the image)
+- The scene must include a **realistic markerboard** (whiteboard or glass board) whose drawing is tightly tied to this specific post's topic. Generic squiggles, gears, or "AI brain" clip art are not acceptable.
+- If the post mentions specific **brands, products, or services** (e.g., Microsoft Copilot Studio, Power Platform, Azure, Dataverse, GitHub, Copilot, VS Code, Teams, SharePoint, Dynamics 365, etc.), include the applicable **official-looking logos** on the markerboard. Place them next to the components they represent.
+- Add **hand-drawn text labels** on the markerboard identifying key components discussed in the post — e.g., topic names, action names, table names, service names, arrows between them. The labels should look like they were written by a person with a dry-erase marker: slightly uneven letters, mixed case, occasional underline or box.
+- Include marker-style connectors (arrows, boxes, brackets) that show the relationships between the labeled components, not just a collage of logos.
+- The overall board should look like something a practitioner would actually sketch while explaining the post's concept out loud — not a polished infographic.
+
+### The person in the image
+- Vary the **pose, framing, and expression** from post to post. Do not default to the same "person standing centered, facing camera, smiling" composition every time. Rotate through options such as:
+  - Standing to one side of the board, gesturing at a labeled component.
+  - Mid-sketch with a marker in hand, writing or drawing on the board.
+  - Looking at the board (three-quarter or side profile) rather than at the camera.
+  - Seated at a nearby desk with the board behind, laptop or notebook visible.
+  - Leaning against a desk or counter with arms crossed, board visible over the shoulder.
+  - Walking past the board or stepping toward it, caught in motion.
+- Vary the **expression**: thoughtful, mid-explanation, laughing lightly, focused, mid-sentence — not always the same closed-mouth smile.
+- Vary the **camera angle and distance**: sometimes waist-up, sometimes wider environmental shots showing more of the room, sometimes closer with the board slightly out of focus behind.
+- Keep the **identity consistent** across posts (same person), but change enough of the surrounding variables that two hero images placed side by side clearly look like different moments.
+
+### Wardrobe
+- Dress the subject in **dressy casual / business casual** attire. Think: khaki or chino pants paired with a short-sleeved collared polo shirt. A tucked or half-tucked button-down with the sleeves rolled is also acceptable when variety is needed.
+- No suits, no ties, no hoodies, no graphic tees, no branded merch.
+- Vary the **polo/shirt color** between posts (navy, forest green, charcoal, burgundy, light blue, etc.) so the wardrobe isn't identical every time. Keep the palette muted and professional.
+
+### Setting
+- A modern, well-lit workspace: a small office, a corner of an open workspace, or a home office. Natural window light preferred over harsh overheads.
+- Vary secondary set dressing between posts (plants, a coffee cup, a laptop, a notebook, a monitor showing a muted screen) — but keep it uncluttered. The markerboard is the visual anchor.
+
+### Style and quality
+- Photorealistic, editorial tech-blog quality. Sharp focus on the subject and readable markerboard content. Shallow depth of field is fine, but the labeled components on the board must remain legible.
+- No text artifacts on walls or shirts. No fake corporate logos on the subject's clothing. Logos appear only on the markerboard where they belong.
+
+### Prompt shape
+When emitting the hero image prompt, structure it (in prose, not bullets) so it covers, in order:
+1. Scene and camera framing (including the specific pose/angle choice for this post).
+2. Subject description, expression, and wardrobe (with the specific polo/shirt color chosen for this post).
+3. Markerboard contents: which logos appear, which components are labeled by hand, and how they connect — named explicitly from this post's content.
+4. Setting and lighting.
+5. Style descriptors (photorealistic, editorial, natural light, shallow depth of field, legible board text).
 
 ## Examples
 
