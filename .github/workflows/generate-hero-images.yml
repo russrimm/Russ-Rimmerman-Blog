@@ -44,6 +44,17 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      # The Entra app's federated identity credential trusts only
+      # refs/heads/main, so Azure OIDC login fails on any other ref. Fail
+      # fast with a clear message instead of burning ~90s on a login error.
+      - name: Guard against non-main dispatches
+        if: github.ref != 'refs/heads/main'
+        run: |
+          echo "::error::This workflow can only run against the 'main' branch."
+          echo "::error::The Azure federated identity credential is scoped to refs/heads/main."
+          echo "::error::Re-run 'Generate hero images' with 'Use workflow from' set to 'main'."
+          exit 1
+
       - name: Set up Node.js
         uses: actions/setup-node@v5
         with:
