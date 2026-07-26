@@ -144,12 +144,13 @@ const GENERIC_SCENE = {
 };
 
 // Randomised framing so heroes don't all share the same angle. One is picked per
-// image. Each keeps large negative space on one side for a title overlay.
+// image. Each keeps a large, clean area for a title overlay while placing the
+// author and the marker board naturally in the training room.
 const COMPOSITIONS = [
-  "Keep large, clean negative space on the LEFT for a title overlay; anchor the focal point in the right two-thirds with strong leading lines.",
-  "Keep large, clean negative space on the RIGHT for a title overlay; anchor the focal point in the left two-thirds with strong leading lines.",
-  "Keep generous open sky/atmosphere in the UPPER-LEFT for a title overlay; ground the architecture in the lower two-thirds.",
-  "Keep generous open atmosphere in the UPPER-RIGHT for a title overlay; ground the architecture in the lower-left with layered depth.",
+  "Medium-wide three-quarter angle from the audience side of the room, camera slightly low: the author stands to the LEFT of frame at the whiteboard mid-drawing, the finished illustration fills the RIGHT two-thirds of the board, seated attendees blur softly in the foreground. Leave clean, quiet space in the UPPER-LEFT for a title overlay.",
+  "Medium-wide three-quarter angle from behind and to the side of a few attendees, camera at seated eye-level: the author stands to the RIGHT of frame at the marker board, the completed diagram anchors the LEFT half of the board, out-of-focus heads and shoulders line the lower-foreground. Leave clean space in the UPPER-RIGHT for a title overlay.",
+  "Wider training-room shot, camera slightly elevated near the back of the room: the author and the whiteboard fill the center-left, rows of engaged attendees fan out in the mid-ground, warm room lighting overhead. Leave open architectural space along the TOP of the frame for a title overlay.",
+  "Cinematic medium shot centered on the whiteboard from an oblique angle: the author is turned partially toward the audience mid-explanation, marker in hand, the finished illustration dominates the board; two or three attentive attendees are visible in soft-focus profile on one side. Keep the LEFT third clean and uncluttered for a title overlay.",
 ];
 
 // Wardrobe variety so the author is not wearing the same outfit in every hero.
@@ -193,7 +194,9 @@ function pickOutfit(slug) {
   return OUTFITS[hashSlug(`${slug}::outfit`) % OUTFITS.length];
 }
 
-// Assemble the full art-direction prompt for one post from its filled-in brief.
+// Assemble the full art-direction prompt for one post. The scene is fixed:
+// the author teaching a small training room, drawing the article's core idea
+// on a large whiteboard so a completed hand-drawn diagram is already visible.
 function buildPrompt({
   title,
   primaryTopic,
@@ -207,32 +210,32 @@ function buildPrompt({
   hasReferenceImages,
 }) {
   return [
-    "You are an award-winning creative director known for Microsoft Build keynotes, Apple product launches, Wired magazine covers, Pixar storytelling, and blockbuster movie posters.",
-    "Your job is NOT to simply illustrate the article. Your job is to create a single hero image that makes cloud architects, AI developers, and Microsoft professionals immediately stop scrolling and click.",
-    "Read the article context below carefully. Identify the single biggest idea. Then invent one memorable visual metaphor that communicates that idea with clarity and impact. The image must feel clever, cinematic, bold, and visually unexpected. Prefer metaphor over literal representation whenever a stronger visual exists.",
+    "You are a world-class editorial photographer and visual storyteller shooting a hero image for a technical blog post.",
+    "The scene, style, and setting are FIXED across every post in this series \u2014 only the content of the whiteboard drawing and the specific topic-driven details change.",
+    "SCENE (mandatory, do not reinterpret): a bright, modern corporate training room. The author stands at a large, clean white marker board (dry-erase whiteboard) at the front of the room, mid-explanation, holding a dry-erase marker in one hand with the marker cap in the other or tucked into a pocket. The author is turned partially toward a small audience of engaged adult professionals seated at rows of tables or chairs. Attendees are clearly listening, leaning in, some taking notes on laptops or notebooks \u2014 attentive, interested, respectful body language, no phones out, no bored expressions. Warm, even overhead lighting; a hint of morning window light from one side; realistic contemporary training-room details (subtle acoustic ceiling, simple modern chairs, a table with water glasses or coffee cups in the mid-ground).",
+    "MARKER BOARD CONTENT: on the whiteboard, render a fully COMPLETED, confident, hand-drawn illustration in dry-erase marker that visually explains the topic of this specific blog post. It must look drawn BY HAND with a real marker \u2014 slightly imperfect strokes, natural marker weight variation, small ink bleed at line ends, occasional wobble \u2014 not printed, not vector, not a projected slide. Use only black, blue, and red (or orange) dry-erase colors. The drawing should be legible from across the room and read as a real, useful teaching diagram: boxes, arrows, flow lines, simple icons, small stick-figures, cloud/server shapes, layered rectangles, callout circles, connecting arrows with heads \u2014 whatever visually communicates THIS post's specific idea. The author appears to be actively completing one part of it (marker touching the board), while most of the diagram is already finished. AVOID any legible words, sentences, code, labels, brand names, product names, logos, wordmarks, or readable UI on the board \u2014 pure shapes, symbols, and arrows only. Any tiny incidental scribbles should be unreadable squiggles, not real letters.",
     `Article title: ${title}.`,
-    `Primary idea and visual centerpiece: ${primaryTopic}.`,
-    secondaryTopics ? `Secondary themes: ${secondaryTopics}.` : "",
-    summary ? `What the article is really about: ${summary}.` : "",
+    `Primary idea to draw on the board: ${primaryTopic}.`,
+    secondaryTopics ? `Secondary themes that can appear as smaller connected diagram fragments on the board: ${secondaryTopics}.` : "",
+    summary ? `What the article is really about (use this to decide what the diagram depicts): ${summary}.` : "",
     technologies
-      ? `Underlying technologies to reference conceptually (never as logos, wordmarks, or readable UI): ${technologies}.`
+      ? `Underlying technologies to reference CONCEPTUALLY in the diagram \u2014 never as logos, wordmarks, or readable UI, only as generic shapes (clouds, stacked layers, gears, agents-as-figures, arrows, databases-as-cylinders, etc.): ${technologies}.`
       : "",
-    `Scene seed \u2014 world/environment: ${brief.environment}.`,
-    `Scene seed \u2014 subjects/action: ${brief.subjects}.`,
-    `Scene seed \u2014 technology focus (treat as metaphor, not literal UI): ${brief.technology}.`,
-    "Subject handling: if the article discusses architecture, represent it as a physical world or structure; if it discusses automation, visualize it as a living machine; if it discusses AI agents, depict them as distinct characters with clear roles collaborating toward a shared mission.",
-    "Style direction: blockbuster movie poster energy fused with high-end editorial illustration and AAA concept art. Cinematic lighting, dramatic perspective, strong color contrast, and clear visual depth. One obvious focal point. Excellent thumbnail readability.",
-    `Composition: single 16:9 hero frame with one strong focal point and clean negative space suitable for a blog title overlay. ${composition}`,
-    "Color language (keep consistent across the series): deep navy, electric cyan, and soft violet, with one warm accent (amber or soft coral) used sparingly for emotional highlights. Subtle Microsoft-inspired aesthetics only \u2014 clean geometry and confident luminosity. Never include actual Microsoft, Azure, Copilot, or product logos, wordmarks, or exact UI.",
-    "Tone: smart, slightly irreverent humor or playful exaggeration is encouraged when it serves the idea. The humor should feel like something a senior cloud architect would actually smile at \u2014 never cartoonish, meme-like, or childish. Remain technically relevant.",
+    `Scene seed \u2014 subject matter to depict on the board: ${brief.subjects}.`,
+    `Scene seed \u2014 technology focus for the board diagram (treat as metaphor, not literal UI): ${brief.technology}.`,
+    "Subject handling for the drawing: if the article discusses architecture, draw a layered system diagram with connected components; if it discusses automation, draw a flow diagram with steps, arrows, and gears; if it discusses AI agents, draw distinct stick-figure agents with roles and arrows between them; if it discusses security or permissions, draw locks, keys, boundaries, and gates; if it discusses data, draw databases, pipelines, and flow lines. Pick whichever best fits THIS post.",
+    `Composition: single 16:9 hero frame. ${composition}`,
+    "Style direction: contemporary editorial photography, natural but flattering lighting, shallow-to-medium depth of field so the author and the board are the sharpest elements while attendees soften slightly in the foreground/mid-ground. Real-world materials and textures: marker sheen on the board, subtle glare, matte fabric, warm wood or neutral carpet, realistic skin tones. Not stylized, not illustrated, not cartoon \u2014 this is a real-photograph aesthetic.",
+    "Color language accent (keep consistent across the series): deep navy, electric cyan, and soft violet appear in room accents (chair backs, wall art, window film, a subtle wall stripe), with one warm accent (amber or soft coral) used sparingly in the lighting or a small object. The whiteboard drawing itself uses only marker colors (black, blue, red/orange). Never include actual Microsoft, Azure, Copilot, or any real product logos, wordmarks, or exact UI \u2014 anywhere in the image.",
+    "Tone: warm, credible, and human. The author looks confident and mid-thought \u2014 not smug, not stiff, not a stock \"presenter smile.\" The audience looks like a real, mixed group of adult professionals genuinely interested in the topic.",
     withHeadshot
-      ? `IMPORTANT: A single human figure appears in this scene. Render that one person to closely resemble the individual in the provided reference headshot photograph \u2014 matching their facial features, hair, skin tone, and overall likeness \u2014 as a natural, cinematic part of the scene. Dress that person specifically in ${outfit}. Do not default to a generic suit; do not repeat a look from another image in this series. Integrate them realistically with matching lighting and perspective. Do not add any other recognizable human faces, and never show the reference photo itself.`
+      ? `IMPORTANT: the author is the single named human in this scene. Render that person to closely resemble the individual in the provided reference headshot photograph \u2014 matching their facial features, hair, skin tone, glasses (if any), and overall likeness. Dress that person specifically in ${outfit}. Do not default to a generic suit; do not repeat a look from another image in this series. Integrate them with realistic lighting, natural posture (one hand drawing on the board, body angled slightly toward the audience), and matching perspective. Never show the reference headshot photo itself in the frame.`
       : "",
     hasReferenceImages
-      ? "Additional attached images are visual context lifted directly from the article (screenshots, diagrams, product shots). Treat them ONLY as loose inspiration for palette, subject matter, materials, and mood so the hero visually echoes the story. Do NOT reproduce readable UI, dashboards, chrome, text, numbers, or logos from them. Reinterpret whatever they depict into the cinematic metaphor described above."
+      ? "Additional attached images are visual context lifted directly from the article (screenshots, diagrams, product shots). Use them ONLY to decide WHAT the author is drawing on the whiteboard: mirror their overall structure, relationships, and subject matter as a hand-drawn marker translation. Do NOT reproduce readable UI, dashboards, chrome, text, numbers, or logos from them \u2014 translate everything into pure hand-drawn boxes, arrows, and simple symbols on the board."
       : "",
-    "Strictly avoid all common AI-image cliches: people typing on laptops, floating cloud icons, glowing brains, stock business people in suits, random holograms, circuit board backgrounds, generic robots, blue abstract technology backgrounds, and overly literal product screenshots or dashboards. No text, words, letters, numbers, logos, brand names, or watermarks anywhere in the image.",
-    "Describe and render the final scene in rich, specific visual detail: lighting, atmosphere, composition, materials, and the single witty or unexpected detail that makes the image memorable.",
+    "Strictly avoid: people typing on laptops as the focal point, floating holograms, glowing brains, circuit-board backgrounds, generic robots, blue abstract technology backgrounds, projector screens as the focal point (the whiteboard is the focal point), any legible words / letters / numbers / code / logos / brand names / watermarks anywhere in the image including on the board, and any cartoon or illustrated rendering style (photographic only).",
+    "Describe and render the final scene in rich, specific visual detail: room lighting, atmosphere, composition, materials, the exact hand-drawn diagram on the board that explains this specific post, and the subtle human details in the audience that make the moment feel real.",
   ]
     .filter(Boolean)
     .join(" ");
@@ -605,7 +608,10 @@ async function generatePost(slug, { force, dryRun, cfg }) {
 
   const composition = pickComposition(slug);
   const outfit = pickOutfit(slug);
-  const withHeadshot = sceneHasHuman(brief);
+  // The whiteboard/training-room scene always features the author, so we
+  // always pass the headshot as a likeness reference regardless of the
+  // brief text.
+  const withHeadshot = true;
   const refImages = await loadReferenceImages(slug, raw);
   const prompt = buildPrompt({
     title: fm.title,
