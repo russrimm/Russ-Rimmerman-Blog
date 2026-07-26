@@ -143,37 +143,45 @@ const GENERIC_SCENE = {
   technology: "enterprise cloud architecture and connected digital services",
 };
 
-// Randomised framing so heroes don't all share the same angle. One is picked per
-// image. Each keeps a large, clean area for a title overlay while placing the
-// author and the marker board naturally in the training room.
+// Randomised framing so heroes don't all share the same angle. One is picked
+// per image. Each keeps the intimate portrait-at-a-whiteboard feel of the
+// reference photo: the author is the only person in the frame, in tight
+// medium/close-up, in profile or three-quarter, actively drawing on a large
+// dry-erase board that fills most of the background. Every variant leaves a
+// clean, quiet region for a title overlay.
 const COMPOSITIONS = [
-  "Medium-wide three-quarter angle from the audience side of the room, camera slightly low: the author stands to the LEFT of frame at the whiteboard mid-drawing, the finished illustration fills the RIGHT two-thirds of the board, seated attendees blur softly in the foreground. Leave clean, quiet space in the UPPER-LEFT for a title overlay.",
-  "Medium-wide three-quarter angle from behind and to the side of a few attendees, camera at seated eye-level: the author stands to the RIGHT of frame at the marker board, the completed diagram anchors the LEFT half of the board, out-of-focus heads and shoulders line the lower-foreground. Leave clean space in the UPPER-RIGHT for a title overlay.",
-  "Wider training-room shot, camera slightly elevated near the back of the room: the author and the whiteboard fill the center-left, rows of engaged attendees fan out in the mid-ground, warm room lighting overhead. Leave open architectural space along the TOP of the frame for a title overlay.",
-  "Cinematic medium shot centered on the whiteboard from an oblique angle: the author is turned partially toward the audience mid-explanation, marker in hand, the finished illustration dominates the board; two or three attentive attendees are visible in soft-focus profile on one side. Keep the LEFT third clean and uncluttered for a title overlay.",
+  "Tight editorial medium close-up from the LEFT side of the author, camera at eye level: the author's head and shoulders occupy the LEFT third of the frame in sharp profile, glasses catching the light, one hand actively drawing on the whiteboard with a black dry-erase marker. The clean white marker board fills the RIGHT two-thirds of the frame, with the completed hand-drawn diagram already covering most of it. Background beyond the board is a soft, out-of-focus modern office wall (warm wood panel or neutral matte plaster). Leave quiet negative space in the UPPER-RIGHT of the whiteboard for a title overlay.",
+  "Tight editorial medium close-up from the RIGHT side of the author, camera at eye level: the author's head and shoulders occupy the RIGHT third of the frame in sharp three-quarter profile, glasses catching the light, marker in hand mid-stroke on the board. The whiteboard fills the LEFT two-thirds of the frame with a completed hand-drawn diagram. Background is a soft, out-of-focus modern office (neutral wall, hint of warm wood). Leave quiet negative space in the UPPER-LEFT of the whiteboard for a title overlay.",
+  "Cinematic close portrait shot from a low three-quarter angle behind the author's shoulder, camera just above waist height: the author is in the LEFT foreground, softly framed, one hand raised drawing on the board with a dry-erase marker; the whiteboard dominates the frame at a slight perspective angle, the completed diagram wrapping most of its surface in confident hand-drawn marker. Shallow depth of field, warm studio-office lighting. Leave quiet negative space in the UPPER-RIGHT of the whiteboard for a title overlay.",
+  "Cinematic close portrait shot from a low three-quarter angle behind the author's opposite shoulder, camera just above waist height: the author is in the RIGHT foreground, softly framed, one hand raised drawing on the board with a dry-erase marker; the whiteboard dominates the frame from a slight perspective angle, the completed diagram wrapping most of its surface in hand-drawn marker. Shallow depth of field, warm studio-office lighting. Leave quiet negative space in the UPPER-LEFT of the whiteboard for a title overlay.",
 ];
 
 // Wardrobe variety so the author is not wearing the same outfit in every hero.
-// Each entry is a self-contained wardrobe brief that reads as one confident,
-// modern, professional look for a Microsoft-adjacent cloud architect — never
-// costumey, never repeating the same silhouette twice.
+// The list intentionally alternates BUSINESS PROFESSIONAL looks (tailored suit
+// or sport coat with dress shirt, often with a tie) and BUSINESS CASUAL looks
+// (blazer with open collar, sweater over collared shirt, quality knit, etc.).
+// Every entry reads as one confident, modern, workplace-appropriate look —
+// never costumey, never repeating the same silhouette twice.
 const OUTFITS = [
+  // Business professional
+  "a crisp white spread-collar dress shirt, sleeves cuffed neatly at the wrist, with a slim charcoal knit tie",
+  "a tailored navy two-piece suit worn with a light blue dress shirt and a burgundy silk tie",
+  "a charcoal grey wool suit with a subtle pinstripe, worn with a crisp white dress shirt and a deep navy silk tie",
+  "a medium grey sport coat over a pale blue dress shirt with a woven forest-green tie",
+  "a black notch-lapel suit jacket over a white dress shirt with a slim black knit tie",
+  "a deep navy blazer with subtle texture over a white dress shirt and a small-pattern silk tie in muted burgundy",
+  "a soft brown tweed sport coat over a cream dress shirt with a knit chocolate-brown tie",
+
+  // Business casual
   "a fitted charcoal wool blazer over a crisp white oxford shirt, open collar, no tie",
-  "a slate-blue merino crewneck sweater layered over a light grey collared shirt",
-  "a heather grey quarter-zip pullover in soft technical fabric over a plain tee",
+  "a slate-blue merino crewneck sweater layered over a light grey collared shirt, collar peeking out cleanly",
   "a navy Oxford button-down, sleeves rolled once, worn with a matte black analog watch",
-  "a black turtleneck under an unstructured deep-navy overcoat draped naturally over one shoulder",
-  "a warm cognac-brown suede bomber jacket over a black henley",
-  "a matte black merino polo shirt with a subtle woven texture",
-  "a deep forest green flannel overshirt worn open over a charcoal tee",
-  "a soft cream cable-knit sweater with rolled sleeves",
-  "a two-tone technical vest in dark navy and slate over a long-sleeve grey shirt",
-  "a fitted denim jacket in washed indigo over a plain white tee, with dark selvedge jeans",
-  "a slim dark plum blazer over a black crewneck",
+  "a matte black merino quarter-zip pullover over a plain white tee, worn with dark chinos",
+  "a heather grey merino v-neck sweater layered over a light blue collared shirt",
   "a lightweight steel-blue chambray shirt, sleeves cuffed, worn untucked over dark chinos",
-  "a chunky ribbed oatmeal cardigan over a soft heather tee, casually unbuttoned",
-  "a black bomber jacket with a subtle olive undertone over a slim grey henley",
-  "a warm terracotta sweatshirt in premium French terry, layered over a white tee",
+  "a slim dark plum blazer over a black crewneck sweater",
+  "a soft cream cable-knit sweater with a collared shirt peeking out at the neck, sleeves rolled",
+  "a black turtleneck under an unstructured deep-navy overcoat draped naturally over one shoulder",
 ];
 
 // Deterministic pick from a slug hash so re-runs of the same post get the same
@@ -195,8 +203,9 @@ function pickOutfit(slug) {
 }
 
 // Assemble the full art-direction prompt for one post. The scene is fixed:
-// the author teaching a small training room, drawing the article's core idea
-// on a large whiteboard so a completed hand-drawn diagram is already visible.
+// a tight editorial portrait of the author at a large whiteboard, actively
+// drawing the article's core idea, with the completed hand-drawn diagram
+// already visible on the board.
 function buildPrompt({
   title,
   primaryTopic,
@@ -212,8 +221,8 @@ function buildPrompt({
   return [
     "You are a world-class editorial photographer and visual storyteller shooting a hero image for a technical blog post.",
     "The scene, style, and setting are FIXED across every post in this series \u2014 only the content of the whiteboard drawing and the specific topic-driven details change.",
-    "SCENE (mandatory, do not reinterpret): a bright, modern corporate training room. The author stands at a large, clean white marker board (dry-erase whiteboard) at the front of the room, mid-explanation, holding a dry-erase marker in one hand with the marker cap in the other or tucked into a pocket. The author is turned partially toward a small audience of engaged adult professionals seated at rows of tables or chairs. Attendees are clearly listening, leaning in, some taking notes on laptops or notebooks \u2014 attentive, interested, respectful body language, no phones out, no bored expressions. Warm, even overhead lighting; a hint of morning window light from one side; realistic contemporary training-room details (subtle acoustic ceiling, simple modern chairs, a table with water glasses or coffee cups in the mid-ground).",
-    "MARKER BOARD CONTENT: on the whiteboard, render a fully COMPLETED, confident, hand-drawn illustration in dry-erase marker that visually explains the topic of this specific blog post. It must look drawn BY HAND with a real marker \u2014 slightly imperfect strokes, natural marker weight variation, small ink bleed at line ends, occasional wobble \u2014 not printed, not vector, not a projected slide. Use only black, blue, and red (or orange) dry-erase colors. The drawing should read as a real, useful teaching diagram: boxes, arrows, flow lines, simple icons, small stick-figures, cloud/server shapes, layered rectangles, callout circles, and connecting arrows with arrowheads showing relationships between components. The author appears to be actively completing one part of it (marker touching the board), while most of the diagram is already finished.",
+    "SCENE (mandatory, do not reinterpret): a tight, editorial close-up portrait of the author at a large, clean white dry-erase marker board in a modern, softly-lit office or studio. The author is the ONLY person in the frame — do not add an audience, attendees, coworkers, or any other people. The author is shown from roughly mid-chest up, turned in profile or three-quarter toward the board, one hand actively drawing on the board with a black dry-erase marker (marker touching the surface mid-stroke). The board is clean, matte-white, and dominates most of the frame with a completed hand-drawn diagram already on it. The background beyond the board is a soft, out-of-focus modern interior — a warm wood panel, wood door, or neutral matte wall — never a training room, never a classroom, never a boardroom. Natural, flattering studio-quality light falls from the front and slightly to one side, catching the author's glasses and the sheen of the marker board.",
+    "MARKER BOARD CONTENT (must reflect THIS specific post): on the whiteboard, render a fully COMPLETED, confident, hand-drawn illustration in dry-erase marker that visually explains the topic of THIS specific blog post \u2014 not a generic tech diagram. The drawing must clearly correspond to the post's title, primary idea, summary, and technologies below: pick the shapes, arrows, labels, and icons that a practitioner would actually sketch while teaching this exact article. It must look drawn BY HAND with a real marker \u2014 slightly imperfect strokes, natural marker weight variation, small ink bleed at line ends, occasional wobble \u2014 not printed, not vector, not a projected slide. Use primarily black dry-erase marker with restrained accents of blue and red (or orange) to highlight key elements. Include a short hand-lettered TITLE at the top of the board (derived from this post's title), a small labeled sequence of boxes or icons with connecting arrows showing the main flow, a short numbered or bulleted list of key steps or concepts down one side, and a small callout cloud with a memorable summary phrase from the post. The author appears to be actively completing one part of it (marker touching the board), while most of the diagram is already finished.",
     "MARKER BOARD LABELS AND LOGOS (required): the diagram must include hand-drawn text labels next to the components they describe \u2014 topic names, service names, action names, table names, short arrow verbs \u2014 written as if by a person with a dry-erase marker (slightly uneven letters, mixed case, occasional underline or box around a key term). Where a real brand, product, or service from this post's tags is depicted, draw a small, recognizable, sketched approximation of that product's official logo in marker next to its label (for example: Microsoft, Azure, Copilot, Copilot Studio, Power Platform, Dataverse, GitHub, VS Code, Teams, SharePoint, Dynamics 365, Foundry, Intune, Entra, ServiceNow). Sketched logos and short official product names on the board are explicitly ALLOWED and encouraged \u2014 they make the diagram feel like something a practitioner actually drew while explaining this post.",
     "SPELLING RULE (critical): every visible word on the whiteboard must be a real, correctly spelled English or product word taken from this post's title, tags, or summary. Prefer short, common words and short official product names (one to three words each) so the model reliably spells them correctly. Do NOT invent words, do NOT produce jumbled or partial letters, and do NOT leave squiggle-text where a label belongs. If a phrase cannot be rendered legibly and correctly spelled, replace it with a shorter labeled box or a simple icon rather than garbled text. Only render labels the model can spell perfectly.",
     `Article title: ${title}.`,
@@ -227,17 +236,17 @@ function buildPrompt({
     `Scene seed \u2014 technology focus for the board diagram (treat as metaphor, not literal UI): ${brief.technology}.`,
     "Subject handling for the drawing: if the article discusses architecture, draw a layered system diagram with connected components; if it discusses automation, draw a flow diagram with steps, arrows, and gears; if it discusses AI agents, draw distinct stick-figure agents with roles and arrows between them; if it discusses security or permissions, draw locks, keys, boundaries, and gates; if it discusses data, draw databases, pipelines, and flow lines. Pick whichever best fits THIS post.",
     `Composition: single 16:9 hero frame. ${composition}`,
-    "Style direction: contemporary editorial photography, natural but flattering lighting, shallow-to-medium depth of field so the author and the board are the sharpest elements while attendees soften slightly in the foreground/mid-ground. Real-world materials and textures: marker sheen on the board, subtle glare, matte fabric, warm wood or neutral carpet, realistic skin tones. Not stylized, not illustrated, not cartoon \u2014 this is a real-photograph aesthetic.",
-    "Color language accent (keep consistent across the series): deep navy, electric cyan, and soft violet appear in room accents (chair backs, wall art, window film, a subtle wall stripe), with one warm accent (amber or soft coral) used sparingly in the lighting or a small object. The whiteboard drawing itself uses only marker colors (black, blue, red/orange). Logos and product names appear ONLY on the whiteboard \u2014 never on the author's clothing, never on walls, never on window film, and never as room signage or watermarks.",
-    "Tone: warm, credible, and human. The author looks confident and mid-thought \u2014 not smug, not stiff, not a stock \"presenter smile.\" The audience looks like a real, mixed group of adult professionals genuinely interested in the topic.",
+    "Style direction: contemporary editorial portrait photography, natural but flattering studio-quality lighting, shallow-to-medium depth of field so the author's face and the whiteboard content are the sharpest elements while the background wall softens into a gentle blur. Real-world materials and textures: marker sheen on the board, subtle glare, matte fabric, warm wood grain, realistic skin tones and hair detail. Not stylized, not illustrated, not cartoon \u2014 this is a real-photograph aesthetic.",
+    "Color language accent (keep consistent across the series): the background allows quiet accents of warm wood, deep navy, or soft neutral plaster; there is no colored wall art, window film, or signage in the frame. The whiteboard drawing itself uses primarily black marker with restrained blue and red (or orange) highlights. Logos and product names appear ONLY on the whiteboard \u2014 never on the author's clothing, never on walls, and never as room signage or watermarks.",
+    "Tone: warm, credible, and human. The author looks confident and mid-thought \u2014 focused on the board, not the camera; not smug, not stiff, not a stock \"presenter smile.\"",
     withHeadshot
-      ? `IMPORTANT: the author is the single named human in this scene. Render that person to closely resemble the individual in the provided reference headshot photograph \u2014 matching their facial features, hair, skin tone, glasses (if any), and overall likeness. Dress that person specifically in ${outfit}. Do not default to a generic suit; do not repeat a look from another image in this series. Integrate them with realistic lighting, natural posture (one hand drawing on the board, body angled slightly toward the audience), and matching perspective. Never show the reference headshot photo itself in the frame.`
+      ? `IMPORTANT: the author is the single named human in this scene. Render that person to closely resemble the individual in the provided reference headshot photograph \u2014 matching their facial features, hair, skin tone, glasses (if any), facial hair, and overall likeness. Dress that person specifically in ${outfit}. Do not default to a random look; do not repeat a look from another image in this series. Pose them in profile or three-quarter facing the whiteboard, one hand actively drawing on the board with a black dry-erase marker mid-stroke, the other hand relaxed at their side or holding the marker cap. Integrate them with realistic lighting and matching perspective. Never show the reference headshot photo itself in the frame, and never add any other person to the frame.`
       : "",
     hasReferenceImages
       ? "Additional attached images are visual context lifted directly from the article (screenshots, diagrams, product shots). Use them to decide WHAT the author is drawing on the whiteboard: mirror their overall structure, relationships, and subject matter as a hand-drawn marker translation, and use them as a reference for the correct spelling and shape of any product names or logos that appear on the board. Do NOT reproduce full UI chrome, dashboards, or long strings of text from them \u2014 translate everything into hand-drawn boxes, arrows, short labels, and sketched logos on the board."
       : "",
-    "Strictly avoid: people typing on laptops as the focal point, floating holograms, glowing brains, circuit-board backgrounds, generic robots, blue abstract technology backgrounds, projector screens as the focal point (the whiteboard is the focal point), any misspelled or garbled text on the board, brand logos or product names anywhere OTHER than on the whiteboard, and any cartoon or illustrated rendering style (photographic only).",
-    "Describe and render the final scene in rich, specific visual detail: room lighting, atmosphere, composition, materials, the exact hand-drawn diagram on the board that explains this specific post, and the subtle human details in the audience that make the moment feel real.",
+    "Strictly avoid: any additional people (no audience, no attendees, no coworkers, no second presenter), classrooms or training rooms, rows of chairs or tables, projector screens, laptops or phones in the frame, floating holograms, glowing brains, circuit-board backgrounds, generic robots, abstract blue technology backgrounds, any misspelled or garbled text on the board, brand logos or product names anywhere OTHER than on the whiteboard, and any cartoon or illustrated rendering style (photographic only).",
+    "Describe and render the final scene in rich, specific visual detail: the lighting on the author's face and glasses, the sheen of the marker on the board, the exact hand-drawn diagram that explains this specific post, and the quiet, uncluttered background \u2014 the whole frame should feel like a single, intentional editorial portrait.",
   ]
     .filter(Boolean)
     .join(" ");
