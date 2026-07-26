@@ -11,7 +11,6 @@ imageAlt: "Pulse 360° landing dashboard with tiles for M365 Message Center, Rel
 ---
 
 import Screenshot from "@/components/Screenshot.astro";
-import messageCenter from "@/assets/projects/pulse360/message-center.png";
 import msrc from "@/assets/projects/pulse360/msrc-security-updates.png";
 import productNews from "@/assets/projects/pulse360/product-news.png";
 import releasePlans from "@/assets/projects/pulse360/release-plans.png";
@@ -68,12 +67,6 @@ filtering everything else gets — by product, category, and date, with major
 changes and action-required items flagged up front. In production the request
 goes through Azure API Management, so the app itself holds no Entra credentials
 and still returns live messages.
-
-<Screenshot
-  src={messageCenter}
-  alt="Pulse 360 Microsoft 365 Message Center page showing tenant advisory cards with message IDs, product tags, category, and act-by dates"
-  caption="The Message Center reads live tenant advisories via Microsoft Graph — brokered through Azure API Management in production, with product, category, and date filters and major-change flags surfaced up front."
-/>
 
 ## Security response, at a glance
 
