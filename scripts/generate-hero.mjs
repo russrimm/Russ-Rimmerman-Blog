@@ -171,34 +171,35 @@ const COMPOSITIONS = [
 ];
 
 // Wardrobe variety so the author is not wearing the same outfit in every hero.
-// Weighted heavily toward BUSINESS CASUAL (blazer with open collar, sweater
-// over collared shirt, quality knit, chambray, quarter-zip, etc.) with only an
-// OCCASIONAL BUSINESS PROFESSIONAL look (tailored suit or sport coat with
-// dress shirt and tie). Because outfit selection is a deterministic hash over
-// this array, the ratio here IS the ratio you'll see across the series.
-// Every entry reads as one confident, modern, workplace-appropriate look —
-// never costumey, never repeating the same silhouette twice.
+// All entries are WARM-CLIMATE BUSINESS CASUAL: lightweight fabrics (linen,
+// cotton, chambray), short-sleeve or rolled-sleeve button-downs, polos,
+// breathable chinos. No jackets, no blazers, no sweaters, no turtlenecks, no
+// fleece, no wool, no ties, no overcoats. An occasional pair of clean dark
+// denim jeans is fine as the bottom. Because outfit selection is a
+// deterministic hash over this array, the ratio here IS the ratio you'll see
+// across the series (roughly one in six frames should feature jeans).
+// Every entry reads as one confident, modern, warm-weather professional look
+// — never costumey, never repeating the same silhouette twice.
 const OUTFITS = [
-  // Business professional (occasional — keep short)
-  "a tailored navy two-piece suit worn with a light blue dress shirt and a burgundy silk tie",
-  "a charcoal grey wool suit with a subtle pinstripe, worn with a crisp white dress shirt and a deep navy silk tie",
-  "a medium grey sport coat over a pale blue dress shirt with a woven forest-green tie",
+  // Rolled- or short-sleeve button-downs with chinos
+  "a crisp white linen-blend button-down with the sleeves rolled twice above the elbow, worn untucked over stone-colored chinos, with a matte black analog watch",
+  "a lightweight steel-blue chambray short-sleeve button-down, worn neatly untucked over slim tan chinos",
+  "a pale-pink cotton oxford button-down with the sleeves rolled once, tucked into slim navy chinos with a woven leather belt",
+  "a fine-check light-blue and white cotton button-down with the sleeves rolled twice, worn open-collar and untucked over khaki chinos",
+  "a soft sage-green linen button-down with the sleeves rolled above the elbow, worn open-collar over cream chinos",
+  "a lightweight white cotton short-sleeve button-down with a subtle textured weave, worn open-collar over medium-grey chinos",
+  "a warm sand-beige linen button-down, sleeves rolled twice, worn untucked over dark navy chinos",
+  "a fine-stripe white and navy cotton button-down with the sleeves rolled once, tucked cleanly into stone chinos",
 
-  // Business casual (the everyday look — kept long)
-  "a fitted charcoal wool blazer over a crisp white oxford shirt, open collar, no tie",
-  "a slate-blue merino crewneck sweater layered over a light grey collared shirt, collar peeking out cleanly",
-  "a navy Oxford button-down, sleeves rolled once, worn with a matte black analog watch",
-  "a matte black merino quarter-zip pullover over a plain white tee, worn with dark chinos",
-  "a heather grey merino v-neck sweater layered over a light blue collared shirt",
-  "a lightweight steel-blue chambray shirt, sleeves cuffed, worn untucked over dark chinos",
-  "a slim dark plum blazer over a black crewneck sweater",
-  "a soft cream cable-knit sweater with a collared shirt peeking out at the neck, sleeves rolled",
-  "a black turtleneck under an unstructured deep-navy overcoat draped naturally over one shoulder",
-  "a soft camel unstructured blazer over a plain white tee, worn with dark chinos",
-  "a fine-gauge navy merino sweater with a light grey collared shirt showing at the neck and cuffs",
-  "a charcoal quarter-zip fleece over a light chambray shirt, collar out",
-  "an olive-green field jacket worn open over a cream henley and dark selvedge denim",
-  "a warm oatmeal-beige crewneck sweatshirt in soft heavyweight cotton over a white collared shirt, sleeves pushed up",
+  // Polos with chinos
+  "a fitted navy-blue pique cotton polo shirt with a clean two-button placket, tucked into slim khaki chinos with a brown leather belt",
+  "a heather-grey performance polo shirt in fine-gauge cotton, worn untucked over dark charcoal chinos",
+  "a soft white pique polo shirt with a clean collar roll, tucked into slim medium-blue chinos",
+  "a muted forest-green polo shirt in lightweight cotton, worn neatly untucked over stone chinos",
+
+  // Occasional clean dark denim (jeans are the exception, not the rule)
+  "a crisp white linen-blend button-down with the sleeves rolled twice, worn untucked over clean dark indigo selvedge jeans",
+  "a navy short-sleeve pique polo shirt, tucked cleanly into clean dark indigo jeans with a slim brown leather belt",
 ];
 
 // Deterministic pick from a slug hash so re-runs of the same post get the same
