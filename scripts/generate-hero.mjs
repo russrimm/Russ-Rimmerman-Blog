@@ -257,7 +257,7 @@ async function exists(p) {
 }
 
 function parseFrontmatter(raw) {
-  const match = raw.match(/^---\n([\s\S]*?)\n---/);
+  const match = raw.match(/^---\r?\n([\s\S]*?)\r?\n---/);
   if (!match) return null;
   const body = match[1];
 
