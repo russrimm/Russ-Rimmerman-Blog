@@ -45,35 +45,11 @@ npm run dev      # start the dev server at http://localhost:4321
 | ------------------- | ---------------------------------------------------------------------------------------------------- |
 | `npm run dev`       | Start the local dev server on `http://localhost:4321` (host-exposed).                                |
 | `npm run start`     | Alias for `npm run dev` — same host-exposed dev server.                                              |
-| `npm run cms`       | Start the dev server with the Keystatic admin UI enabled at `/keystatic` (`KEYSTATIC=true`).         |
 | `npm run build`     | Type-check with `astro check` and build the production site to `dist/`.                              |
 | `npm run preview`   | Preview the production build locally.                                                                |
 | `npm run astro`     | Passthrough to the Astro CLI (`npm run astro -- <cmd>`).                                             |
 | `npm run hero`      | Generate topic-aware AI hero images for posts (see [Auto-generating blog hero images](#auto-generating-blog-hero-images)). |
 | `npm run format`    | Format the codebase with Prettier.                                                                   |
-
-### CMS (Keystatic)
-
-The site uses [Keystatic](https://keystatic.com/) as an optional local CMS for
-authoring content in a friendly UI instead of raw Markdown/MDX. Run it with:
-
-```bash
-npm run cms
-```
-
-That sets `KEYSTATIC=true` and starts `astro dev`. The `KEYSTATIC` env var
-toggles the `@astrojs/react` + `@keystatic/astro` integrations in
-[`astro.config.mjs`](astro.config.mjs), and the admin UI is available at
-[`http://localhost:4321/keystatic`](http://localhost:4321/keystatic).
-
-Use this when you'd rather click through fields (title, tags, hero image, body)
-than edit frontmatter by hand. Changes still land as commits in
-`src/content/blog/` and `src/content/projects/`, so the git workflow is
-unchanged.
-
-**Dev-only.** The default `npm run build` does **not** set `KEYSTATIC`, so the
-production build stays a pure static Astro site with no CMS runtime and no
-impact on the Azure Static Web Apps deployment.
 
 ## Writing a blog post
 

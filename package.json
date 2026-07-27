@@ -13,7 +13,6 @@
   "scripts": {
     "dev": "astro dev --host",
     "start": "astro dev --host",
-    "cms": "KEYSTATIC=true astro dev --host",
     "build": "astro check && astro build",
     "preview": "astro preview --host",
     "astro": "astro",
@@ -22,22 +21,15 @@
   },
   "dependencies": {
     "@astrojs/mdx": "^7.0.3",
-    "@astrojs/react": "^6.0.1",
     "@astrojs/rss": "^4.0.19",
     "@astrojs/sitemap": "^3.7.3",
-    "@keystatic/astro": "^5.2.0",
-    "@keystatic/core": "^0.5.50",
-    "astro": "^7.1.1",
-    "react": "^19.2.7",
-    "react-dom": "^19.2.7"
+    "astro": "^7.1.1"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.9",
     "@azure/identity": "^4.13.1",
     "@tailwindcss/typography": "^0.5.16",
     "@tailwindcss/vite": "^4.1.7",
-    "@types/react": "^19.2.17",
-    "@types/react-dom": "^19.2.3",
     "prettier": "^3.5.3",
     "prettier-plugin-astro": "^0.14.1",
     "prettier-plugin-tailwindcss": "^0.6.11",
