@@ -2,7 +2,7 @@
 title: "Ready, Set, Create! (Using AI)"
 heroImage: ../../assets/blog/vibe-code-your-blog-part-1-setup.webp
 heroAlt: "Cinematic enterprise hero image representing Vibe Coding — an AI innovation lab bathed in soft volumetric light."
-description: "A complete, beginner-proof setup guide for vibe coding your first project — a blog. GitHub, Git, the GitHub Copilot app, Node LTS, Copilot, and the agent/skills scaffolding you need before you write a single line. VS Code Insiders is optional."
+description: "A complete, beginner-proof setup guide for vibe coding your first project — a blog. GitHub, Git, the GitHub Copilot app, Node LTS, Python, Copilot, and the agent/skills scaffolding you need before you write a single line. VS Code Insiders is optional."
 pubDate: 2026-07-15
 tags:
   ["Vibe Coding", "Vibe Coding Blog Series", "AI", "Getting Started", "Copilot"]
@@ -55,7 +55,7 @@ Real Apps](/blog/vibe-coding-lessons). Read that for the *why*. This post is the
 
 ## Before you install anything: the plan
 
-You're going to set up six things, in this order, because each one builds on the
+You're going to set up seven things, in this order, because each one builds on the
 last:
 
 1. **A GitHub account** — your home base for code, history, and hosting.
@@ -63,7 +63,8 @@ last:
 3. **The GitHub Copilot app** — vibe coding from anywhere, no editor required. This is what I recommend as your primary surface — it can now do everything you need for this series.
 4. **VS Code Insiders** *(optional)* — the editor where the deeper vibe coding happens, if you want a local editor alongside the app.
 5. **Node LTS + npm** — the engine that runs a modern website.
-6. **GitHub Copilot** — the AI you'll be steering inside the app (and inside the editor, if you install one).
+6. **Python (latest)** — not strictly required to run the blog, but so much of the vibe-coding ecosystem (scripts, tools, MCP servers, AI helpers) assumes it's there that you'll save yourself pain by installing it now.
+7. **GitHub Copilot** — the AI you'll be steering inside the app (and inside the editor, if you install one).
 
 Then you'll scaffold a home for your agents and skills so the AI works *with*
 you instead of guessing. Let's go.
@@ -88,6 +89,24 @@ be embarrassed by later — it shows up in your project URLs.
 While you're there, [enable **two-factor authentication** in your account](https://docs.github.com/en/authentication/securing-your-account-with-two-factor-authentication-2fa/configuring-two-factor-authentication)
 settings. GitHub requires it for most contributors now, and you don't want to hit
 that wall mid-project.
+
+<Explain title="Free, Pro, Enterprise, or Education — which one do I need?">
+  For this series, the **free** plan is genuinely fine — you get unlimited public
+  and private repos, GitHub Actions minutes, and the basics of Copilot. Start
+  there and don't overthink it.
+
+  That said, if you're going to vibe code seriously, [**GitHub Copilot Pro**](https://github.com/features/copilot/plans)
+  (or a **GitHub Enterprise** seat if your employer offers one) is well worth
+  it. For about **$21/month** you unlock the higher-tier models, larger context
+  windows, more agent runs, and the newer Copilot features as they land — which
+  is most of what makes the "AI does the boring parts" experience actually feel
+  magical instead of rationed.
+
+  And if you're a **student or teacher**, don't pay a cent yet — apply for
+  [**GitHub Education**](https://github.com/education) first. Verified students
+  get **Copilot Pro for free**, and educators get free or heavily discounted
+  access to the same tooling. Same features, same models, zero out of pocket.
+</Explain>
 
 ## Step 2: Install Git (this is not the same as a GitHub account)
 
@@ -222,6 +241,48 @@ you see something like `'npm' is not recognized` or `command not found`, your
   the entire class of "npm not found" problems instead of patching one instance.
 </Explain>
 
+## Step 6: Install Python (latest)
+
+You won't write Python to build the blog itself, but the rest of the vibe-coding
+world assumes you have it. Half the helper scripts, dev tools, and MCP servers
+you'll bump into over the next few months start with "just run this Python
+script." Install it now and you'll never think about it again.
+
+Grab the **latest** version — not an old 3.9 or 3.10 — from
+[python.org/downloads](https://www.python.org/downloads/).
+
+- **Windows:** run the installer and **check the box that says "Add python.exe
+  to PATH"** on the very first screen. That one checkbox saves you an hour of
+  troubleshooting later.
+- **macOS:** the installer from python.org is the most predictable route. You
+  can also use [Homebrew](https://brew.sh): `brew install python`.
+- **Linux:** most distros already ship a recent Python 3. Confirm with
+  `python3 --version`; if it's older than 3.11, install a newer one via your
+  distro's package manager or [pyenv](https://github.com/pyenv/pyenv).
+
+After installing, **close and reopen your terminal**, then verify:
+
+```bash
+python --version
+pip --version
+```
+
+You should see something like `Python 3.13.x` and a matching `pip` version.
+
+<Explain title="Why `python` on Windows but `python3` on macOS/Linux?">
+  It's a historical quirk. macOS and most Linux distros ship an old Python 2 as
+  `python` and expose the modern one as `python3` so they don't break old
+  scripts. The Windows installer just calls it `python` because there's no
+  legacy version to protect. If `python --version` doesn't work on macOS or
+  Linux, try `python3 --version` — same tool, different name.
+</Explain>
+
+If `python` isn't found after installing, it's almost always the PATH
+checkbox — reinstall and make sure it's ticked, or add Python to your PATH
+manually via the installer's "Modify" option. The fix pattern is the same as
+Node: reopen the terminal, restart if needed, and only touch PATH by hand as a
+last resort.
+
 ## Verify everything before you build
 
 Run this quick checklist in a **fresh** terminal. Each command should print a
@@ -231,6 +292,7 @@ version or a success message — no errors:
 git --version          # e.g. git version 2.4x.x
 node --version         # e.g. v24.x.x
 npm --version          # e.g. 10.x.x
+python --version       # e.g. Python 3.13.x  (try 'python3' on macOS/Linux)
 code --version         # VS Code version (use 'code-insiders' if 'code' isn't found)
 gh --version           # e.g. gh version 2.x.x (see below)
 ```
@@ -560,7 +622,7 @@ them:
 - ✅ Git installed and configured with your name and email.
 - ✅ The **GitHub Copilot app** installed, signed in, and responding — this is your primary surface for the rest of the series.
 - ✅ *(Optional)* VS Code **Insiders** open, with the Copilot extension active and responding, if you chose to install a local editor.
-- ✅ `node`, `npm`, and `git` all return versions in a fresh terminal.
+- ✅ `node`, `npm`, `git`, and `python` all return versions in a fresh terminal.
 - ✅ A `~/.agents/skills` folder ready for your portable skills.
 - ✅ You understand the safety basics: commit often, branch for risk, no secrets.
 - ✅ You know how to make security the AI's default — ground it in the Azure and
