@@ -21,9 +21,16 @@ on:
   workflow_dispatch:
     inputs:
       slug:
-        description: "Regenerate a single post by slug (e.g. portal-of-portals-deep-dive). Overrides regenerate_all."
+        description: "Regenerate one or more posts by slug (space- or comma-separated, e.g. 'post-a post-b'). Overrides regenerate_all."
         type: string
         default: ""
+      style:
+        description: "Prompt style. 'presenter' = author at whiteboard (current default). 'content' = subject-matter illustration only, no author, no headshot, no training room."
+        type: choice
+        default: presenter
+        options:
+          - presenter
+          - content
       include_drafts:
         description: "Also generate images for draft posts"
         type: boolean
@@ -86,11 +93,18 @@ jobs:
             extra_args="--include-drafts"
           fi
 
+          style_input="${{ github.event.inputs.style }}"
+          if [ "$style_input" = "content" ]; then
+            extra_args="$extra_args --content-only"
+          fi
+
           slug_input="${{ github.event.inputs.slug }}"
           if [ -n "$slug_input" ]; then
-            echo "Regenerating hero image for: $slug_input"
+            # Accept comma- or whitespace-separated slugs; normalize to spaces.
+            slugs=$(echo "$slug_input" | tr ',' ' ' | tr -s '[:space:]' ' ' | sed 's/^ //;s/ $//')
+            echo "Regenerating hero image(s) for: $slugs (style=$style_input)"
             # shellcheck disable=SC2086
-            npm run hero -- "$slug_input" --force
+            npm run hero -- $slugs --force $extra_args
           elif [ "${{ github.event.inputs.regenerate_all }}" = "true" ]; then
             # Regenerate every post (filter out drafts unless include_drafts=true,
             # since positional slugs bypass the script's built-in draft filter).
@@ -107,9 +121,9 @@ jobs:
             if [ -z "$slugs" ]; then
               echo "No blog posts to regenerate."; exit 0
             fi
-            echo "Regenerating hero images for:$slugs"
+            echo "Regenerating hero images for:$slugs (style=$style_input)"
             # shellcheck disable=SC2086
-            npm run hero -- $slugs --force
+            npm run hero -- $slugs --force $extra_args
           else
             npm run hero -- --missing $extra_args
           fi
@@ -121,9 +135,9 @@ jobs:
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add -A
             if [ "${{ github.event.inputs.regenerate_all }}" = "true" ]; then
-              git commit -m "chore: regenerate all hero images [skip ci]"
+              git commit -m "chore: regenerate all hero images (style=${{ github.event.inputs.style }}) [skip ci]"
             elif [ -n "${{ github.event.inputs.slug }}" ]; then
-              git commit -m "chore: regenerate hero image for ${{ github.event.inputs.slug }} [skip ci]"
+              git commit -m "chore: regenerate hero image(s) for ${{ github.event.inputs.slug }} (style=${{ github.event.inputs.style }}) [skip ci]"
             else
               git commit -m "chore: auto-generate hero images for new posts [skip ci]"
             fi

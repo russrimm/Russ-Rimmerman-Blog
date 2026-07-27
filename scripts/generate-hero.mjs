@@ -5,12 +5,18 @@
 // likeness reference so the person in the hero resembles the author.
 //
 // Usage:
-//   npm run hero -- <slug>              generate one post's image
+//   npm run hero -- <slug>              generate one post's image (author + whiteboard scene)
+//   npm run hero -- <slug1> <slug2> ... generate several posts in one run
 //   npm run hero -- <slug> --force      overwrite an existing image / frontmatter
 //   npm run hero -- --missing           generate for every published post lacking one
 //   npm run hero -- --missing --include-drafts   ...including drafts
 //   npm run hero -- <slug> --dry-run    print the prompt only, no token / API call
 //   npm run hero -- --list-missing      list slugs that have no heroImage (no calls)
+//   npm run hero -- <slug> --content-only
+//                                       use the alternate content-only prompt: an editorial
+//                                       illustration of the post's subject matter, with NO
+//                                       author, NO headshot reference, and NO training-room
+//                                       venue. Combine with --force to replace existing.
 //
 // This is a LOCAL / CI generator — never run it at page-build time. It calls a
 // paid image API, is non-deterministic, and needs Entra ID auth. Generate once,
@@ -288,6 +294,45 @@ function buildPrompt({
       : "",
     "Strictly avoid: rows of student desks with a single teacher up front, K-12 classrooms, laptops or phones held up in the frame, floating holograms, glowing brains, circuit-board backgrounds, generic robots, abstract blue technology backgrounds, any misspelled or garbled text on the board or stage screen, brand logos or product names anywhere OTHER than on the whiteboard or stage screen, any cartoon or illustrated rendering style (photographic only), any additional person whose face is a sharp copy of the author's likeness (the author is the only sharply-focused named individual in every frame), any marker strokes, ink, text, arrows, or sketched logos rendered on top of the author's arm, hand, shoulder, torso, face, or clothing (the author is in front of the board and must occlude anything that would fall behind them, never be overwritten by it), any attendee crowded up against the presenter's shoulder, elbow, or back, any attendee seated within arm's reach of the whiteboard or stage, any audience head or body that overlaps the presenter's silhouette from the camera's viewpoint, any first row of seats placed directly against the presenter with no aisle or negative space, any attendee placed behind the whiteboard, behind the presenter's back, level with or past the board's plane, beside or behind the edge of the board, wrapped around the board, in a side alcove facing a blank wall, behind a partition or divider, around a corner, or in any seat where architecture, furniture, columns, curtains, equipment, another attendee's head, or the presenter's body would obstruct their view of the board or stage screen, any attendee whose head, face, or eyes are turned away from the front of the room so the board falls outside their natural forward field of view, and any row of attendees positioned so a person is completely blocked by the head of the person directly in front of them, and any anatomical impossibility \u2014 no floating or disembodied hands, arms, or fingers, no extra or duplicate hands or arms on the author or any attendee, no fused or missing fingers, no arms that do not connect back to a shoulder through a correctly-proportioned limb.",
     "Describe and render the final scene in rich, specific visual detail: the lighting on the author's face and glasses, the sheen of the marker on the board, the exact hand-drawn diagram that explains this specific post, and the quiet, uncluttered background \u2014 the whole frame should feel like a single, intentional editorial portrait.",
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+// Alternate prompt: an editorial illustration of the post's subject matter
+// itself — no author, no headshot reference, no training-room / audience venue.
+// Use this via the `--content-only` flag (or the workflow's `style: content`
+// input) when you want cover art driven purely by what the post is about.
+function buildContentPrompt({
+  title,
+  primaryTopic,
+  secondaryTopics,
+  summary,
+  technologies,
+  brief,
+  hasReferenceImages,
+}) {
+  return [
+    "You are a world-class editorial illustrator and art director creating a hero image for a technical blog post.",
+    "SCENE (mandatory, do not reinterpret): a single 16:9 editorial illustration that visually explains the SUBJECT MATTER of this specific post. There is NO author, NO named person, NO headshot likeness, NO presenter, NO whiteboard, NO training room, NO auditorium, NO keynote stage, and NO audience of attendees anywhere in the frame. Human figures are allowed only when the post's topic genuinely requires them (for example, generic silhouetted knowledge-worker roles for a workflow post); they must be small, anonymous, softly abstracted, and never resemble any specific individual. This is a subject-driven concept image, not a portrait.",
+    "COMPOSITION: a clean, modern editorial illustration composed around the post's core idea. Build the frame from the concepts, systems, data, or workflow the article describes: labeled architecture blocks and arrows for architecture posts; a flow of steps, gears, and pipelines for automation posts; distinct agent nodes with roles and message arrows for AI-agent posts; locks, keys, boundaries, tokens, and gates for security posts; databases, tables, pipelines, and flowing streams for data posts. Choose the metaphor that best fits THIS post. Reserve quiet negative space in one corner of the frame (upper-right by default) for a later title overlay.",
+    "STYLE DIRECTION: contemporary editorial vector-style illustration with a subtle photographic finish \u2014 clean geometric shapes, confident line work, soft gradients, gentle drop shadows, and a restrained modern color palette (deep navy, warm neutral, muted teal, with restrained accents of orange or red for emphasis). Not cartoon, not childish, not sci-fi neon, not a stock robot-brain graphic. It should feel like the cover illustration for a serious enterprise tech magazine article.",
+    "LABELS AND LOGOS: short, correctly-spelled English or product labels are welcome next to the components they describe \u2014 keep them one to three words each so the model spells them perfectly. Where a real brand, product, or service from this post's tags is depicted, include a small, recognizable, tastefully stylized approximation of that product's official logo next to its label (for example: Microsoft, Azure, Copilot, Copilot Studio, Power Platform, Dataverse, GitHub, VS Code, Teams, SharePoint, Dynamics 365, Foundry, Intune, Entra, ServiceNow). Do NOT invent words, do NOT produce jumbled or partial letters, and do NOT leave squiggle-text where a label belongs. If a phrase cannot be rendered legibly, replace it with a labeled icon instead.",
+    `Article title: ${title}.`,
+    `Primary idea to illustrate: ${primaryTopic}.`,
+    secondaryTopics ? `Secondary themes that can appear as smaller connected elements: ${secondaryTopics}.` : "",
+    summary ? `What the article is really about (use this to decide what to depict): ${summary}.` : "",
+    technologies
+      ? `Underlying technologies to reference \u2014 draw each as a small labeled component with its short official product name (spelled exactly as given) and a stylized approximation of its logo where recognizable: ${technologies}.`
+      : "",
+    `Scene seed \u2014 subject matter to depict: ${brief.subjects}.`,
+    `Scene seed \u2014 technology focus (treat as concept, not literal UI): ${brief.technology}.`,
+    "TONE: warm, credible, modern, and human. The image should feel like a considered editorial choice, not a stock illustration \u2014 confident, uncluttered, and clearly about THIS post.",
+    hasReferenceImages
+      ? "Additional attached images are visual context lifted directly from the article (screenshots, diagrams, product shots). Use them to decide WHAT to depict: mirror their overall structure, relationships, and subject matter as an editorial illustration, and use them as a reference for the correct spelling and shape of any product names or logos. Do NOT reproduce full UI chrome, dashboards, or long strings of text from them \u2014 translate everything into clean labeled shapes, arrows, and stylized logos."
+      : "",
+    "Strictly avoid: any recognizable individual human likeness, any portrait of a named person, any presenter or teacher figure, any whiteboard scene, any training room, any classroom, any auditorium or keynote stage, any audience of attendees, any headshot, any hand-drawn dry-erase-marker aesthetic (this is editorial illustration, not a whiteboard sketch), any misspelled or garbled text, any brand or product logo used decoratively outside of its labeled diagram component, floating holograms, glowing brains, generic robots, abstract blue technology backgrounds, circuit-board wallpaper, cartoon or childish styling, and any anatomical impossibilities if small human figures do appear.",
+    "Describe and render the final scene in rich, specific visual detail: the composition of shapes, the color palette, the labeled components, the flow between them, and the quiet negative space reserved for a title overlay \u2014 the whole frame should feel like a single, intentional editorial illustration.",
   ]
     .filter(Boolean)
     .join(" ");
@@ -623,7 +668,7 @@ async function requestImage({ cfg, prompt, headshot, refImages = [] }) {
 }
 
 // --- Generation --------------------------------------------------------------
-async function generatePost(slug, { force, dryRun, cfg }) {
+async function generatePost(slug, { force, dryRun, cfg, contentOnly }) {
   const postPath = await resolvePostPath(slug);
   if (!postPath) {
     console.warn(`\u2716 No post found for "${slug}" — skipping.`);
@@ -660,26 +705,39 @@ async function generatePost(slug, { force, dryRun, cfg }) {
 
   const composition = pickComposition(slug);
   const outfit = pickOutfit(slug);
-  // The whiteboard/training-room scene always features the author, so we
-  // always pass the headshot as a likeness reference regardless of the
-  // brief text.
-  const withHeadshot = true;
+  // The presenter/whiteboard scene always features the author, so we pass the
+  // headshot as a likeness reference. In `--content-only` mode we skip the
+  // author entirely: no headshot, no venue, subject-matter-only illustration.
+  const withHeadshot = !contentOnly;
   const refImages = await loadReferenceImages(slug, raw);
-  const prompt = buildPrompt({
-    title: fm.title,
-    primaryTopic,
-    secondaryTopics,
-    summary: fm.description,
-    technologies,
-    brief,
-    composition,
-    withHeadshot,
-    outfit,
-    hasReferenceImages: refImages.length > 0,
-  });
-  const alt = `Cinematic enterprise hero image representing ${primaryTopic} \u2014 ${brief.environment}.`;
+  const prompt = contentOnly
+    ? buildContentPrompt({
+        title: fm.title,
+        primaryTopic,
+        secondaryTopics,
+        summary: fm.description,
+        technologies,
+        brief,
+        hasReferenceImages: refImages.length > 0,
+      })
+    : buildPrompt({
+        title: fm.title,
+        primaryTopic,
+        secondaryTopics,
+        summary: fm.description,
+        technologies,
+        brief,
+        composition,
+        withHeadshot,
+        outfit,
+        hasReferenceImages: refImages.length > 0,
+      });
+  const alt = contentOnly
+    ? `Editorial illustration representing ${primaryTopic}.`
+    : `Cinematic enterprise hero image representing ${primaryTopic} \u2014 ${brief.environment}.`;
 
   console.log(`\n\u25b6 ${fm.title || slug}`);
+  console.log(`  style:  ${contentOnly ? "content-only (no author, no venue)" : "presenter (whiteboard scene)"}`);
   console.log(`  tags:   ${fm.tags.join(", ") || "(none)"}`);
   console.log(`  topic:  ${primaryTopic}`);
   if (withHeadshot) console.log(`  outfit: ${outfit}`);
@@ -745,6 +803,7 @@ const force = flags.has("--force");
 const dryRun = flags.has("--dry-run");
 const missing = flags.has("--missing");
 const includeDrafts = flags.has("--include-drafts");
+const contentOnly = flags.has("--content-only");
 
 async function missingSlugs() {
   const slugs = await listPosts();
@@ -802,7 +861,7 @@ if (!dryRun) {
 
 const results = { generated: 0, skipped: 0, failed: 0, "dry-run": 0 };
 for (const slug of targets) {
-  const status = await generatePost(slug, { force, dryRun, cfg });
+  const status = await generatePost(slug, { force, dryRun, cfg, contentOnly });
   results[status] = (results[status] ?? 0) + 1;
 }
 
