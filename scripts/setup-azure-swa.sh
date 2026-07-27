@@ -20,7 +20,7 @@
 #      GitHub Actions variables (the SWA name + resource group)
 #
 # Prerequisites (things a script can't do for you — do these first):
-#   - az login       (use `az login --use-device-code` in Codespaces/containers)
+#   - az login       (use `az login --use-device-code` in headless containers)
 #   - gh auth login   (needs the `repo` scope; repo admin to set secrets)
 #   - Directory role that can register apps (Application Developer or higher)
 #   - Owner or User Access Administrator on the subscription/resource group
@@ -58,8 +58,8 @@ require() {
   command -v "$1" >/dev/null 2>&1 || { echo "ERROR: '$1' is not installed."; exit 1; }
 }
 
-# The GitHub CLI in Codespaces defaults to the injected GITHUB_TOKEN, which
-# usually can't manage secrets. Prefer your interactive `gh auth login`.
+# In some environments the GitHub CLI defaults to an injected GITHUB_TOKEN,
+# which usually can't manage secrets. Prefer your interactive `gh auth login`.
 gh() { env -u GITHUB_TOKEN -u GH_TOKEN command gh "$@"; }
 
 # ---------------------------------------------------------------------------

@@ -78,7 +78,7 @@ builds clean locally, it'll build clean in the pipeline.
 Here's the whole thing. Sign in to Azure and GitHub, then run one script:
 
 ```bash
-az login        # or: az login --use-device-code  (Codespaces / containers)
+az login        # or: az login --use-device-code  (headless containers)
 gh auth login   # choose GitHub.com, HTTPS, and authenticate in the browser
 
 ./scripts/setup-azure-swa.sh
@@ -92,8 +92,8 @@ the live URL. Push to `main` and the site deploys automatically.
   Signing in is the one thing a script (or an AI agent) genuinely can't do for
   you: it needs *your* browser and *your* second factor. `az login` and
   `gh auth login` prove **you** are you. Everything after that is just API calls
-  the script can make on your behalf. In a headless environment like Codespaces,
-  use <code>az login --use-device-code</code> so you can complete sign-in on any
+  the script can make on your behalf. In a headless environment, use
+  <code>az login --use-device-code</code> so you can complete sign-in on any
   device.
 </Explain>
 

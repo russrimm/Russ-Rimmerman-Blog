@@ -223,7 +223,7 @@ App, the deployment identity, its federated credentials, a custom
 least-privilege role, and all the GitHub configuration.
 
 ```bash
-az login        # or: az login --use-device-code   (Codespaces/containers)
+az login        # or: az login --use-device-code   (headless containers)
 gh auth login   # needs the `repo` scope + repo admin
 
 ./scripts/setup-azure-swa.sh
@@ -330,10 +330,9 @@ privileges. Handle these and the agent can run the rest unattended.
 
 - **Signing in to Azure and GitHub.** `az login` and `gh auth login` open a
   browser (or ask you to paste a device code) — an agent can't complete that
-  handshake. **Unblock it:** run them yourself first. In a headless environment
-  (Codespaces, containers), use `az login --use-device-code` and
-  `gh auth login` and complete the browser step. After that, the CLIs stay
-  authenticated for the agent's session.
+  handshake. **Unblock it:** run them yourself first. In a headless container,
+  use `az login --use-device-code` and `gh auth login` and complete the browser
+  step. After that, the CLIs stay authenticated for the agent's session.
 - **Creating the app registration.** `az ad app create` needs a directory role
   that can register applications — **Application Developer** (or higher, e.g.
   **Application Administrator**), or a tenant that hasn't restricted app

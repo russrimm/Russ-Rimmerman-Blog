@@ -246,11 +246,10 @@ these all work.
   version before you continue — Part 2 assumes it's set up.
 </Explain>
 
-## Where to do the work: local vs. GitHub Codespaces
+## Keeping your local disk tidy
 
 Everything above installs your tools **locally**, on your own machine. That's a
-perfectly good way to work — but it's not the only one, and it comes with a
-gotcha I learned the hard way.
+perfectly good way to work — but it comes with a gotcha I learned the hard way.
 
 After spinning up project after project, I ran my hard drive out of space.
 Here's the thing that took me too long to realize: **once your code is committed
@@ -258,28 +257,6 @@ and pushed to a GitHub repo, you don't need to keep a local copy forever.** The
 repo *is* the source of truth. When you're done working on a project for a while
 and you're tight on disk, delete the local folder — you can always clone it back
 down the moment you want to pick it up again.
-
-Better yet, skip the local-disk problem entirely with
-[**GitHub Codespaces**](https://github.com/features/codespaces), which lets you
-work on and test your code in the cloud. Your editor, terminal, tools, and
-running preview all live on a container GitHub spins up for you — you just open
-it in the browser or connect VS Code to it.
-
-<Explain title="What actually is a Codespace?">
-  A Codespace is a full development environment — VS Code, a terminal, Node, Git,
-  your project files, everything — running on a machine in the cloud instead of on
-  your laptop. You reach it from a browser or from VS Code on your machine, but the
-  work happens remotely. Nothing takes up space on your local drive, and you can
-  spin one up or throw it away per project.
-</Explain>
-
-<Explain title="Which should I pick as a beginner?">
-  Either works, and you can switch anytime — the project is identical in both. Go
-  **local** if you want the simplest mental model and reliable offline access. Go
-  **Codespaces** if you're low on disk space, jump between machines, or just want
-  a clean environment you can delete without a second thought. Many people do both:
-  local for daily work, a Codespace when they're on a different computer.
-</Explain>
 
 ## Using source control in VS Code
 
