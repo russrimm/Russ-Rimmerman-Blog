@@ -20,6 +20,10 @@ on:
       - "src/content/blog/**"
   workflow_dispatch:
     inputs:
+      slug:
+        description: "Regenerate a single post by slug (e.g. portal-of-portals-deep-dive). Overrides regenerate_all."
+        type: string
+        default: ""
       include_drafts:
         description: "Also generate images for draft posts"
         type: boolean
@@ -82,7 +86,12 @@ jobs:
             extra_args="--include-drafts"
           fi
 
-          if [ "${{ github.event.inputs.regenerate_all }}" = "true" ]; then
+          slug_input="${{ github.event.inputs.slug }}"
+          if [ -n "$slug_input" ]; then
+            echo "Regenerating hero image for: $slug_input"
+            # shellcheck disable=SC2086
+            npm run hero -- "$slug_input" --force
+          elif [ "${{ github.event.inputs.regenerate_all }}" = "true" ]; then
             # Regenerate every post (filter out drafts unless include_drafts=true,
             # since positional slugs bypass the script's built-in draft filter).
             include_drafts="${{ github.event.inputs.include_drafts }}"
@@ -113,6 +122,8 @@ jobs:
             git add -A
             if [ "${{ github.event.inputs.regenerate_all }}" = "true" ]; then
               git commit -m "chore: regenerate all hero images [skip ci]"
+            elif [ -n "${{ github.event.inputs.slug }}" ]; then
+              git commit -m "chore: regenerate hero image for ${{ github.event.inputs.slug }} [skip ci]"
             else
               git commit -m "chore: auto-generate hero images for new posts [skip ci]"
             fi
