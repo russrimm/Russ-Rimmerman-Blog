@@ -247,11 +247,25 @@ Copilot Studio, ALM, and more — so the AI can scaffold, deploy, and manage Pow
 Platform solutions through natural-language prompts instead of you memorizing
 each service's quirks.
 
-One command installs the lot:
+Microsoft ships a one-liner installer. **Because this exact post is about being
+the reviewer in the loop, don't just pipe it to `node`.** Download it, read what
+it's about to do, *then* run it:
 
 ```powershell
-iwr https://raw.githubusercontent.com/microsoft/power-platform-skills/main/scripts/install.js -OutFile install.js; node install.js; del install.js
+# 1. Download the installer
+iwr https://raw.githubusercontent.com/microsoft/power-platform-skills/main/scripts/install.js -OutFile install.js
+
+# 2. Read it — either open it in your editor or peek at the top of the file
+code install.js       # or: Get-Content install.js | Select-Object -First 40
+
+# 3. When you're satisfied with what it does, run it and clean up
+node install.js
+Remove-Item install.js
 ```
+
+The habit matters more than the file. Any time you see a `curl | sh` or
+`iwr | iex` in someone's docs, break it into "download, read, run" instead. It
+takes ninety extra seconds and it's saved me from a bad afternoon more than once.
 
 After that, the plugins auto-update and you can start building Power Platform
 apps by describing what you want.
