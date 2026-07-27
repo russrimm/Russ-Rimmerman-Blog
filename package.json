@@ -6,6 +6,10 @@
   "description": "Personal blog and portfolio of Russ Rimmerman, Microsoft Cloud Solution Architect.",
   "author": "Russ Rimmerman",
   "license": "MIT",
+  "engines": {
+    "node": ">=24.0.0",
+    "npm": ">=10.0.0"
+  },
   "scripts": {
     "dev": "astro dev --host",
     "start": "astro dev --host",

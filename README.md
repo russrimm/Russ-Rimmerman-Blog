@@ -17,6 +17,21 @@ deployed to [Azure Static Web Apps](https://learn.microsoft.com/azure/static-web
 - 🖼️ AI-generated, topic-aware photorealistic enterprise post hero images (Entra ID / OIDC — no API key)
 - 🎨 Azure-inspired design system
 
+## Prerequisites
+
+- **Node.js** ≥ 24 (matches the version used in CI — see `.github/workflows/*.yml`).
+- **npm** ≥ 10 (bundled with Node 24).
+
+Verify your local versions:
+
+```bash
+node --version   # v24.x or newer
+npm --version    # 10.x or newer
+```
+
+If you need to switch Node versions, [`nvm`](https://github.com/nvm-sh/nvm),
+[`fnm`](https://github.com/Schniz/fnm), or [Volta](https://volta.sh/) all work.
+
 ## Getting started
 
 ```bash
@@ -26,11 +41,39 @@ npm run dev      # start the dev server at http://localhost:4321
 
 ## Scripts
 
-| Command           | Description                                     |
-| ----------------- | ----------------------------------------------- |
-| `npm run dev`     | Start the local dev server                      |
-| `npm run build`   | Type-check (`astro check`) and build to `dist/` |
-| `npm run preview` | Preview the production build locally            || `npm run hero`    | Generate topic-aware post hero images (see below) || `npm run format`  | Format the codebase with Prettier               |
+| Command             | Description                                                                                          |
+| ------------------- | ---------------------------------------------------------------------------------------------------- |
+| `npm run dev`       | Start the local dev server on `http://localhost:4321` (host-exposed).                                |
+| `npm run start`     | Alias for `npm run dev` — same host-exposed dev server.                                              |
+| `npm run cms`       | Start the dev server with the Keystatic admin UI enabled at `/keystatic` (`KEYSTATIC=true`).         |
+| `npm run build`     | Type-check with `astro check` and build the production site to `dist/`.                              |
+| `npm run preview`   | Preview the production build locally.                                                                |
+| `npm run astro`     | Passthrough to the Astro CLI (`npm run astro -- <cmd>`).                                             |
+| `npm run hero`      | Generate topic-aware AI hero images for posts (see [Auto-generating blog hero images](#auto-generating-blog-hero-images)). |
+| `npm run format`    | Format the codebase with Prettier.                                                                   |
+
+### CMS (Keystatic)
+
+The site uses [Keystatic](https://keystatic.com/) as an optional local CMS for
+authoring content in a friendly UI instead of raw Markdown/MDX. Run it with:
+
+```bash
+npm run cms
+```
+
+That sets `KEYSTATIC=true` and starts `astro dev`. The `KEYSTATIC` env var
+toggles the `@astrojs/react` + `@keystatic/astro` integrations in
+[`astro.config.mjs`](astro.config.mjs), and the admin UI is available at
+[`http://localhost:4321/keystatic`](http://localhost:4321/keystatic).
+
+Use this when you'd rather click through fields (title, tags, hero image, body)
+than edit frontmatter by hand. Changes still land as commits in
+`src/content/blog/` and `src/content/projects/`, so the git workflow is
+unchanged.
+
+**Dev-only.** The default `npm run build` does **not** set `KEYSTATIC`, so the
+production build stays a pure static Astro site with no CMS runtime and no
+impact on the Azure Static Web Apps deployment.
 
 ## Writing a blog post
 
@@ -80,25 +123,17 @@ Static Web Apps **managed API function** at `/api/subscribe`
 (`api/src/functions/subscribe.js`), which forwards the address to your provider.
 The provider API key stays server-side and is never exposed to the browser.
 
-Configure **one** provider by adding these values in the Static Web App under
+Configure Buttondown by adding these values in the Static Web App under
 **Settings → Environment variables** (Application settings):
 
 **Buttondown**
 
-| Name                 | Value                     |
-| -------------------- | ------------------------- |
-| `NEWSLETTER_PROVIDER` | `buttondown`             |
+| Name                  | Value                     |
+| --------------------- | ------------------------- |
+| `NEWSLETTER_PROVIDER` | `buttondown`              |
 | `BUTTONDOWN_API_KEY`  | your Buttondown API token |
 
-**Mailchimp**
-
-| Name                 | Value                                          |
-| -------------------- | ---------------------------------------------- |
-| `NEWSLETTER_PROVIDER` | `mailchimp`                                    |
-| `MAILCHIMP_API_KEY`   | API key incl. datacenter suffix (`…-us21`)     |
-| `MAILCHIMP_LIST_ID`   | audience / list ID                             |
-
-Until a provider is configured the endpoint returns a friendly "not available
+Until the provider is configured the endpoint returns a friendly "not available
 yet" message rather than silently discarding the signup. The form validates the
 email, includes a honeypot for bots, shows accessible loading/success/error
 states, and only reports success when the provider confirms it.
