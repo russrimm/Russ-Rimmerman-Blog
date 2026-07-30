@@ -5,10 +5,10 @@ heroAlt: "Cinematic enterprise hero image representing Vibe Coding — an AI inn
 
 
 
-description: "I know just enough PowerShell to be dangerous and never had the patience to actually learn to code. Here's what vibe coding taught me — plan mode, skills, picking the right model, wiring up MCPs like MS Learn and Azure, and putting a reviewer in the loop."
+description: "I know just enough PowerShell to be dangerous and never had the patience to actually learn to code. Here's what vibe coding taught me — plan mode, skills, picking a model in Microsoft Foundry, building an agentic harness, and putting a reviewer in the loop."
 pubDate: 2026-07-11
-updatedDate: 2026-07-18
-tags: ["Vibe Coding", "AI", "Microsoft", "Azure", "MCP", "Copilot"]
+updatedDate: 2026-07-29
+tags: ["Vibe Coding", "AI", "Microsoft", "Azure", "MCP", "Copilot", "Microsoft Foundry"]
 featured: false
 draft: false
 ---
@@ -114,20 +114,64 @@ unlock.
 Here's my rough rule of thumb:
 
 - **Heavy reasoning, architecture, gnarly debugging** — reach for the most
-  capable frontier model. When I'm designing how an app should be structured or
-  untangling a bug that spans several files, I want the deepest thinker in the
-  room, even if it's slower.
+  capable frontier model you have. Right now that means Opus 5, Sonnet 5, or
+  GPT-5.6 Sol. When I'm designing how an app should be structured or untangling
+  a bug that spans several files, I want the deepest thinker in the room, even
+  if it's slower.
 - **Fast, well-defined edits** — a lighter, quicker model is perfect. Renaming
   things, small tweaks, <Term def="Repetitive, standardized code that you have to include to make something work, but that doesn't involve any real decisions.">boilerplate</Term>, "add a button here" — you don't need a
   sledgehammer for a thumbtack.
 - **Long, sprawling context** — pick the model that handles big <Term def="How much text an AI can consider at once — the prompt, your files, and the conversation so far. A bigger window lets it reason over more of your codebase at a time.">context windows</Term>
   gracefully when I'm asking it to reason across a whole codebase.
 
+If you're working inside Microsoft, the place to do that switching is **Microsoft
+Foundry**. The model catalog is somewhere north of 1,900 models, and the frontier
+ones are right there next to the small, cheap, fast ones — same portal, same
+governance, same deployment story. You're not signing up for five vendors; you're
+picking a tool off the shelf.
+
+The line between Foundry and **Microsoft Copilot Studio** keeps getting blurrier,
+too, and that's a good thing. From Foundry you can
+[publish an agent straight out to Microsoft 365 Copilot and Teams](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/publish-copilot).
+So the "build it in a pro-dev tool, then figure out how to get it in front of
+people" problem mostly went away. Build where the control is, publish where the
+users already are.
+
 The meta-lesson: **treat models like tools in a belt, not a single hammer.**
 Being deliberate about which one you grab saves time, saves money, and gives
 better results.
 
-## Lesson 5: MCPs give the AI real, current knowledge
+## Lesson 5: Build the harness, not the prompt
+
+Once the models got this good, the bottleneck moved. It stopped being "can the AI
+write this code" and became "have I actually said what I want."
+
+So most of my effort now goes into the harness — the rules of engagement I hand
+the model before it starts:
+
+- **Define what success looks like.** Not "build me a devices page." What does
+  done mean? What does it show, who's allowed to see it, what does it do when the
+  API returns nothing, and how will I know it's right? If I can't answer that, no
+  model can.
+- **Grab the right skills.** Point it at the skills that match the job so it works
+  from a specialist's playbook instead of improvising.
+- **Give it instructions to abide by.** Generate them, download them, or write
+  them once and reuse them. Coding standards, security posture, naming, commit
+  format — anything I'd otherwise repeat every session.
+- **Point it at real examples and documentation.** An existing page that already
+  does it right, or the actual product docs, beats three paragraphs of me
+  describing the pattern from memory.
+
+That bundle is the harness. The model is the engine; the harness is the steering,
+the guardrails, and the destination. Get it right and you can hand off much bigger
+pieces of work than you'd expect. Skip it and you get a confident, fluent,
+plausible mess.
+
+It's also why I now find myself writing about Vite, Node.js, Next.js, .NET, and
+React — pro-dev terms I genuinely never expected to use, let alone blog about.
+The harness let me operate in a stack I couldn't have hand-written my way into.
+
+## Lesson 6: MCPs give the AI real, current knowledge
 
 This one was the biggest surprise. Out of the box, an AI model knows a lot, but
 it doesn't know *your* Azure environment, and its training data has a cutoff date
@@ -156,7 +200,7 @@ The pattern behind both: an AI that can *look things up* and *take grounded
 action* is in a different league from one working purely from memory. If you're
 in the Microsoft world and haven't wired up the MS Learn MCP yet, start there.
 
-## Lesson 6: Put a reviewer in the loop — especially for security
+## Lesson 7: Put a reviewer in the loop — especially for security
 
 Here's the lesson that scared me straight. On one project — **Pulse 360°**, a
 public dashboard that pulls in Microsoft's update feeds — I stopped working with a
@@ -212,11 +256,14 @@ If you're technical but not a coder, here's the shortest path I know:
 
 1. **Turn on plan mode** and refuse to let the AI code before you've agreed on a
    plan.
-2. **Steal a skill** — grab an existing one that matches something you do often.
-3. **Build your first skill** the next time you catch yourself repeating context.
-4. **Wire up the MS Learn MCP** so your answers are grounded in current docs.
-5. **Notice which model you're using** and start switching deliberately.
-6. **Add a review step** — a dedicated reviewer, a security-hunting pass, or just
+2. **Write down what success looks like** for the thing you're building, before
+   you open a chat window.
+3. **Steal a skill** — grab an existing one that matches something you do often.
+4. **Build your first skill** the next time you catch yourself repeating context.
+5. **Wire up the MS Learn MCP** so your answers are grounded in current docs.
+6. **Notice which model you're using** and start switching deliberately — in
+   Microsoft Foundry that's a dropdown, not a migration.
+7. **Add a review step** — a dedicated reviewer, a security-hunting pass, or just
    a rule that nothing ships unreviewed. Assume the working code might be unsafe.
 
 None of that requires you to learn to code. It requires you to be clear about

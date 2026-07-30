@@ -4,6 +4,7 @@ heroImage: ../../assets/blog/starting-a-new-blog.webp
 heroAlt: "Cinematic enterprise hero image representing Microsoft — an AI innovation lab bathed in soft volumetric light."
 description: "After years of 'I should really start a blog,' here it is. A quick tour of what I've been building lately — Pulse 360°, Portal 360°, and the Microsoft Communications Portal."
 pubDate: 2026-07-10
+updatedDate: 2026-07-29
 tags: ["Microsoft", "Azure", "Power Platform", "Vibe Coding", "Projects"]
 featured: true
 draft: false
@@ -38,9 +39,8 @@ of them.
 
 [**Pulse 360°**](/projects/pulse360) is my answer to that. It pulls all of those official Microsoft
 update streams — Microsoft 365, Azure, Fabric, Power Platform, Dynamics 365,
-Copilot, and MSRC — into a single, fast, filterable dashboard. It's dark-mode
-first, everything is sorted newest-first, and there's a global search and
-per-product filters so you can scope down to just what you care about.
+Copilot, and MSRC — into a single, fast, filterable dashboard, so "what changed
+that affects me this week" is one search instead of nine tabs.
 
 Under the hood it's a Next.js 16 app (App Router, React 19, TypeScript,
 Tailwind CSS 4). Server Components do the heavy lifting and route handlers act
@@ -59,12 +59,13 @@ bouncing between the Entra, Intune, Azure, Power Platform, and Exchange admin
 centers, IT and MSP teams get one console with centralized visibility,
 cross-service actions, and audit-ready operations.
 
-It's a Next.js 16 / React 19 / TypeScript app with **700+ API routes**, secured
-with NextAuth (Auth.js) v5. It runs on a **Backend-for-Frontend** architecture,
-so every privileged call stays server-side, behind per-route authentication and
-least-privilege scopes drawn from a single centralized map. It's a private repo
-for now while I harden it — 700+ routes across this many privileged APIs is a big
-attack surface, and I'd rather ship it when the security story is airtight.
+It's a Next.js 16 / React 19 / TypeScript app secured with NextAuth (Auth.js) v5,
+built on a **Backend-for-Frontend** architecture. Every privileged call stays
+server-side, behind per-route authentication and least-privilege scopes drawn
+from a single centralized map, and it uses delegated tokens so the app acts as
+the signed-in admin rather than a faceless service principal. It's a private repo
+for now while I harden it — this much reach across this many privileged APIs is a
+big attack surface, and I'd rather ship it when the security story is airtight.
 
 Here's the home dashboard — service health and platform tiles for every
 Microsoft cloud in one place:
@@ -184,8 +185,16 @@ some version of *"how do I stay on top of all this change?"*
 
 The other thing worth admitting: I'm not a career developer. Most of this got
 built by describing what I wanted and letting AI do the heavy lifting, then
-poking at it until it worked. That approach — call it vibe coding — is a big part
-of what I want to write about here, alongside the projects themselves.
+poking at it until it worked. What made that possible isn't the code the model
+types — it's the harness around it. I define what success looks like, hand the
+model the right skills, point it at the instructions and reference docs it has to
+abide by, and let it work inside those rules of engagement. The models doing that
+work now — Opus 5, Sonnet 5, GPT-5.6 Sol, and the rest of the catalog in Microsoft
+Foundry — are good enough that the hard part has moved from *how do I build this*
+to *what am I actually asking for*.
+
+Which is how I ended up writing about Vite, Node.js, Next.js, .NET, and React —
+a sentence I would not have believed two years ago.
 
 So that's the plan for this blog: the things I'm building, the Microsoft cloud
 news worth paying attention to, and what I'm learning about building software
