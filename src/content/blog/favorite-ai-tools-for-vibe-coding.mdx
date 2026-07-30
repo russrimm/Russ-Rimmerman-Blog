@@ -2,9 +2,10 @@
 title: "The Vibe-Coding/Engineering Stack I Actually Ship With"
 heroImage: ../../assets/blog/favorite-ai-tools-for-vibe-coding.webp
 heroAlt: "Cinematic enterprise hero image representing Vibe Coding — an AI innovation lab bathed in soft volumetric light."
-description: "The AI tools I reach for on every vibe-coding project — beginning with Impeccable, the design skill that makes AI-built interfaces actually look designed instead of generic. Plus the model, MCP, and reviewer setup that ships the rest."
+description: "The AI tools I reach for on every vibe-coding project — Impeccable for design, Microsoft Foundry for picking the model, MCPs for grounding, and a reviewer in the loop for everything I ship."
 pubDate: 2026-07-17
-tags: ["Vibe Coding", "AI", "Tools", "Design", "Copilot"]
+updatedDate: 2026-07-29
+tags: ["Vibe Coding", "AI", "Tools", "Design", "Copilot", "Microsoft Foundry"]
 featured: false
 draft: false
 ---
@@ -107,13 +108,34 @@ Two things make it a great fit for vibe coding a blog:
   hard to beat, which is why it's become a go-to for blogs and documentation.
 </Explain>
 
-### Picking the right model
+### Microsoft Foundry: where I pick the model
 
 Not every task wants the same model. For planning, architecture, and gnarly
-debugging I reach for the strongest reasoning model I have access to. For fast,
-mechanical edits, a quicker model keeps the loop tight. Knowing when to switch is
-half the skill — a heavyweight model on a trivial rename is slow, and a
-lightweight model on a subtle bug will confidently lead you off a cliff.
+debugging I reach for the strongest reasoning model I have access to — Opus 5,
+Sonnet 5, or GPT-5.6 Sol. For fast, mechanical edits, a quicker model keeps the
+loop tight. Knowing when to switch is half the skill: a heavyweight model on a
+trivial rename is slow, and a lightweight model on a subtle bug will confidently
+lead you off a cliff.
+
+[Microsoft Foundry](https://ai.azure.com) is where I do that switching. The
+catalog runs to something like 1,900 models, frontier and small alike, under one
+portal with one governance and deployment story. Swapping models becomes a
+decision instead of a project.
+
+The part I didn't expect: the line between Foundry and **Microsoft Copilot
+Studio** is blurring, in the useful direction. From Foundry you can
+[publish an agent directly to Microsoft 365 Copilot and Teams](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/publish-copilot) —
+so the pro-dev surface and the place your users actually live are no longer
+separate problems. Build the agent where you have control over the model and the
+grounding, then ship it into the client people already have open. Worth knowing
+before you plan around it: publishing creates an Azure Bot Service resource, so
+you need rights to create one and configure its channels in the target resource
+group. Foundry roles alone don't cover that.
+
+Which means the work shifts to the part that was always the hard part: deciding
+what success should look like, picking the model that fits it, then handing that
+model the skills, instructions, and reference docs it has to abide by. That
+bundle is your agentic harness, and it matters more than which model you picked.
 
 ### Warp: a terminal that vibe codes with you
 
@@ -274,9 +296,9 @@ apps by describing what you want.
 
 Every tool on this list does the same thing from a different angle: it closes the
 gap between what an AI produces on instinct and what a professional would actually
-approve. Impeccable closes it on design. The right model closes it on reasoning.
-MCPs close it on facts and secure defaults. A reviewer — or a whole Squad of
-them — closes it on safety.
+approve. Impeccable closes it on design. The model you pick in Foundry closes it
+on reasoning. MCPs close it on facts and secure defaults. A reviewer — or a whole
+Squad of them — closes it on safety.
 
 Vibe coding isn't about walking away and letting the AI cook. It's about
 surrounding the AI with enough good judgment — some of it yours, most of it

@@ -4,6 +4,7 @@ heroImage: ../../assets/blog/portal-of-portals-deep-dive.webp
 heroAlt: "Editorial illustration representing Microsoft."
 description: "Why I built Portal 360° — a BFF-secured Next.js app that folds Entra, Intune, Azure, and Power Platform admin into one console — and how its auth, scopes, and APIs actually work."
 pubDate: 2026-07-15
+updatedDate: 2026-07-29
 tags: ["Microsoft", "Azure", "Intune", "Power Platform", "Microsoft Graph", "Security", "Projects"]
 featured: false
 draft: false
@@ -72,9 +73,8 @@ The scope is genuinely broad. Today it covers:
   Studio workflows, Azure DevOps, Microsoft Fabric, a reporting hub, AI Foundry,
   a Graph Explorer, and a DOCX editor
 
-Under the hood that's a Next.js app with more than 700 API routes. It's a lot of
-surface area, which is exactly why the boring parts — auth, scopes, rate limits —
-had to be right from the start.
+That's a lot of surface area, which is exactly why the boring parts — auth,
+scopes, rate limits — had to be right from the start.
 
 <Screenshot
   src={dashboard}
@@ -99,11 +99,14 @@ and one consistent way to act, rather than a folder full of bookmarks pointing a
 a dozen different security models.
 
 There's also an honest personal thread here: I'm a Microsoft architect who came to
-real software development late, through AI-assisted coding. A project with 700+
-routes is not something I'd have attempted the old way. Being able to describe a
-page, wire it to the right API with the right scope, and review the result changed
-what "one person can build" means. Portal 360° is the biggest thing I've built
-that way.
+real software development late, through AI-assisted coding. A project this broad
+is not something I'd have attempted the old way. What changed wasn't that I got
+better at TypeScript — it's that the models got good enough to work inside a
+harness. I describe what success looks like for a page, hand the model the skills
+and the reference docs it has to abide by, and review what comes back. Frontier
+models like Opus 5, Sonnet 5, and GPT-5.6 Sol turned "wire this page to the right
+API with the right scope" into a review problem instead of a research project.
+Portal 360° is the biggest thing I've built that way.
 
 ## The goals
 
@@ -139,10 +142,10 @@ The stack is Next.js 16, React 19, TypeScript 5, Tailwind 4, and NextAuth
 (Auth.js) v5. A few of those are on the bleeding edge — NextAuth v5 is still in
 beta as I write this — so I pin versions and re-verify behavior when I bump them.
 
-Every one of those 700+ API routes starts the same way: verify the session, or
-reject the request. There's a small helper for it, and the rule is absolute —
-an API route with no auth check is a bug, and there's tooling in the repo whose
-only job is to find routes missing that check.
+Every API route starts the same way: verify the session, or reject the request.
+There's a small helper for it, and the rule is absolute — an API route with no
+auth check is a bug, and there's tooling in the repo whose only job is to find
+routes missing that check.
 
 ```typescript
 export async function GET(request: NextRequest) {
@@ -191,7 +194,7 @@ prompts. A sampling of what's registered:
 - **Microsoft Fabric** — `https://api.fabric.microsoft.com/.default`
 
 Keeping the scope map in one place makes over-permissioning a review problem
-instead of an accident scattered across 700 files.
+instead of an accident scattered across hundreds of files.
 
 ## The APIs it talks to
 
@@ -272,7 +275,7 @@ BFF design.
 ## Where it stands, honestly
 
 Portal 360° is still private while I harden it, and I'm deliberate about that.
-Seven hundred routes across this many privileged APIs is a big attack surface, and
+This much reach across this many privileged APIs is a big attack surface, and
 I'd rather ship it when the security story is airtight than rush a public repo.
 
 It's also worth repeating the disclaimer, because I mean it: this is an
