@@ -1,0 +1,330 @@
+---
+title: "Publish Foundry Agents to Teams Behind a Private Endpoint"
+description: "Disabling public network access removes the Foundry portal's Teams publish button. Here's the REST path that replaces it, the inbound design you now own, and what it costs you."
+pubDate: 2026-07-29
+tags: ["Microsoft Foundry", "Agents", "Azure", "Security", "Copilot"]
+draft: true
+featured: false
+---
+
+import Explain from "@/components/Explain.astro";
+
+Publishing a Microsoft Foundry agent to Microsoft 365 Copilot and Teams is a
+button. You test the agent, pick an active version, fill in some metadata, choose
+a scope, and Foundry does the rest.
+
+Then you lock the project down, and the button stops working.
+
+There's a one-line note in the
+[publish how-to](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/publish-copilot)
+that's easy to skim past: publishing from the Foundry portal isn't available for
+projects that disable public network access. You have to use the REST API. That
+sentence is doing a lot of work, and what it's really telling you is that in an
+isolated deployment, the inbound network path becomes your problem. Not
+Microsoft's. Yours, with your firewall, your certificate, and your rules about
+who gets to reach the endpoint.
+
+This is what that actually involves, in the order you'll hit it.
+
+*Verified against Microsoft Learn on 2026-07-29. This surface is moving; check
+the linked docs before you build against it.*
+
+## Why the portal button disappears
+
+When someone types a message to your agent in Teams or Copilot, Microsoft's Bot
+Channel Adapter POSTs that message to your agent's messaging endpoint. The
+adapter runs on Microsoft's side of the fence, outside your network.
+
+Disable public network access and your Foundry endpoint resolves to a private IP
+inside your VNet. The adapter has nowhere to deliver to. The portal hides the
+button because a one-click flow can't invent a network path into your
+infrastructure.
+
+So the isolation you asked for and the delivery path Teams needs point in
+opposite directions. You resolve that by hand: a controlled, authenticated public
+entry point back into a network you deliberately made private.
+
+<Explain title="Doesn't Private Link solve this?">
+  Not here. The docs are explicit: Private Link isn't supported for Teams or
+  Azure Bot Service integrations. You can put a private endpoint in front of the
+  Foundry account, and you should, but the channel adapter still arrives from the
+  public internet and still needs a public entry point to hit. Plan for a
+  perimeter, not a private circuit.
+</Explain>
+
+## The decision you can't take back
+
+Before any of the publishing mechanics, there's a sequencing trap.
+
+Network injection is part of the create-resource flow for the Foundry account. It
+can't be added to an existing account, it takes effect when you create the first
+hosted agent, and you can't change it afterward. The configuration applies at the
+account level, so it covers hosted agents and prompt agents alike.
+
+Translation: if you prototype on a public account and later decide you need
+isolation, you're not flipping a setting. You're standing up a new account and
+moving projects. Decide on bring-your-own VNet before you create the account, not
+after the pilot goes well.
+
+Two more things that are equally sticky. The delegated subnet can't be resized
+after you assign it, and it can't be shared across Foundry resources. Multiple
+Foundry resources can share a VNet, but each one needs its own dedicated agent
+runtime subnet. The Foundry resource and the VNet also have to be in the same
+region, though they don't have to share a resource group.
+
+## What publishing actually does
+
+Read this list carefully, because you're about to reproduce it by hand. When you
+publish, Foundry:
+
+1. Validates the metadata you submitted, including display name, description, and
+   version.
+2. Compiles a Teams app manifest as a `.zip` package.
+3. Submits that manifest to the Microsoft 365 Copilot and Teams agent catalogs on
+   your behalf.
+4. Enables the `activity` protocol on the agent endpoint, which is how the channel
+   adapters exchange messages with it.
+5. Enables an authorization scheme, either `BotServiceRbac` or `BotServiceTenant`,
+   based on the scope you chose.
+
+None of that is network-specific. That's why steps 1 through 4 of the REST flow
+work for any project, public or private. Only the last step is unique to a locked
+down deployment.
+
+Before you start, get the permissions right, because this is the most common way
+the flow fails. You need the **Foundry User** role on the project, plus permission
+to create an Azure Bot Service resource and configure its channels in the target
+resource group. That's `Microsoft.BotService/botServices/write` and
+`Microsoft.BotService/botServices/channels/write`. The **Azure Bot Service
+Contributor** role grants exactly those. Foundry roles do not, and that catches
+people, because everything else in the flow works with Foundry roles alone. Then
+register the resource provider:
+
+```bash
+az provider register --namespace Microsoft.BotService
+```
+
+<Explain title="Why the role names might not match what you see">
+  Microsoft recently renamed the Foundry RBAC roles. Foundry User, Foundry Owner,
+  Foundry Account Owner, and Foundry Project Manager were previously Azure AI
+  User, Azure AI Owner, Azure AI Account Owner, and Azure AI Project Manager. The
+  role IDs and permissions are unchanged, but you'll see both names in the portal
+  and the docs while the rename rolls out.
+</Explain>
+
+## Steps 1 through 4: the REST equivalent of the button
+
+Authenticate once against the `https://ai.azure.com` audience and reuse the token:
+
+```bash
+az login
+az account get-access-token --resource https://ai.azure.com --query accessToken -o tsv
+```
+
+**Get the agent's identity.** Call the Get agent API against your project
+endpoint and copy `instance_identity.principal_id` out of the response. Grab your
+tenant ID with `az account show --query tenantId -o tsv`. You need both to create
+the bot.
+
+**Create the Azure Bot Service resource.** This is the component that proxies
+messages between the channel adapters and your agent. Create it with public
+network access disabled and attach the Teams channel:
+
+```bicep
+resource botService 'Microsoft.BotService/botServices@2022-09-15' = {
+  name: botName
+  kind: 'azurebot'
+  location: 'global'
+  sku: { name: botServiceSku }
+  properties: {
+    displayName: displayName
+    endpoint: endpoint
+    msaAppId: msaAppId
+    msaAppTenantId: tenantId
+    msaAppType: 'SingleTenant'
+    publicNetworkAccess: 'Disabled'
+  }
+}
+
+resource botServiceMsTeamsChannel 'Microsoft.BotService/botServices/channels@2021-03-01' = {
+  parent: botService
+  location: 'global'
+  name: 'MsTeamsChannel'
+  properties: { channelName: 'MsTeamsChannel' }
+}
+```
+
+`msaAppId` is the agent principal ID from the previous step, and `endpoint` is the
+agent's activity protocol endpoint. Deploy it into the resource group that holds
+your Foundry resource, then capture the ARM resource ID with `az bot show`, which
+you'll need to publish.
+
+**Publish.** POST to `microsoft365/publish` on the agent, passing the bot's ARM
+ID and your store metadata. Four validation rules cause most of the rejections:
+`appVersion` can only contain digits and periods and can't start with `0`,
+`developerName` is capped at 32 characters, `fullDescription` at 4,000, and every
+URL you supply has to be `https://`.
+
+A successful call returns a `titleId`. The agent is now in the catalog and
+completely unreachable, because nothing can deliver a message to it yet.
+
+## Step 5: building an inbound path you control
+
+Here's the part the docs describe in principle rather than prescription, because
+it depends entirely on what your organization already runs. Two things have to be
+true:
+
+- **A publicly reachable entry point.** Something with a public IP you control
+  that can route traffic inward. A firewall, a load balancer, a CDN, an
+  application gateway. Whatever your network team already operates.
+- **TLS termination.** Something has to terminate TLS and present a valid
+  certificate for the hostname the channel adapter connects to, then forward the
+  request to your agent's private endpoint.
+
+These can be one component or two. Azure Application Gateway does both, and it
+can present a certificate against a public IP without you supplying one. The
+other common shape is a firewall as the public entry point, with a DNAT rule
+forwarding 443 to a reverse proxy behind it that terminates TLS. Order doesn't
+matter as long as both requirements are met end to end.
+
+If the adapter can't reach the agent, the failure is almost always in this chain.
+Confirm the `A` record points at the firewall, the DNAT rule forwards 443 to the
+proxy, and the proxy presents a certificate for the hostname in question.
+
+Whatever sits at the perimeter, restrict inbound traffic to the published Bot
+Channel Adapter source ranges from
+[Microsoft 365 URLs and IP address ranges](https://learn.microsoft.com/en-us/microsoft-365/enterprise/urls-and-ip-address-ranges).
+It costs nothing and it drops the internet's background noise before any
+application-layer control has to think about it.
+
+## Authenticating what comes through the door
+
+Every request from the channel adapter carries a signed JWT in the
+`Authorization` header. Foundry validates that token and authorizes the end user,
+so in most deployments you don't need to do anything else.
+
+If your security model requires traffic to be authenticated *before* it crosses a
+boundary, you can validate the JWT yourself at the TLS-terminating component.
+Use issuer `https://api.botframework.com` and an audience matching your bot's
+Microsoft App ID. Getting either wrong produces requests that reach the agent and
+are rejected, which is a confusing failure mode until you know to look there.
+
+There's one detail here that deserves more attention than its placement in the
+docs suggests. **A published agent's Teams app can be installed in any tenant.**
+Requests originating outside your organization can reach your endpoint before
+Foundry applies RBAC. Your perimeter is genuinely internet-facing, and the fact
+that you built it for one specific caller doesn't mean only that caller will find
+it.
+
+If you don't have infrastructure that can validate a JWT, there's a documented
+lighter-weight fallback: restrict source IPs to the Teams required ranges, and
+reject any request whose `x-tenant-id` header isn't your own tenant. Be honest
+about what that buys you. Any caller who reaches your endpoint can set a header,
+so the tenant check only means something when it's paired with the IP
+restriction. It's defense in depth for organizations that can't do the strong
+version, not an equivalent to it.
+
+## Don't forget outbound
+
+Inbound gets all the attention, and then the agent receives messages and never
+replies. That's an egress problem. Allow outbound access to
+`smba.trafficmanager.net`, `login.microsoftonline.com`, and
+`login.botframework.com`.
+
+If you're running Azure Firewall in front of the agent subnet, you'll also want
+the FQDNs listed under Managed Identity in the Azure Firewall integration guidance,
+or the `AzureActiveDirectory` service tag. Source-code agent deployments need
+their own deployment endpoints allowed on top of that.
+
+## Scope controls two different things
+
+`publishScope` looks like a visibility setting. It's actually setting visibility
+and authorization together, and conflating them causes real confusion later.
+
+- **`Shared`** (the portal's *Just you*) enables `BotServiceRbac`. No admin
+  approval. The agent appears under *Your agents*, and callers need the Azure
+  permissions to invoke the agent in Foundry. `Personal` is accepted and treated
+  the same way.
+- **`Tenant`** (the portal's *People in your organization*) enables
+  `BotServiceTenant`. Requires Microsoft 365 admin approval in the admin center,
+  after which the agent appears under *Built by your org* and anyone in the tenant
+  can call it.
+
+The practical consequence: if you publish to `Shared` and hand colleagues a link,
+they'll hit authorization errors unless they have a role on the Foundry project.
+That's the RBAC scheme working correctly, not a bug. Publish to `Tenant` when you
+want access governed by admin approval instead of Azure RBAC.
+
+One licensing note that changes how you scope a pilot: end users don't need a
+Microsoft 365 Copilot license to use a published agent in Copilot Chat. Usage
+that touches shared tenant data, like SharePoint or Copilot connectors, can incur
+usage-based charges.
+
+## Limitations to check before you promise anything
+
+These aren't networking-specific, but they shape what you can commit to, and it's
+better to know before the demo:
+
+- **Private Link isn't supported** for Teams or Azure Bot Service integrations.
+- **No streaming responses and no citations** for published agents. If you're
+  selling grounded answers with visible sources, check this against current docs
+  before you design around it.
+- **File uploads and image generation don't work** in Microsoft 365. They do work
+  in Teams.
+
+One more for the runbook: if a conversation gets stuck after a tool error, later
+messages keep failing. Microsoft 365 Copilot lets you start a new chat. Teams
+doesn't yet expose a way to reset the session, so you send the agent
+`/foundry_new_preview`.
+
+## Sizing the subnet
+
+Since you can't resize it later, get this right the first time.
+
+The delegated subnet must be delegated to `Microsoft.App/environments` and use
+RFC 1918 space only: `10.0.0.0/8`, `172.16.0.0/12`, or `192.168.0.0/16`. Class A
+(`10.x`) ranges are only available in certain regions. CGNAT and public ranges
+cause routing failures.
+
+`/27` is the supported minimum. `/24` is the recommendation for production with
+hosted agents, and the reason is upgrade behavior rather than steady-state load:
+platform upgrades run old and new revisions in parallel, so IP consumption spikes
+during rollouts you don't control the timing of. Target 80% maximum utilization
+to absorb that.
+
+Concurrent sessions are the constraint people miss. By default, usable subnet IPs
+and concurrent sessions map 1:1, subject to a regional limit. A `/26` gives you
+roughly 59 usable IPs and about 50 concurrent sessions, which is the documented
+maximum under the default mapping. If you need more from the same subnet, open an
+Azure support request with your subscription, region, and expected concurrency;
+support can raise the ratio to 1:10.
+
+Hosted agents and prompt agents consume that space differently. Each hosted agent
+runs in its own Micro VM with a dedicated NIC, so it takes an IP per agent and per
+concurrent session. Prompt agents share a small static pool, roughly 10 per
+project, no matter how many you run. If you're mostly running prompt agents, `/27`
+is genuinely workable. If you're running hosted agents at any scale, it isn't.
+
+## What I'd tell an architect starting this
+
+The publishing flow isn't the hard part. It's four API calls, and there's a
+[notebook](https://github.com/mattfeltonma/azure-terraform-lab-base-azfw/blob/main/workloads/microsoft-foundry/sample-code/publish-agent-teams/publish-agent.ipynb)
+that walks steps 1 through 4 if you'd rather read code than prose.
+
+The hard part is that publishing an isolated agent to Teams means accepting an
+internet-facing entry point into a network you isolated on purpose, and owning
+the controls on it. That's a design conversation with your network and security
+teams, not a task you complete at the end of a sprint. Have it before you pick
+the networking model, because the networking model is set at account creation and
+doesn't change.
+
+If you're building this out, the two docs to read in full are
+[Publish agents by using the REST API and VNet guidance](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/publish-copilot-virtual-network)
+and the
+[networking deep dive](https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/agents-networking-deep-dive).
+Between them they cover the IP allocation math and the failure modes I've only
+summarized here.
+
+I'd like to hear how other people terminated the inbound path, particularly
+anyone who put Azure API Management in front of it and validated the JWT there.
+[Reach out](/contact) if you've built this.
