@@ -4,6 +4,7 @@ heroImage: ../../assets/blog/servicenow-copilot-studio-user-login-sso.webp
 heroAlt: "Cinematic enterprise hero image representing Copilot Studio — an intelligent business operations center."
 description: "A complete, end-to-end guide to wiring the ServiceNow connector into a Copilot Studio agent using the Microsoft Entra ID User Login authentication type — so every request runs as the signed-in user and ServiceNow's own roles, ACLs, and audit trails stay authoritative. No service accounts, no shared credentials."
 pubDate: 2026-07-22
+updatedDate: 2026-07-30
 tags: ["Copilot Studio", "ServiceNow", "Microsoft Entra ID", "Identity", "Security"]
 featured: false
 draft: false
@@ -47,41 +48,163 @@ the way.
   fixed ServiceNow account, so every user acts as that account. **Certificate**
   OAuth is an application-token (app-only) pattern for service-to-service or
   unattended access, so requests execute with the *application's* permissions.
-  Neither honors the signed-in user's ServiceNow roles. **Microsoft Entra ID
-  User Login** is delegated and per-user — each agent user signs in, and
-  ServiceNow evaluates the request as that mapped user.
+  Neither honors the signed-in user's ServiceNow roles. Both are legitimate
+  choices for the right scenario — see [Choosing an integration
+  path](#choosing-an-integration-path) for the full comparison — but neither is
+  what you want behind an interactive agent.
 </Explain>
 
 ## Implementation overview
 
-This guide provides an end-to-end implementation path for configuring the
-Microsoft Entra ID User Login authentication type for the ServiceNow connector in
-Copilot Studio. Its goal is to help platform administrators, ServiceNow
-administrators, and Copilot Studio makers establish a secure delegated identity
-model in which every user authenticates with their own Microsoft Entra identity
-before the agent accesses ServiceNow. The resulting design allows ServiceNow API
-calls to execute in the context of the signed-in Microsoft 365 user, rather than
-through a shared service account, so existing ServiceNow access control lists,
-roles, record-level permissions, and audit trails remain authoritative.
+This guide walks the full trust chain: the two Entra app registrations, the
+ServiceNow OIDC provider, the Copilot Studio connection, connection-parameter
+sharing, and the per-user consent flow at runtime. It's written for the three
+people who have to agree before this ships — the Entra admin, the ServiceNow
+admin, and the Copilot Studio maker.
 
-It walks through the complete trust chain across Microsoft Entra ID, the
-Microsoft-managed ServiceNow connector, ServiceNow OIDC configuration, Copilot
-Studio connection settings, and end-user consent. It's meant to remove ambiguity
-around the two Entra applications involved, identity-claim mapping,
-connection-parameter sharing, and the runtime experience that creates a separate
-connection for each user.
-
-By following the guide, teams should be able to deploy and validate a
-production-ready authentication pattern without service accounts, shared
-credentials, or customer-managed certificates; confirm that ServiceNow receives
-and maps the correct user identity; verify that least-privilege permissions are
-enforced at runtime; and diagnose the most common configuration failures before
-broad rollout. The scope is specifically the connector's delegated Microsoft
-Entra ID User Login flow for supported `*.service-now.com` instances; it does not
-replace broader ServiceNow role design, Copilot Studio environment governance,
-DLP policy, ALM, or agent-level confirmation controls.
+Scope is deliberately narrow: the connector's delegated Microsoft Entra ID User
+Login flow on supported `*.service-now.com` instances. It doesn't replace
+ServiceNow role design, environment governance, DLP policy, or agent-level
+confirmation controls. Before the walkthrough, though, it's worth being honest
+that User Login isn't the only way to connect these two platforms — and for some
+scenarios it's the wrong one.
 
 **Tested against ServiceNow releases:** Yokohama, Zurich, and Australia.
+
+## Choosing an integration path
+
+"Integrate ServiceNow with Copilot" means at least four different things, and
+people routinely argue past each other because they're each picturing a different
+one. Before any of the auth detail matters, pick the surface.
+
+```text
+What does the agent need to do with ServiceNow?
+│
+├─ Answer questions from KB articles or catalog items
+│  └─ Copilot connector (ServiceNow Knowledge / ServiceNow Catalog)
+│     Crawls content into the Microsoft Graph semantic index. Read-only.
+│     Set up once, tenant-wide, by an M365 admin.
+│
+├─ Read or write live records (incidents, changes, requests)
+│  └─ ServiceNow connector, added as a tool in Copilot Studio
+│     ├─ Must honor each user's ServiceNow roles? → Entra ID User Login ★
+│     ├─ Unattended / background automation?      → Entra ID OAuth + Certificate
+│     ├─ ServiceNow team owns the credentials?    → ServiceNow OAuth 2.0
+│     └─ Custom domain, GCC, or nothing else works? → Basic Authentication
+│
+├─ Both (grounded answers AND record actions)
+│  └─ Copilot connector for knowledge + connector tool for actions.
+│     They're independent — different setup, different identity model.
+│
+└─ Something the certified connector doesn't expose
+   └─ MCP server, custom connector, or an HTTP request node
+
+★ = the path this guide walks end to end.
+```
+
+### Path 1: Copilot connectors (the indexing path)
+
+Copilot connectors — the feature formerly branded Graph connectors — crawl an
+external system on a schedule and copy the content into Microsoft's semantic
+index so Copilot and Microsoft Search can ground answers on it. Microsoft ships
+two in the gallery for this platform: **ServiceNow Knowledge** and **ServiceNow
+Catalog**. An M365 admin deploys them from the Microsoft 365 admin center under
+**Copilot > Connectors**, and Copilot Studio makers can then add them as a
+knowledge source on any agent.
+
+<Explain title="Yes, it's Microsoft Graph — but not the part you're picturing">
+  Copilot connectors write to the *external items* surface of Microsoft Graph
+  (`/external/connections`), which backs the semantic index. Same API host you use
+  for Entra ID, Intune, SharePoint, and OneDrive; completely separate content
+  store. Indexing your ServiceNow knowledge base does **not** create directory
+  objects, does not put anything in SharePoint, and gives your agent no ability to
+  write back to ServiceNow. If the agent needs to open an incident, you still need
+  Path 2.
+</Explain>
+
+Authentication for the connector crawl itself:
+
+| Auth type | What you configure | Pros | Cons |
+| --- | --- | --- | --- |
+| **Federated Auth** (Microsoft's recommendation) | Look up the service principal object ID of Microsoft's first-party connector app `933838e2-bec1-440f-a634-9363c82e5b6d`, register an Entra ID OIDC provider in ServiceNow, then create a ServiceNow user with **Identity Type = Machine**, User ID = that object ID, and the `knowledge_admin`, `user_criteria_admin`, and `user_admin` roles | No secret to store or rotate; nothing expires on you | Newest option, so fewer people have run it; needs a ServiceNow release that supports OIDC ID token verification and machine identities |
+| **Basic authentication** | A ServiceNow account with the `knowledge` (or `catalog`) role | Fastest to stand up; works on custom domains | Password stored in the connector config; rotation is a manual, breaking event |
+| **OAuth 2.0** | An OAuth endpoint in ServiceNow's Application Registry, with the redirect URL set to the Microsoft Search callback for *your* cloud (commercial, GCC, GCC High, DoD each differ) | Token-based; ServiceNow admins control lifespans | Client secret to manage; wrong redirect URL for your cloud is the classic failure |
+| **Microsoft Entra ID OpenID Connect** | A single-tenant Entra app with a client secret, plus an OAuth OIDC entity in ServiceNow | Keeps trust anchored in Entra ID | Still a client secret with an expiry date |
+
+<Explain title="How permissions actually work on the indexing path">
+  All four options crawl as a **single identity**. Per-user security trimming
+  doesn't come from the signed-in user's ServiceNow session — it comes from
+  ServiceNow **user criteria** captured at index time and mapped onto the indexed
+  items. Two flows exist: **Simple** (the default) ignores script-based user
+  criteria, and **Advanced** evaluates them by calling a Scripted REST API. If a
+  script-based criterion sits on a *Cannot Read* path and you're on Simple, the
+  connector fails safe and hides that content from everyone. That's documented
+  behavior, not a bug — but it surprises people who assume "nothing showed up"
+  means the crawl broke.
+</Explain>
+
+### Path 2: The ServiceNow connector as a tool
+
+This is the live path. The certified Microsoft-published ServiceNow connector
+(Premium in Copilot Studio, Power Apps, Power Automate, and Logic Apps) calls the
+ServiceNow REST API in real time: Create Record, List Records, Update Record, Get
+Knowledge Articles, Order item, attachments, and so on. Nothing is copied
+anywhere; every call hits your instance and is subject to that instance's ACLs
+for whichever identity you authenticated as.
+
+That identity is the whole game, and it's chosen entirely by the authentication
+type on the connection:
+
+| Auth type | ServiceNow sees | Shareable? | Requires |
+| --- | --- | --- | --- |
+| **Microsoft Entra ID User Login** (`entraIDUserLogin`) | The signed-in agent user, mapped by OIDC claim | No — each user gets their own connection | Entra "Application A" exposing `user_impersonation`, connector app `c26b24aa-…` authorized on it, a ServiceNow OIDC provider config, a matching `sys_user` per person, and parameter sharing turned on |
+| **Entra ID OAuth using Certificate** (`aadOAuthCert`) | The application, not the person | Yes | A PFX certificate plus tenant ID, client ID, and resource URI; Power Platform only |
+| **ServiceNow OAuth 2.0** (`oauth2ServiceNow`) | Whichever ServiceNow account authorized the connection | No | An OAuth endpoint in ServiceNow's Application Registry with a client ID and secret |
+| **Basic Authentication** (`basicAuthentication`) | One fixed ServiceNow account | No | Instance name, username, and password |
+| **Default** | One fixed ServiceNow account | No | Deprecated — exists only for legacy connections. Don't build on it. |
+
+And the trade-offs behind those requirements:
+
+| Auth type | Pros | Cons |
+| --- | --- | --- |
+| **Entra ID User Login** | ServiceNow roles, ACLs, record-level permissions, and audit identity all stay authoritative; no secrets or certificates anywhere; least-privilege comes free because it's already modeled in ServiceNow | Every user needs an active `sys_user` with the right roles and a matching claim value; each user hits a one-time consent card; interactive scenarios only; **`*.service-now.com` instances only** |
+| **Certificate (app-only)** | Works unattended, so it's the right answer for scheduled or background flows; the connection is shareable, so one setup serves many makers | Every request runs with the *application's* rights — one over-permissioned ServiceNow account away from an oversharing incident; certificates expire and someone has to own renewal; a shared connection also shares the throttle budget |
+| **ServiceNow OAuth 2.0** | No Entra app registration needed, which matters when the ServiceNow team owns identity end to end; honors the authorizing account's ACLs | Client secret to store and rotate; the identity is "whoever set it up," not the person chatting; redirect URI mismatches are the number-one setup failure |
+| **Basic Authentication** | Works everywhere the others don't — custom domains, migrated instances, GCC scenarios; nothing to register on either side | Shared credential, zero per-user accountability, every audit record points at the service account, and password rotation silently breaks every agent using it |
+
+<Explain title="Throttling is per connection, and that changes the math">
+  The connector allows **600 API calls per connection per 60 seconds**. With
+  Entra ID User Login every user has their own connection, so the budget scales
+  with your user base. With Certificate or Basic Auth, *everyone* shares one
+  bucket — a popular agent can throttle itself at scale. Worth modeling before you
+  pick the "simpler" option.
+</Explain>
+
+### Path 3: MCP servers, custom connectors, and raw HTTP
+
+When the certified connector doesn't expose what you need — a scoped app's custom
+table, a Scripted REST API, a workflow you've built yourself — you have three
+escape hatches. Copilot Studio can consume **MCP servers** (generative
+orchestration must be on, and the server's tools appear automatically), you can
+build a **custom connector** from an OpenAPI definition, or you can call the API
+directly from an **HTTP request node**.
+
+All three trade convenience for ownership. You handle authentication, token
+refresh, error handling, and throttling yourself, and DLP policy treats a custom
+connector differently than a certified one. Verify what your ServiceNow release
+offers here before designing around it; this space has moved fast and what's
+available depends heavily on your instance version and plugins.
+
+### The short version
+
+Use a **Copilot connector** when the answer already exists in a knowledge base or
+catalog and the agent just needs to find it. Use the **connector as a tool with
+Entra ID User Login** when the agent acts on live records on someone's behalf and
+ServiceNow's permission model has to hold. Reach for **Certificate** only for
+genuinely unattended work, and treat **Basic Authentication** as a compatibility
+fallback rather than a design choice.
+
+The rest of this guide is the User Login path, start to finish.
 
 ## Architectural overview
 
@@ -126,41 +249,19 @@ Two Entra application registrations are involved:
   stop; it's already there.
 </Explain>
 
-## Authentication options for ServiceNow tools
-
-When the ServiceNow connector is used as a tool in Copilot Studio, the connection
-can be configured with Basic Authentication, Microsoft Entra ID OAuth using
-Certificate, or Microsoft Entra ID OAuth using User Login. The connector also
-exposes a ServiceNow OAuth 2.0 type that authenticates directly against
-ServiceNow's own OAuth server rather than Microsoft Entra ID; it's less common in
-Copilot Studio agent scenarios and is not the focus of this guide. Basic
-Authentication uses a fixed ServiceNow account. Certificate-based OAuth is an
-application-token pattern suited to service-to-service or unattended access and
-therefore executes with the permissions assigned to the application identity.
-Microsoft Entra ID User Login is a delegated, per-user pattern in which each agent
-user signs in and ServiceNow evaluates the request as that mapped user.
-
-Microsoft Entra ID User Login is often preferred for interactive Copilot Studio
-agents because it honors the signed-in user's existing ServiceNow roles, ACLs,
-record-level permissions, and audit identity. This avoids running every request
-through a shared service account or the Copilot Studio agent creator's connection,
-either of which can grant users access or actions beyond what their own ServiceNow
-account permits.
-
-This delegated authentication pattern can be used by Copilot Studio tools that
-call ServiceNow APIs for Incident Management, Change Management, and Knowledge
-Management, subject to the connector operation, enabled ServiceNow APIs or
-plugins, and the signed-in user's ServiceNow permissions. For example, the user
-must have the appropriate incident or change roles to access those records, and
-knowledge operations require access to the relevant knowledge bases and the
-ServiceNow Knowledge API (the `sn_km_api` plugin) where applicable.
-
 ## Prerequisites
 
 - Admin access to Microsoft Entra ID (Azure portal)
 - Admin access to a ServiceNow instance (Yokohama, Zurich, or Australia release)
 - Copilot Studio maker access with an agent that will use a ServiceNow connector action
 - ServiceNow OAuth enabled
+
+Delegated auth gets you the right *identity*; it doesn't grant capability. What
+the agent can actually do still depends on the connector operation, the
+ServiceNow APIs and plugins you've enabled, and the signed-in user's own roles.
+Incident and change operations need the corresponding ServiceNow roles, and
+knowledge operations need access to the relevant knowledge bases plus the
+Knowledge API (`sn_km_api`) plugin where applicable.
 
 <Explain title="⚠ ServiceNow domain limitation: custom domains are not supported">
   The ServiceNow connector's OAuth User Login flow only supports instances on
@@ -380,9 +481,12 @@ either end users or makers click **Allow** on the consent card at runtime.
 
 ## References
 
-- Microsoft Learn: ServiceNow connector
-- Copilot Studio: Authenticate with Microsoft Entra ID
-- ServiceNow docs: OIDC ID token verification
+- [ServiceNow connector reference (Power Platform / Copilot Studio)](https://learn.microsoft.com/connectors/service-now/)
+- [Deploy the ServiceNow Knowledge Copilot connector](https://learn.microsoft.com/microsoftsearch/servicenow-connector)
+- [Deploy the ServiceNow Catalog Copilot connector](https://learn.microsoft.com/microsoftsearch/servicenow-catalog-connector)
+- [Add Copilot connectors as a knowledge source in Copilot Studio](https://learn.microsoft.com/microsoft-copilot-studio/knowledge-copilot-connectors)
+- [Extend your agent with Model Context Protocol](https://learn.microsoft.com/microsoft-copilot-studio/agent-extend-action-mcp)
+- ServiceNow product docs: OIDC ID token verification (varies by release — check the docs for your instance version)
 
 ---
 
@@ -392,4 +496,10 @@ either end users or makers click **Allow** on the consent card at runtime.
   connector in Copilot Studio, including prerequisites, implementation steps,
   troubleshooting, security guidance, and references. Tested against ServiceNow
   Yokohama, Zurich, and Australia releases.
+
+  **v1.1 — 2026-07-30 — Russ Rimmerman.** Added the "Choosing an integration
+  path" section: a decision tree across all four integration surfaces, plus
+  comparison tables for Copilot connector authentication (Federated Auth, Basic,
+  OAuth 2.0, Entra ID OIDC) and ServiceNow connector authentication (User Login,
+  Certificate, ServiceNow OAuth 2.0, Basic) with requirements and trade-offs.
 </Explain>
