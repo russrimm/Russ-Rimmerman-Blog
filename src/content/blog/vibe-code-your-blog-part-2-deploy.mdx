@@ -4,6 +4,7 @@ heroImage: ../../assets/blog/vibe-code-your-blog-part-2-deploy.webp
 heroAlt: "Editorial illustration representing Vibe Coding."
 description: "Deploy an Astro blog to Azure Static Web Apps with OIDC, least-privilege access, and a walkthrough of the resources and trade-offs."
 pubDate: 2026-07-20
+updatedDate: 2026-07-31
 tags:
   [
     "Vibe Coding",
@@ -51,8 +52,9 @@ is, *why* it's required, and *what the security trade-offs are*.
 - A live **Azure Static Web App** serving it on `https://<something>.azurestaticapps.net`
 - A **GitHub Actions** pipeline that rebuilds and redeploys every time you push
   to `main`
-- **Zero long-lived secrets** stored anywhere — deployment authenticates with a
-  short-lived, least-privilege identity
+- **No long-lived deployment credential stored in GitHub** — the workflow uses
+  OIDC to sign in to Azure, then retrieves the Static Web App's deployment token
+  just in time for each Static Web Apps action
 
 ## Step 1: Build the site locally
 
@@ -133,9 +135,10 @@ the small `/api` function behind the newsletter form.
 **Why it's required:** it's the thing visitors connect to.
 
 **Security angle:** Static Web Apps serves **pre-built static files**, so there's
-no server-side app to exploit at runtime — no database, no CMS admin panel, no
-long-running process. It's HTTPS by default. The attack surface is about as small
-as web hosting gets.
+no database, CMS admin panel, or long-running front-end process to patch. This
+blog does still have a [managed Azure Functions API](https://learn.microsoft.com/azure/static-web-apps/apis-overview)
+for newsletter sign-up, so that endpoint remains runtime code and needs the same
+input validation, dependency patching, and monitoring as any other API.
 
 <Explain title="Free tier — what's the catch?">
   For a personal blog, essentially none. The Free tier includes global
@@ -183,8 +186,10 @@ and one for pull requests (preview builds).
 
 **Security angle — this is the headline:**
 
-- **No long-lived secret exists.** There's nothing in GitHub to steal, leak, or
-  rotate. A leaked deployment token is a real incident; a *missing* one can't be.
+- **No long-lived Azure credential is stored in GitHub.** Azure still creates a
+  [resettable deployment token](https://learn.microsoft.com/azure/static-web-apps/deployment-token-management)
+  for the Static Web App. The difference is that this workflow leaves the durable
+  token in Azure instead of copying it into a repository secret.
 - **Tightly scoped trust.** Azure only accepts a token whose subject exactly
   matches `repo:your-org/your-repo:ref:refs/heads/main` (or `:pull_request`). A
   different repo, a different branch, a fork — none of them can impersonate your
@@ -193,12 +198,13 @@ and one for pull requests (preview builds).
   later.
 
 <Explain title="OIDC vs. a deployment token — what's the actual difference?">
-  A **deployment token** is a long-lived password you paste into GitHub secrets.
-  It works, but it sits there forever until you remember to rotate it, and anyone
-  who reads it can deploy. **OIDC federation** stores *nothing* sensitive —
-  GitHub proves its identity fresh on every run and gets a credential that
-  expires almost immediately. Same result, dramatically smaller risk. It's the
-  approach Microsoft and GitHub both recommend for CI/CD.
+  A Static Web App **deployment token** is a persistent credential Azure creates
+  for deployment. The common setup copies it into GitHub secrets, where anyone
+  who reads it can deploy until you reset it. **OIDC federation** removes the
+  stored Azure sign-in credential from GitHub: GitHub proves its identity on each
+  run, receives a short-lived Azure token, and uses that access to retrieve the
+  Static Web App deployment token just in time. The deployment token still exists
+  in Azure; the safer part is not keeping another durable copy in GitHub.
 </Explain>
 
 ### 5. A custom, least-privilege role
@@ -227,10 +233,10 @@ grant the smallest one that works.
   subscription) is the tightest boundary Azure offers.
 
 <Explain title="Why fetch the token at runtime instead of just storing it?">
-  Storing the deployment token would reintroduce exactly the long-lived secret we
-  worked to eliminate. Fetching it fresh each run means the only durable thing in
-  your GitHub settings is a set of *identifiers* — not a credential. The token
-  lives only in memory, during a single job, and is masked in the logs.
+  Storing the deployment token would put a second durable copy of that credential
+  in GitHub. Fetching it each run means your GitHub settings hold only
+  *identifiers*, while Azure remains the source of truth for the resettable token.
+  The workflow's copy exists only during the job and is masked in the logs.
 </Explain>
 
 ### 6. Non-sensitive configuration in GitHub
@@ -276,11 +282,11 @@ If you're weighing options, here's how the choices in this setup stack up:
 
 | Choice | Alternative | Why this is safer |
 | --- | --- | --- |
-| OIDC federated identity | Stored deployment token | No long-lived secret to leak or rotate; tokens are short-lived and scoped to one repo/branch. |
+| OIDC federated identity | Stored Azure client secret | No long-lived Azure sign-in credential in GitHub; the OIDC token is short-lived and scoped to one repo/branch. |
 | Custom `listSecrets`-only role | Built-in **Contributor** | Identity can do one thing on one resource, not manage your subscription. |
-| Fetch token at runtime | Store token in GitHub secrets | The durable footprint is identifiers, never a credential. |
+| Fetch token at runtime | Store token in GitHub secrets | Azure keeps the durable deployment token; GitHub stores identifiers instead of another credential copy. |
 | Dedicated deploy identity | Personal account / shared key | Revocable, auditable, and blast-radius-limited. |
-| Static Web App (prebuilt) | Server-rendered app | Almost no runtime attack surface; HTTPS by default. |
+| Static front end + managed API | Server-rendered front end | Smaller front-end runtime surface; the managed `/api` function still requires normal API hardening. |
 
 ## The errors I hit — so you don't have to
 

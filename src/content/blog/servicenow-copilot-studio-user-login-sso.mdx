@@ -4,7 +4,7 @@ heroImage: ../../assets/blog/servicenow-copilot-studio-user-login-sso.webp
 heroAlt: "Cinematic enterprise hero image representing Copilot Studio — an intelligent business operations center."
 description: "Connect ServiceNow to Copilot Studio with Microsoft Entra ID User Login so requests honor each user's roles, ACLs, and audit trail."
 pubDate: 2026-07-22
-updatedDate: 2026-07-30
+updatedDate: 2026-07-31
 tags: ["Copilot Studio", "ServiceNow", "Microsoft Entra ID", "Identity", "Security"]
 featured: false
 draft: false
@@ -56,11 +56,11 @@ the way.
 
 ## Implementation overview
 
-This guide walks the full trust chain: the two Entra app registrations, the
-ServiceNow OIDC provider, the Copilot Studio connection, connection-parameter
-sharing, and the per-user consent flow at runtime. It's written for the three
-people who have to agree before this ships — the Entra admin, the ServiceNow
-admin, and the Copilot Studio maker.
+This guide walks the full trust chain: the customer-owned Entra app registration,
+Microsoft's first-party connector identity, the ServiceNow OIDC provider, the
+Copilot Studio connection, connection-parameter sharing, and the per-user consent
+flow at runtime. It's written for the three people who have to agree before this
+ships — the Entra admin, the ServiceNow admin, and the Copilot Studio maker.
 
 Scope is deliberately narrow: the connector's delegated Microsoft Entra ID User
 Login flow on supported `*.service-now.com` instances. It doesn't replace
@@ -68,6 +68,10 @@ ServiceNow role design, environment governance, DLP policy, or agent-level
 confirmation controls. Before the walkthrough, though, it's worth being honest
 that User Login isn't the only way to connect these two platforms — and for some
 scenarios it's the wrong one.
+
+Here, "SSO" describes the delegated Entra identity reused by the per-user
+connection. The first run still includes the **Allow** card and can prompt the
+user to sign in; it isn't a promise of zero prompts on first use.
 
 **Tested against ServiceNow releases:** Yokohama, Zurich, and Australia.
 
@@ -232,21 +236,25 @@ End User → Copilot Studio Agent → Entra ID (issues token as user)
   caption="The same integration at a glance — five phases from Entra app registration through knowledge and action integration."
 />
 
-Two Entra application registrations are involved:
+Two Entra application identities are involved:
 
 - **Application A (customer-owned)** — represents the ServiceNow resource. *You
   create this.*
 - **Application B (Microsoft-owned first-party connector)** — client ID
-  `c26b24aa-7874-4e06-ad55-7d06b1f79b63`. It already exists in every tenant.
-  **Do NOT create your own app registration for this ID.**
+  `c26b24aa-7874-4e06-ad55-7d06b1f79b63`, as documented in Microsoft's
+  [ServiceNow integration guidance](https://learn.microsoft.com/microsoft-365/copilot/employee-self-service/servicenow-hrsd-itsm#servicenow-configuration).
+  Microsoft owns its multitenant app registration; your tenant uses a local
+  service principal (shown under **Enterprise applications**) when the app is
+  consented for use. **Do NOT create your own app registration for this ID.**
 
 <Explain title="Keep the two apps straight — it's the #1 source of confusion">
   **Application A** is the resource: it's the audience ServiceNow trusts and the
   thing you expose a `user_impersonation` scope on. **Application B** is
   Microsoft's shared connector app that actually requests tokens on the user's
-  behalf. Your only job with Application B is to *authorize* it on Application A —
-  never to recreate it. If you find yourself registering an app with that GUID,
-  stop; it's already there.
+  behalf. Its [service principal is the tenant-local instance of Microsoft's
+  application](https://learn.microsoft.com/entra/identity-platform/app-objects-and-service-principals);
+  your job is to *authorize* that client on Application A, never to recreate its
+  app registration. If you find yourself registering an app with that GUID, stop.
 </Explain>
 
 ## Prerequisites

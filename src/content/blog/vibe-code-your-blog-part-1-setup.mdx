@@ -4,6 +4,7 @@ heroImage: ../../assets/blog/vibe-code-your-blog-part-1-setup.webp
 heroAlt: "Cinematic enterprise hero image representing Vibe Coding — an AI innovation lab bathed in soft volumetric light."
 description: "A beginner-friendly setup guide for building your first project with AI: GitHub, Git, Node.js, Python, Copilot, agents, and reusable skills."
 pubDate: 2026-07-15
+updatedDate: 2026-07-31
 tags:
   ["Vibe Coding", "Vibe Coding Blog Series", "AI", "Getting Started", "Copilot"]
 featured: false
@@ -60,7 +61,8 @@ last:
 
 1. **A GitHub account** — your home base for code, history, and hosting.
 2. **Git** — the tool that actually tracks your changes locally.
-3. **The GitHub Copilot app** — vibe coding from anywhere, no editor required. This is what I recommend as your primary surface — it can now do everything you need for this series.
+3. **A Copilot agent surface** — use the native GitHub Copilot desktop app,
+   Copilot cloud agent on GitHub.com, or both.
 4. **VS Code Insiders** *(optional)* — the editor where the deeper vibe coding happens, if you want a local editor alongside the app.
 5. **Node LTS + npm** — the engine that runs a modern website.
 6. **Python (latest)** — not strictly required to run the blog, but so much of the vibe-coding ecosystem (scripts, tools, MCP servers, AI helpers) assumes it's there that you'll save yourself pain by installing it now.
@@ -91,21 +93,21 @@ settings. GitHub requires it for most contributors now, and you don't want to hi
 that wall mid-project.
 
 <Explain title="Free, Pro, Enterprise, or Education — which one do I need?">
-  For this series, the **free** plan is genuinely fine — you get unlimited public
-  and private repos, GitHub Actions minutes, and the basics of Copilot. Start
-  there and don't overthink it.
+  A free GitHub account is enough for the repositories and Actions work in this
+  series. **Copilot Free** is more limited, though, and doesn't include Copilot
+  cloud agent. If you want the asynchronous branch-and-PR workflow described
+  here, you'll need a paid Copilot plan or an eligible Education plan.
 
-  That said, if you're going to vibe code seriously, [**GitHub Copilot Pro**](https://github.com/features/copilot/plans)
-  (or a **GitHub Enterprise** seat if your employer offers one) is well worth
-  it. For about **$21/month** you unlock the higher-tier models, larger context
-  windows, more agent runs, and the newer Copilot features as they land — which
-  is most of what makes the "AI does the boring parts" experience actually feel
-  magical instead of rationed.
+  As of July 2026, [**GitHub Copilot Pro is $10 USD per month**](https://docs.github.com/en/copilot/get-started/plans).
+  It includes unlimited completions, access to a selection of models, Copilot
+  cloud agent, and a monthly allowance of AI credits. Check the plan table before
+  buying because prices, model access, and usage allowances change.
 
   And if you're a **student or teacher**, don't pay a cent yet — apply for
   [**GitHub Education**](https://github.com/education) first. Verified students
-  get **Copilot Pro for free**, and educators get free or heavily discounted
-  access to the same tooling. Same features, same models, zero out of pocket.
+  get the free **Copilot Student** plan, which has unlimited completions but more
+  limited chat, agent, and model access than Pro. Verified teachers are eligible
+  for **Copilot Pro at no charge**.
 </Explain>
 
 ## Step 2: Install Git (this is not the same as a GitHub account)
@@ -135,35 +137,34 @@ git config --global user.email "you@example.com"
   label on your history.
 </Explain>
 
-## Step 3: Install the GitHub Copilot app
+## Step 3: Choose your Copilot agent surface
 
-Before you install a full editor, install the
-[GitHub Copilot app](https://github.com/features/ai/github-app). It's the piece
-that changed how much of my work happens *outside* VS Code. The app lets you
-steer Copilot's coding agent from wherever you are — the web, your phone, or
-GitHub itself — so you can kick off changes, review what the AI proposes, and
-approve pull requests without opening a code editor at all.
+Before you install a full editor, choose the agent surface you'll use. The
+[GitHub Copilot app](https://github.com/features/ai/github-app) is GitHub's native
+desktop experience for agent-driven development on macOS, Windows, and Linux.
+For asynchronous work that runs on a branch and comes back as a pull request,
+[Copilot cloud agent on GitHub.com](https://docs.github.com/en/copilot/concepts/agents/cloud-agent/about-cloud-agent)
+is the browser-based surface. You can use either one or both.
 
-- **Windows / macOS / Linux / mobile:** install the app from
+- **Desktop app (Windows / macOS / Linux):** install it from
   [github.com/features/ai/github-app](https://github.com/features/ai/github-app)
   and sign in with the GitHub account you just created.
+- **Cloud agent (GitHub.com):** no install required. Sign in, open a repository,
+  and confirm Copilot cloud agent is available for your plan.
 
-<Explain title="Why install this before the editor?">
-  Because it genuinely reduces how much you need the editor. A huge share of my
-  vibe coding now starts as a plain-language request to the Copilot agent — from a
-  browser tab or my phone — which then does the work on a branch and opens a pull
-  request for me to review. VS Code is still where I go for hands-on, line-by-line
-  work, but the app handles "describe it, let the agent build it, review the PR"
-  without me sitting in front of an editor at all. Installing it now means you have
-  that option from day one.
+<Explain title="Why choose this before the editor?">
+  Because a dedicated agent surface reduces how much you need the editor. I use
+  the desktop app for native agent-driven work and Copilot cloud agent on
+  GitHub.com for "describe it, let the agent build it, review the PR." VS Code is
+  still where I go for hands-on, line-by-line work.
 </Explain>
 
 ## Step 4: Install VS Code Insiders *(optional)*
 
-**You can skip this step entirely.** The GitHub Copilot app you installed in
-Step 3 can now do everything this series needs — I highly recommend making it
-your primary surface and coming back to this step only if you want a local
-editor too.
+**You can skip this step entirely.** The GitHub Copilot app covers native
+agent-driven work, while Copilot cloud agent handles asynchronous branch-and-PR
+work on GitHub.com. Come back to this step if you want hands-on editing in a
+local workspace.
 
 If you'd still like an editor on your machine — for hand-editing files,
 side-by-side terminal work, or extensions you already love — install **VS Code
@@ -248,32 +249,39 @@ Grab the **latest** version — not an old 3.9 or 3.10 — from
   troubleshooting later.
 - **macOS:** the installer from python.org is the most predictable route. You
   can also use [Homebrew](https://brew.sh): `brew install python`.
-- **Linux:** most distros already ship a recent Python 3. Confirm with
-  `python3 --version`; if it's older than 3.11, install a newer one via your
-  distro's package manager or [pyenv](https://github.com/pyenv/pyenv).
+- **Linux:** many distros already include Python 3, but don't assume the bundled
+  version is current. Confirm with `python3 --version`; if it's older than 3.11,
+  install a newer one via your distro's package manager or
+  [pyenv](https://github.com/pyenv/pyenv).
 
 After installing, **close and reopen your terminal**, then verify:
 
 ```bash
+# Windows
 python --version
-pip --version
+python -m pip --version
+
+# macOS / Linux
+python3 --version
+python3 -m pip --version
 ```
 
-You should see something like `Python 3.13.x` and a matching `pip` version.
+You should see a supported Python 3 release and a matching `pip` version.
 
 <Explain title="Why `python` on Windows but `python3` on macOS/Linux?">
-  It's a historical quirk. macOS and most Linux distros ship an old Python 2 as
-  `python` and expose the modern one as `python3` so they don't break old
-  scripts. The Windows installer just calls it `python` because there's no
-  legacy version to protect. If `python --version` doesn't work on macOS or
-  Linux, try `python3 --version` — same tool, different name.
+  Command naming depends on the operating system, installer, and distribution.
+  [Current macOS releases](https://docs.python.org/3/using/mac.html) expose an
+  Apple-managed `python3` for developer tools, and most Linux packaging also uses
+  `python3`; neither implies that an old Python 2 is still installed as `python`.
+  The official Windows installer normally provides `python`. Use the command
+  shown for your platform and avoid replacing the operating system's managed
+  Python.
 </Explain>
 
-If `python` isn't found after installing, it's almost always the PATH
+On Windows, if `python` isn't found after installing, it's usually the PATH
 checkbox — reinstall and make sure it's ticked, or add Python to your PATH
-manually via the installer's "Modify" option. The fix pattern is the same as
-Node: reopen the terminal, restart if needed, and only touch PATH by hand as a
-last resort.
+through the installer's **Modify** option. On macOS or Linux, verify `python3`
+instead. Reopen the terminal before changing PATH by hand.
 
 ## Verify everything before you build
 
@@ -603,11 +611,11 @@ or ask for a security review — no re-explaining required.
 Before moving on, make sure all of this is true — Part 2 assumes every one of
 them:
 
-- ✅ A GitHub account with 2FA enabled, and you're signed in inside the GitHub Copilot app (and inside VS Code too, if you installed it).
+- ✅ A GitHub account with 2FA enabled, and you're signed in to the Copilot surface you chose.
 - ✅ Git installed and configured with your name and email.
-- ✅ The **GitHub Copilot app** installed, signed in, and responding — this is your primary surface for the rest of the series.
+- ✅ The **GitHub Copilot app** installed and responding, or Copilot cloud agent working on GitHub.com.
 - ✅ *(Optional)* VS Code **Insiders** open, with the Copilot extension active and responding, if you chose to install a local editor.
-- ✅ `node`, `npm`, `git`, and `python` all return versions in a fresh terminal.
+- ✅ `node`, `npm`, `git`, and `python` (Windows) or `python3` (macOS/Linux) all return versions in a fresh terminal.
 - ✅ A `~/.agents/skills` folder ready for your portable skills.
 - ✅ You understand the safety basics: commit often, branch for risk, no secrets.
 - ✅ You know how to make security the AI's default — ground it in the Azure and
