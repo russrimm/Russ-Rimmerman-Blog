@@ -6,13 +6,15 @@ import FormattedDate from "@/components/FormattedDate.astro";
 import TagList from "@/components/TagList.astro";
 import Comments from "@/components/Comments.astro";
 import NewsletterSignup from "@/components/NewsletterSignup.astro";
+import PostListItem from "@/components/PostListItem.astro";
 
 interface Props {
   post: CollectionEntry<"blog">;
   readingTime: string;
+  relatedPosts?: CollectionEntry<"blog">[];
 }
 
-const { post, readingTime } = Astro.props;
+const { post, readingTime, relatedPosts = [] } = Astro.props;
 const { title, description, pubDate, updatedDate, heroImage, heroAlt, tags } =
   post.data;
 
@@ -29,33 +31,46 @@ const titleAside = titleMatch ? titleMatch[2] : null;
   description={description}
   type="article"
   publishedTime={pubDate}
+  modifiedTime={updatedDate}
+  image={heroImage}
+  imageAlt={heroAlt ?? title}
+  tags={tags}
 >
   <article class="mx-auto max-w-3xl px-4 py-12 sm:px-6">
     <header class="mb-8">
       <a
         href="/blog"
-        class="mb-6 inline-flex items-center gap-1 text-sm font-medium text-ink-500 transition hover:text-azure-600 dark:text-ink-400 dark:hover:text-azure-400"
+        class="text-ink-500 hover:text-azure-600 dark:text-ink-400 dark:hover:text-azure-400 mb-6 inline-flex items-center gap-1 text-sm font-medium transition"
       >
         &larr; Back to blog
       </a>
       <h1
-        class="text-balance text-3xl font-bold tracking-tight text-ink-900 sm:text-4xl dark:text-white"
+        class="text-ink-900 text-3xl font-bold tracking-tight text-balance sm:text-4xl dark:text-white"
       >
         {titleMain}
         {
           titleAside && (
-            <span class="mt-1 block text-2xl text-ink-500 sm:text-3xl dark:text-ink-400">
+            <span class="text-ink-500 dark:text-ink-400 mt-1 block text-2xl sm:text-3xl">
               {titleAside}
             </span>
           )
         }
       </h1>
       <div
-        class="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-ink-500 dark:text-ink-400"
+        class="text-ink-500 dark:text-ink-400 mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm"
       >
         <FormattedDate date={pubDate} />
         <span aria-hidden="true">&middot;</span>
         <span>{readingTime}</span>
+        <span aria-hidden="true">&middot;</span>
+        <span>
+          By <a
+            href="/about"
+            rel="author"
+            class="text-azure-600 dark:text-azure-400 font-medium hover:underline"
+            >Russ Rimmerman</a
+          >
+        </span>
         {
           updatedDate && (
             <>
@@ -75,15 +90,17 @@ const titleAside = titleMatch ? titleMatch[2] : null;
         <Image
           src={heroImage}
           alt={heroAlt ?? title}
-          width={1200}
-          height={800}
+          widths={[480, 768, 1200]}
+          sizes="(min-width: 768px) 768px, calc(100vw - 2rem)"
+          loading="eager"
+          fetchpriority="high"
           class="mb-10 aspect-[3/2] w-full rounded-2xl object-cover"
         />
       )
     }
 
     <div
-      class="prose prose-lg max-w-none dark:prose-invert prose-headings:font-semibold prose-pre:rounded-xl prose-pre:border prose-pre:border-ink-200 dark:prose-pre:border-ink-800"
+      class="prose prose-lg dark:prose-invert prose-headings:font-semibold prose-pre:rounded-xl prose-pre:border prose-pre:border-ink-200 dark:prose-pre:border-ink-800 max-w-none"
     >
       <slot />
     </div>
@@ -91,6 +108,27 @@ const titleAside = titleMatch ? titleMatch[2] : null;
     <div class="mt-16">
       <NewsletterSignup />
     </div>
+
+    {
+      relatedPosts.length > 0 && (
+        <section
+          class="border-ink-200/70 dark:border-ink-800/70 mt-16 border-t pt-10"
+          aria-labelledby="related-posts-heading"
+        >
+          <h2
+            id="related-posts-heading"
+            class="text-ink-900 text-xl font-semibold dark:text-white"
+          >
+            Related articles
+          </h2>
+          <div class="divide-ink-200/70 dark:divide-ink-800/70 mt-4 divide-y">
+            {relatedPosts.map(relatedPost => (
+              <PostListItem post={relatedPost} />
+            ))}
+          </div>
+        </section>
+      )
+    }
 
     <Comments />
   </article>

@@ -1,11 +1,5 @@
 name: Azure Static Web Apps CI/CD
 
-# Deploys via Microsoft Entra ID (OIDC) instead of a deployment token. Requires
-# the AZURE_CLIENT_ID / AZURE_TENANT_ID / AZURE_SUBSCRIPTION_ID secrets and a
-# one-time identity + RBAC setup. See "Deploying to Azure Static Web Apps" in
-# README.md — it includes a ready-to-paste prompt so a coding agent can run the
-# setup CLI for you.
-
 on:
   push:
     branches:
@@ -17,14 +11,12 @@ on:
 
 permissions:
   contents: read
-  pull-requests: write
-  id-token: write
 
 jobs:
-  build_and_deploy:
+  validate:
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
     runs-on: ubuntu-latest
-    name: Build and Deploy
+    name: Validate site
     steps:
       - uses: actions/checkout@v5
         with:
@@ -36,16 +28,44 @@ jobs:
           node-version: 24
           cache: npm
 
-      - name: Install dependencies
+      - name: Install site dependencies
         run: npm ci
 
-      - name: Build
-        run: npm run build
+      - name: Install API dependencies
+        run: npm ci --prefix api
 
-      # Authenticate to Microsoft Entra ID via OIDC (no deployment token / access keys).
-      # Requires an app registration or user-assigned managed identity with a
-      # federated credential for this repo and a role assignment (e.g. Website
-      # Contributor) on the Static Web App resource.
+      - name: Check API syntax
+        run: node --check api/src/functions/subscribe.js
+
+      - name: Build and test
+        run: npm test
+
+      - name: Upload site artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: site-dist
+          path: dist
+          if-no-files-found: error
+          retention-days: 1
+
+  build_and_deploy:
+    needs: validate
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed' && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.user.login != 'dependabot[bot]')
+    runs-on: ubuntu-latest
+    name: Deploy
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Download site artifact
+        uses: actions/download-artifact@v5
+        with:
+          name: site-dist
+          path: dist
+
       - name: Azure login (OIDC)
         uses: azure/login@v2
         with:
@@ -53,10 +73,6 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      # The static-web-apps-deploy action still requires a deployment token; it
-      # can't authenticate with the OIDC login alone. Fetch a fresh token at
-      # runtime via the RBAC-authorized identity so nothing long-lived is stored
-      # as a repo secret.
       - name: Get deployment token
         id: swa_token
         run: |
@@ -76,17 +92,18 @@ jobs:
           azure_static_web_apps_api_token: ${{ steps.swa_token.outputs.token }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: upload
-          # Pre-built by the Build step above; skip_app_build makes the action
-          # deploy app_location as-is (output_location is ignored when skipping
-          # the build), so point app_location at the build output.
           app_location: "dist"
           api_location: "api"
+          output_location: ""
           skip_app_build: true
 
   close_pull_request:
-    if: github.event_name == 'pull_request' && github.event.action == 'closed'
+    if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.user.login != 'dependabot[bot]'
     runs-on: ubuntu-latest
     name: Close Pull Request
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - name: Azure login (OIDC)
         uses: azure/login@v2

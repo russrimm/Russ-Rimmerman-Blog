@@ -51,6 +51,7 @@
 html {
   scroll-behavior: smooth;
   color-scheme: light;
+  scroll-padding-top: 5rem;
 }
 
 html.dark {
@@ -58,14 +59,18 @@ html.dark {
 }
 
 body {
-  @apply bg-white text-ink-800 antialiased;
+  @apply text-ink-800 bg-white antialiased;
   @apply dark:bg-ink-950 dark:text-ink-100;
   font-family: var(--font-sans);
 }
 
+:where(a, button) {
+  touch-action: manipulation;
+}
+
 /* Gradient text helper — reserved for the brand monogram only (see DESIGN.md) */
 .text-gradient {
-  @apply bg-gradient-to-r from-azure-600 to-teal-400 bg-clip-text text-transparent;
+  @apply from-azure-600 bg-gradient-to-r to-teal-400 bg-clip-text text-transparent;
 }
 
 /* Subtle grid/glow backdrop used on hero sections */
@@ -84,7 +89,7 @@ body {
 
 /* Focus visibility */
 :focus-visible {
-  @apply outline-2 outline-offset-2 outline-azure-500;
+  @apply outline-azure-500 outline-2 outline-offset-2;
 }
 
 /* Prose (article) tweaks so it reads well in both themes */
@@ -92,7 +97,7 @@ body {
   text-wrap: pretty;
 }
 .prose :where(a):not(:where(.not-prose *)) {
-  @apply text-azure-600 no-underline hover:underline dark:text-azure-400;
+  @apply text-azure-600 dark:text-azure-400 no-underline hover:underline;
 }
 .prose :where(h1, h2, h3, h4):not(:where(.not-prose *)) {
   @apply scroll-mt-24;
@@ -101,6 +106,10 @@ body {
 
 /* Reduced motion: suppress transforms and scale animations */
 @media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
   *,
   *::before,
   *::after {

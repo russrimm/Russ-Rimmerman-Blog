@@ -38,7 +38,11 @@ async function subscribeButtondown(email) {
   });
 
   if (res.ok) {
-    return { ok: true, status: 200, message: "You're subscribed. Thanks for joining!" };
+    return {
+      ok: true,
+      status: 200,
+      message: "You're subscribed. Thanks for joining!",
+    };
   }
 
   let detail = "";
@@ -53,7 +57,12 @@ async function subscribeButtondown(email) {
     return { ok: true, status: 200, message: "You're already on the list." };
   }
 
-  return { ok: false, status: 502, message: "Subscription failed. Please try again later.", detail };
+  return {
+    ok: false,
+    status: 502,
+    message: "Subscription failed. Please try again later.",
+    upstreamStatus: res.status,
+  };
 }
 
 async function subscribeMailchimp(email) {
@@ -77,11 +86,15 @@ async function subscribeMailchimp(email) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ email_address: email, status: "subscribed" }),
-    },
+    }
   );
 
   if (res.ok) {
-    return { ok: true, status: 200, message: "You're subscribed. Thanks for joining!" };
+    return {
+      ok: true,
+      status: 200,
+      message: "You're subscribed. Thanks for joining!",
+    };
   }
 
   let body = {};
@@ -99,20 +112,41 @@ async function subscribeMailchimp(email) {
     ok: false,
     status: 502,
     message: "Subscription failed. Please try again later.",
-    detail: body.detail || "",
+    upstreamStatus: res.status,
   };
 }
 
 app.http("subscribe", {
-  methods: ["POST"],
+  methods: ["GET", "POST"],
   authLevel: "anonymous",
   route: "subscribe",
   handler: async (request, context) => {
     const json = (status, payload) => ({
       status,
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Cache-Control": "no-store",
+        "Content-Type": "application/json",
+      },
       jsonBody: payload,
     });
+
+    const provider = (process.env.NEWSLETTER_PROVIDER || "").toLowerCase();
+    const available =
+      (provider === "buttondown" && Boolean(process.env.BUTTONDOWN_API_KEY)) ||
+      (provider === "mailchimp" &&
+        Boolean(
+          process.env.MAILCHIMP_API_KEY?.includes("-") &&
+          process.env.MAILCHIMP_LIST_ID
+        ));
+
+    if (request.method === "GET") {
+      return json(200, {
+        available,
+        message: available
+          ? "Newsletter sign-up is available."
+          : "Newsletter sign-up isn't available yet — check back soon.",
+      });
+    }
 
     let data;
     try {
@@ -122,17 +156,25 @@ app.http("subscribe", {
     }
 
     // Honeypot: real users leave this empty. Bots fill it in.
-    if (data && typeof data.website === "string" && data.website.trim() !== "") {
+    if (
+      data &&
+      typeof data.website === "string" &&
+      data.website.trim() !== ""
+    ) {
       // Pretend success so bots don't learn they were caught.
-      return json(200, { ok: true, message: "You're subscribed. Thanks for joining!" });
+      return json(200, {
+        ok: true,
+        message: "You're subscribed. Thanks for joining!",
+      });
     }
 
     const email = typeof data?.email === "string" ? data.email.trim() : "";
     if (!email || email.length > 254 || !EMAIL_RE.test(email)) {
-      return json(400, { ok: false, message: "Please enter a valid email address." });
+      return json(400, {
+        ok: false,
+        message: "Please enter a valid email address.",
+      });
     }
-
-    const provider = (process.env.NEWSLETTER_PROVIDER || "").toLowerCase();
 
     let result;
     try {
@@ -155,8 +197,10 @@ app.http("subscribe", {
       });
     }
 
-    if (!result.ok && result.detail) {
-      context.warn(`Newsletter provider rejected signup: ${result.detail}`);
+    if (!result.ok && result.upstreamStatus) {
+      context.warn(
+        `Newsletter provider rejected signup with status ${result.upstreamStatus}.`
+      );
     }
 
     return json(result.status, { ok: result.ok, message: result.message });

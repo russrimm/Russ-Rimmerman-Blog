@@ -6,14 +6,50 @@ const configured =
   GISCUS.categoryId !== "REPLACE_WITH_CATEGORY_ID";
 ---
 
-<section class="mt-16" aria-label="Comments">
-  <h2 class="mb-6 text-xl font-semibold text-ink-900 dark:text-white">
+<section
+  class="mt-16"
+  aria-labelledby="comments-heading"
+  data-comments
+  data-configured={configured ? "true" : undefined}
+  data-repo={configured ? GISCUS.repo : undefined}
+  data-repo-id={configured ? GISCUS.repoId : undefined}
+  data-category={configured ? GISCUS.category : undefined}
+  data-category-id={configured ? GISCUS.categoryId : undefined}
+  data-mapping={configured ? GISCUS.mapping : undefined}
+  data-reactions-enabled={configured ? GISCUS.reactionsEnabled : undefined}
+  data-emit-metadata={configured ? GISCUS.emitMetadata : undefined}
+  data-input-position={configured ? GISCUS.inputPosition : undefined}
+  data-lang={configured ? GISCUS.lang : undefined}
+>
+  <h2
+    id="comments-heading"
+    class="mb-3 text-xl font-semibold text-ink-900 dark:text-white"
+  >
     Comments
   </h2>
 
   {
     configured ? (
-      <div class="giscus"></div>
+      <>
+        <p class="mb-4 text-sm text-ink-600 dark:text-ink-300">
+          Comments are hosted by GitHub Discussions. Loading them connects your
+          browser to giscus.app and GitHub.
+        </p>
+        <button
+          type="button"
+          data-load-comments
+          class="rounded-lg border border-ink-300 px-4 py-2 text-sm font-semibold text-ink-700 transition hover:border-azure-400 hover:text-azure-600 disabled:cursor-wait disabled:opacity-60 dark:border-ink-700 dark:text-ink-200 dark:hover:border-azure-500 dark:hover:text-azure-400"
+        >
+          Load comments
+        </button>
+        <p
+          class="mt-3 text-sm text-ink-500 dark:text-ink-400"
+          data-comments-status
+          role="status"
+          aria-live="polite"
+        />
+        <div class="giscus mt-6" data-giscus-container />
+      </>
     ) : (
       <div class="rounded-xl border border-dashed border-ink-300 bg-ink-50 p-6 text-sm text-ink-600 dark:border-ink-700 dark:bg-ink-900 dark:text-ink-300">
         <p class="font-medium text-ink-800 dark:text-ink-100">
@@ -26,7 +62,7 @@ const configured =
             href="https://github.com/apps/giscus"
             class="text-azure-600 hover:underline dark:text-azure-400"
           >
-            giscus app
+            Giscus app
           </a>
           , then fill in the values from{" "}
           <a
@@ -42,64 +78,95 @@ const configured =
   }
 </section>
 
-{
-  configured && (
-    <script
-      is:inline
-      define:vars={{
-        repo: GISCUS.repo,
-        repoId: GISCUS.repoId,
-        category: GISCUS.category,
-        categoryId: GISCUS.categoryId,
-        mapping: GISCUS.mapping,
-        reactionsEnabled: GISCUS.reactionsEnabled,
-        emitMetadata: GISCUS.emitMetadata,
-        inputPosition: GISCUS.inputPosition,
-        lang: GISCUS.lang,
-      }}
-    >
-      {
-        (function () {
-          function currentTheme() {
-            return document.documentElement.classList.contains("dark")
-              ? "dark_dimmed"
-              : "light";
-          }
+<script>
+  function currentGiscusTheme() {
+    return document.documentElement.classList.contains("dark")
+      ? "dark_dimmed"
+      : "light";
+  }
 
-          function loadGiscus() {
-            const container = document.querySelector(".giscus");
-            if (!container || container.dataset.loaded === "true") return;
-            container.dataset.loaded = "true";
-            const s = document.createElement("script");
-            s.src = "https://giscus.app/client.js";
-            s.async = true;
-            s.crossOrigin = "anonymous";
-            s.setAttribute("data-repo", repo);
-            s.setAttribute("data-repo-id", repoId);
-            s.setAttribute("data-category", category);
-            s.setAttribute("data-category-id", categoryId);
-            s.setAttribute("data-mapping", mapping);
-            s.setAttribute("data-reactions-enabled", reactionsEnabled);
-            s.setAttribute("data-emit-metadata", emitMetadata);
-            s.setAttribute("data-input-position", inputPosition);
-            s.setAttribute("data-theme", currentTheme());
-            s.setAttribute("data-lang", lang);
-            container.appendChild(s);
-          }
+  function initComments() {
+    const section = document.querySelector<HTMLElement>(
+      '[data-comments][data-configured="true"]',
+    );
+    if (!section || section.dataset.bound === "true") return;
 
-          loadGiscus();
+    const container = section.querySelector<HTMLElement>(
+      "[data-giscus-container]",
+    );
+    const button = section.querySelector<HTMLButtonElement>(
+      "[data-load-comments]",
+    );
+    const status = section.querySelector<HTMLElement>(
+      "[data-comments-status]",
+    );
+    if (!container || !button || !status) return;
+    section.dataset.bound = "true";
 
-          // Keep Giscus theme in sync with the site toggle.
-          window.addEventListener("theme-change", () => {
-            const frame = document.querySelector("iframe.giscus-frame");
-            if (!frame) return;
-            frame.contentWindow.postMessage(
-              { giscus: { setConfig: { theme: currentTheme() } } },
-              "https://giscus.app",
-            );
-          });
-        })()
-      }
-    </script>
-  )
-}
+    const setStatus = (message: string) => {
+      status.textContent = message;
+    };
+
+    const loadGiscus = () => {
+      if (container.dataset.loaded === "true") return;
+      container.dataset.loaded = "true";
+      button.disabled = true;
+      button.textContent = "Loading…";
+      setStatus("Loading comments…");
+
+      const script = document.createElement("script");
+      script.src = "https://giscus.app/client.js";
+      script.async = true;
+      script.crossOrigin = "anonymous";
+      script.setAttribute("data-repo", section.dataset.repo ?? "");
+      script.setAttribute("data-repo-id", section.dataset.repoId ?? "");
+      script.setAttribute("data-category", section.dataset.category ?? "");
+      script.setAttribute(
+        "data-category-id",
+        section.dataset.categoryId ?? "",
+      );
+      script.setAttribute("data-mapping", section.dataset.mapping ?? "pathname");
+      script.setAttribute(
+        "data-reactions-enabled",
+        section.dataset.reactionsEnabled ?? "1",
+      );
+      script.setAttribute(
+        "data-emit-metadata",
+        section.dataset.emitMetadata ?? "0",
+      );
+      script.setAttribute(
+        "data-input-position",
+        section.dataset.inputPosition ?? "top",
+      );
+      script.setAttribute("data-theme", currentGiscusTheme());
+      script.setAttribute("data-lang", section.dataset.lang ?? "en");
+      script.addEventListener("load", () => {
+        button.hidden = true;
+        setStatus("Comments loaded.");
+      });
+      script.addEventListener("error", () => {
+        container.dataset.loaded = "false";
+        button.disabled = false;
+        button.textContent = "Try loading comments again";
+        setStatus("Comments couldn't load. Please try again.");
+      });
+      container.appendChild(script);
+    };
+
+    button.addEventListener("click", loadGiscus);
+  }
+
+  function syncGiscusTheme() {
+    const frame = document.querySelector<HTMLIFrameElement>(
+      "[data-comments] iframe.giscus-frame",
+    );
+    frame?.contentWindow?.postMessage(
+      { giscus: { setConfig: { theme: currentGiscusTheme() } } },
+      "https://giscus.app",
+    );
+  }
+
+  initComments();
+  document.addEventListener("astro:page-load", initComments);
+  window.addEventListener("theme-change", syncGiscusTheme);
+</script>

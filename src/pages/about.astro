@@ -1,6 +1,8 @@
 ---
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import { SOCIALS } from "@/consts";
+import { Image } from "astro:assets";
+import headshot from "@/assets/author/headshot.jpg";
 
 const skills = [
   "Microsoft Power Platform",
@@ -121,29 +123,30 @@ const experience = [
 >
   <div class="mx-auto max-w-3xl px-4 py-12 sm:px-6">
     <div class="flex flex-col gap-8 sm:flex-row sm:items-center">
-      <div
-        class="flex h-28 w-28 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-azure-600 to-teal-500 text-4xl font-bold text-white"
-        aria-hidden="true"
-      >
-        RR
-      </div>
+      <Image
+        src={headshot}
+        alt="Russ Rimmerman"
+        widths={[112, 224]}
+        sizes="112px"
+        class="h-28 w-28 shrink-0 rounded-2xl object-cover shadow-sm"
+      />
       <div>
         <h1
-          class="text-balance text-3xl font-bold tracking-tight text-ink-900 sm:text-4xl dark:text-white"
+          class="text-ink-900 text-3xl font-bold tracking-tight text-balance sm:text-4xl dark:text-white"
         >
           Russ Rimmerman
         </h1>
-        <p class="mt-2 text-lg text-azure-600 dark:text-azure-400">
+        <p class="text-azure-600 dark:text-azure-400 mt-2 text-lg">
           Principal Cloud Solution Architect · Microsoft
         </p>
       </div>
     </div>
 
-    <div class="prose prose-lg mt-10 max-w-none dark:prose-invert">
+    <div class="prose prose-lg dark:prose-invert mt-10 max-w-none">
       <p>
         I'm a Principal Cloud Solution Architect at Microsoft with over 30 years
-        of experience across a wide range of information technology domains. As a
-        Power Platform expert, I design, develop, and implement innovative
+        of experience across a wide range of information technology domains. As
+        a Power Platform expert, I design, develop, and implement innovative
         solutions tailored to each client's unique needs using low-code tools
         like Copilot Studio, Power Apps, Power Automate, and Azure Logic Apps.
       </p>
@@ -152,8 +155,8 @@ const experience = [
         through low-code development — helping them achieve more with less and
         improve their outcomes through increased efficiency and productivity. I
         have a strong track record of leading successful projects, collaborating
-        across cross-functional teams, and delivering high-quality solutions that
-        exceed customer expectations.
+        across cross-functional teams, and delivering high-quality solutions
+        that exceed customer expectations.
       </p>
       <p>
         I've co-authored two Microsoft Press e-books in the Endpoint Management
@@ -166,30 +169,33 @@ const experience = [
     </div>
 
     <div class="mt-12">
-      <h2 class="text-xl font-semibold text-ink-900 dark:text-white">
+      <h2 class="text-ink-900 text-xl font-semibold dark:text-white">
         Experience
       </h2>
-      <p class="mt-1 text-sm text-ink-500 dark:text-ink-400">
-        30+ years across mission-critical IT — from the U.S. Air Force to Microsoft
+      <p class="text-ink-500 dark:text-ink-400 mt-1 text-sm">
+        30+ years across mission-critical IT — from the U.S. Air Force to
+        Microsoft
       </p>
-      <ol class="mt-6 space-y-8 border-l border-ink-200 pl-6 dark:border-ink-800">
+      <ol
+        class="border-ink-200 dark:border-ink-800 mt-6 space-y-8 border-l pl-6"
+      >
         {
-          experience.map((job) => (
+          experience.map(job => (
             <li class="relative">
               <span
-                class="absolute top-1.5 -left-[1.65rem] h-3 w-3 rounded-full bg-azure-500 ring-4 ring-white dark:ring-ink-950"
+                class="bg-azure-500 dark:ring-ink-950 absolute top-1.5 -left-[1.65rem] h-3 w-3 rounded-full ring-4 ring-white"
                 aria-hidden="true"
               />
-              <h3 class="font-semibold text-ink-900 dark:text-white">
+              <h3 class="text-ink-900 font-semibold dark:text-white">
                 {job.role}
               </h3>
-              <p class="text-sm text-azure-600 dark:text-azure-400">
+              <p class="text-azure-600 dark:text-azure-400 text-sm">
                 {job.company} · {job.period}
               </p>
-              <p class="text-xs text-ink-500 dark:text-ink-400">
+              <p class="text-ink-500 dark:text-ink-400 text-xs">
                 {job.location}
               </p>
-              <p class="mt-2 text-ink-700 dark:text-ink-300">{job.summary}</p>
+              <p class="text-ink-700 dark:text-ink-300 mt-2">{job.summary}</p>
             </li>
           ))
         }
@@ -197,13 +203,13 @@ const experience = [
     </div>
 
     <div class="mt-12">
-      <h2 class="text-xl font-semibold text-ink-900 dark:text-white">
+      <h2 class="text-ink-900 text-xl font-semibold dark:text-white">
         What I work with
       </h2>
       <ul class="mt-4 flex flex-wrap gap-2">
         {
-          skills.map((skill) => (
-            <li class="rounded-lg border border-ink-200 bg-white px-3 py-1.5 text-sm text-ink-700 dark:border-ink-800 dark:bg-ink-900 dark:text-ink-200">
+          skills.map(skill => (
+            <li class="border-ink-200 text-ink-700 dark:border-ink-800 dark:bg-ink-900 dark:text-ink-200 rounded-lg border bg-white px-3 py-1.5 text-sm">
               {skill}
             </li>
           ))
@@ -216,9 +222,13 @@ const experience = [
         href={SOCIALS.linkedin}
         target="_blank"
         rel="noopener noreferrer"
-        class="inline-flex items-center gap-2 rounded-lg border border-ink-300 px-5 py-3 text-sm font-semibold text-ink-700 transition hover:border-azure-400 hover:text-azure-600 dark:border-ink-700 dark:text-ink-200 dark:hover:border-azure-500 dark:hover:text-azure-400"
+        class="border-ink-300 text-ink-700 hover:border-azure-400 hover:text-azure-600 dark:border-ink-700 dark:text-ink-200 dark:hover:border-azure-500 dark:hover:text-azure-400 inline-flex items-center gap-2 rounded-lg border px-5 py-3 text-sm font-semibold transition"
       >
-        <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"
+        <svg
+          class="h-5 w-5"
+          fill="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
           ><path
             d="M4.98 3.5A2.5 2.5 0 100 3.51 2.5 2.5 0 004.98 3.5zM.24 8.02h4.5V24H.24V8.02zM8.24 8.02h4.31v2.18h.06c.6-1.14 2.07-2.34 4.26-2.34C21.6 7.86 24 10.1 24 14.6V24h-4.5v-8.3c0-1.98-.04-4.52-2.76-4.52-2.76 0-3.18 2.16-3.18 4.38V24H8.24V8.02z"
           ></path></svg
@@ -229,9 +239,13 @@ const experience = [
         href={SOCIALS.github}
         target="_blank"
         rel="noopener noreferrer"
-        class="inline-flex items-center gap-2 rounded-lg border border-ink-300 px-5 py-3 text-sm font-semibold text-ink-700 transition hover:border-azure-400 hover:text-azure-600 dark:border-ink-700 dark:text-ink-200 dark:hover:border-azure-500 dark:hover:text-azure-400"
+        class="border-ink-300 text-ink-700 hover:border-azure-400 hover:text-azure-600 dark:border-ink-700 dark:text-ink-200 dark:hover:border-azure-500 dark:hover:text-azure-400 inline-flex items-center gap-2 rounded-lg border px-5 py-3 text-sm font-semibold transition"
       >
-        <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"
+        <svg
+          class="h-5 w-5"
+          fill="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
           ><path
             fill-rule="evenodd"
             clip-rule="evenodd"

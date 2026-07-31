@@ -12,14 +12,14 @@ const { compact = false } = Astro.props;
 
 <div
   class:list={[
-    "rounded-2xl border border-ink-200 bg-gradient-to-br from-azure-50 to-white p-6 dark:border-ink-800 dark:from-ink-900 dark:to-ink-950 sm:p-8",
+    "border-ink-200 from-azure-50 dark:border-ink-800 dark:from-ink-900 dark:to-ink-950 rounded-2xl border bg-gradient-to-br to-white p-6 sm:p-8",
     compact ? "" : "text-center",
   ]}
 >
-  <h3 class="text-xl font-semibold text-ink-900 dark:text-white">
+  <h2 class="text-ink-900 text-xl font-semibold dark:text-white">
     Get the latest learnings
-  </h3>
-  <p class="mt-2 text-sm text-ink-600 dark:text-ink-300">
+  </h2>
+  <p class="text-ink-600 dark:text-ink-300 mt-2 text-sm">
     Occasional notes on Azure, AI, and cloud architecture. No spam, unsubscribe
     anytime.
   </p>
@@ -39,8 +39,12 @@ const { compact = false } = Astro.props;
       type="email"
       required
       autocomplete="email"
+      autocapitalize="none"
+      inputmode="email"
+      spellcheck="false"
+      aria-describedby="newsletter-note"
       placeholder="you@example.com"
-      class="w-full flex-1 rounded-lg border border-ink-300 bg-white px-4 py-2.5 text-sm text-ink-900 placeholder:text-ink-400 focus:border-azure-500 focus:ring-2 focus:ring-azure-500/30 focus:outline-none dark:border-ink-700 dark:bg-ink-900 dark:text-white"
+      class="border-ink-300 text-ink-900 placeholder:text-ink-400 focus:border-azure-500 focus:ring-azure-500/30 dark:border-ink-700 dark:bg-ink-900 w-full flex-1 rounded-lg border bg-white px-4 py-2.5 text-sm focus:ring-2 focus:outline-none dark:text-white"
     />
     {/* Honeypot: hidden from users, catches bots. */}
     <div class="hidden" aria-hidden="true">
@@ -56,14 +60,15 @@ const { compact = false } = Astro.props;
     <button
       type="submit"
       data-newsletter-submit
-      class="rounded-lg bg-azure-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-azure-700 focus:ring-2 focus:ring-azure-500/40 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60"
+      class="bg-azure-600 hover:bg-azure-700 focus:ring-azure-500/40 rounded-lg px-5 py-2.5 text-sm font-semibold text-white transition focus:ring-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60"
     >
       Subscribe
     </button>
   </form>
   <p
     data-newsletter-note
-    class="mt-3 text-xs text-ink-500 dark:text-ink-400"
+    id="newsletter-note"
+    class="text-ink-500 dark:text-ink-400 mt-3 text-xs"
     role="status"
     aria-live="polite"
   >
@@ -72,7 +77,7 @@ const { compact = false } = Astro.props;
 
 <script is:inline>
   function initNewsletter() {
-    document.querySelectorAll("form[data-newsletter]").forEach((form) => {
+    document.querySelectorAll("form[data-newsletter]").forEach(form => {
       if (form.dataset.bound === "true") return;
       form.dataset.bound = "true";
 
@@ -84,20 +89,53 @@ const { compact = false } = Astro.props;
       const setNote = (message, tone) => {
         if (!note) return;
         note.textContent = message;
-        note.classList.remove("text-emerald-600", "text-red-600");
+        note.classList.remove(
+          "text-emerald-600",
+          "text-red-600",
+          "text-amber-700",
+          "dark:text-amber-400"
+        );
         if (tone === "success") note.classList.add("text-emerald-600");
         if (tone === "error") note.classList.add("text-red-600");
+        if (tone === "unavailable") {
+          note.classList.add("text-amber-700", "dark:text-amber-400");
+        }
       };
 
-      form.addEventListener("submit", async (e) => {
+      const localPreview = ["localhost", "127.0.0.1"].includes(
+        window.location.hostname
+      );
+      if (!localPreview) {
+        fetch("/api/subscribe", {
+          headers: { Accept: "application/json" },
+        })
+          .then(res => (res.ok ? res.json() : null))
+          .then(data => {
+            if (!data || data.available !== false) return;
+            emailInput.disabled = true;
+            submit.disabled = true;
+            setNote(
+              data.message ||
+                "Newsletter sign-up isn't available yet — check back soon.",
+              "unavailable"
+            );
+          })
+          .catch(() => {
+            // Submission still surfaces a useful error if the API is unavailable.
+          });
+      }
+
+      form.addEventListener("submit", async e => {
         e.preventDefault();
 
         const email = (emailInput?.value || "").trim();
         if (!emailInput?.checkValidity() || !email) {
           setNote("Please enter a valid email address.", "error");
+          emailInput?.setAttribute("aria-invalid", "true");
           emailInput?.focus();
           return;
         }
+        emailInput.removeAttribute("aria-invalid");
 
         submit.disabled = true;
         const originalLabel = submit.textContent;
@@ -127,13 +165,13 @@ const { compact = false } = Astro.props;
           } else {
             setNote(
               data.message || "Something went wrong. Please try again later.",
-              "error",
+              "error"
             );
           }
         } catch {
           setNote(
             "Couldn't reach the server. Please try again later.",
-            "error",
+            "error"
           );
         } finally {
           submit.disabled = false;
