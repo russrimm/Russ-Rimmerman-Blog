@@ -8,12 +8,26 @@ import "@/styles/global.css";
 interface Props {
   title?: string;
   description?: string;
-  image?: string;
+  image?: import("astro").ImageMetadata | string;
+  imageAlt?: string;
   type?: "website" | "article";
   publishedTime?: Date;
+  modifiedTime?: Date;
+  tags?: string[];
+  noindex?: boolean;
 }
 
-const { title, description, image, type, publishedTime } = Astro.props;
+const {
+  title,
+  description,
+  image,
+  imageAlt,
+  type,
+  publishedTime,
+  modifiedTime,
+  tags,
+  noindex,
+} = Astro.props;
 ---
 
 <!doctype html>
@@ -23,14 +37,24 @@ const { title, description, image, type, publishedTime } = Astro.props;
       title={title}
       description={description}
       image={image}
+      imageAlt={imageAlt}
       type={type}
       publishedTime={publishedTime}
+      modifiedTime={modifiedTime}
+      tags={tags}
+      noindex={noindex}
     />
     <ClientRouter />
   </head>
   <body class="flex min-h-screen flex-col">
+    <a
+      href="#main-content"
+      class="bg-azure-700 fixed top-3 left-3 z-[70] -translate-y-20 rounded-lg px-4 py-2 text-sm font-semibold text-white shadow-lg transition-transform focus-visible:translate-y-0"
+    >
+      Skip to content
+    </a>
     <Header />
-    <main class="flex-1">
+    <main id="main-content" class="flex-1" tabindex="-1">
       <slot />
     </main>
     <Footer />

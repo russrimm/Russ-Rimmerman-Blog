@@ -6,7 +6,7 @@ import BlogPost from "@/layouts/BlogPost.astro";
 
 export const getStaticPaths = (async () => {
   const posts = await getCollection("blog", ({ data }) => !data.draft);
-  return posts.map((post) => ({
+  return posts.map(post => ({
     params: { slug: post.id },
     props: { post },
   }));
@@ -15,8 +15,25 @@ export const getStaticPaths = (async () => {
 const { post } = Astro.props;
 const { Content } = await render(post);
 const readingTime = readingTimeFn(post.body ?? "").text;
+const postTags = new Set(post.data.tags.map(tag => tag.toLowerCase()));
+const relatedPosts = (await getCollection("blog", ({ data }) => !data.draft))
+  .filter(candidate => candidate.id !== post.id)
+  .map(candidate => ({
+    post: candidate,
+    sharedTags: candidate.data.tags.filter(tag =>
+      postTags.has(tag.toLowerCase())
+    ).length,
+  }))
+  .filter(candidate => candidate.sharedTags > 0)
+  .sort(
+    (a, b) =>
+      b.sharedTags - a.sharedTags ||
+      b.post.data.pubDate.valueOf() - a.post.data.pubDate.valueOf()
+  )
+  .slice(0, 3)
+  .map(candidate => candidate.post);
 ---
 
-<BlogPost post={post} readingTime={readingTime}>
+<BlogPost post={post} readingTime={readingTime} relatedPosts={relatedPosts}>
   <Content />
 </BlogPost>

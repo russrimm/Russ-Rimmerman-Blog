@@ -3,6 +3,9 @@
 The personal blog and portfolio of **Russ Rimmerman**, Microsoft Cloud Solution
 Architect. Built with [Astro](https://astro.build) and [Tailwind CSS](https://tailwindcss.com),
 deployed to [Azure Static Web Apps](https://learn.microsoft.com/azure/static-web-apps/).
+The deployable Static Web Apps configuration lives in
+[`public/staticwebapp.config.json`](public/staticwebapp.config.json) so Astro
+copies it into `dist/` for prebuilt deployments.
 
 ## Features
 
@@ -12,8 +15,10 @@ deployed to [Azure Static Web Apps](https://learn.microsoft.com/azure/static-web
 - 🏷️ Tags & topic pages
 - 🌗 Dark/light mode with no-flash theme loading
 - 💬 Giscus comments on blog posts (GitHub Discussions)
-- 📰 RSS feed + sitemap + Open Graph/SEO meta tags
-- 📧 Newsletter signup (placeholder — wire to a provider when ready)
+- 📰 RSS feed, sitemap, canonical URLs, Open Graph cards, and JSON-LD
+- 📧 Newsletter signup with server-side provider configuration and availability checks
+- ♿ Skip links, keyboard navigation, reduced-motion support, and responsive images
+- 🔒 Privacy disclosure, opt-in comment loading, CSP, and security headers
 - 🖼️ AI-generated, topic-aware photorealistic enterprise post hero images (Entra ID / OIDC — no API key)
 - 🎨 Azure-inspired design system
 
@@ -46,6 +51,8 @@ npm run dev      # start the dev server at http://localhost:4321
 | `npm run dev`       | Start the local dev server on `http://localhost:4321` (host-exposed).                                |
 | `npm run start`     | Alias for `npm run dev` — same host-exposed dev server.                                              |
 | `npm run build`     | Type-check with `astro check` and build the production site to `dist/`.                              |
+| `npm run check:site` | Check generated metadata, structured data, headings, links, images, sitemap exclusions, and required files. |
+| `npm test`          | Build the production site and run all generated-site checks.                                         |
 | `npm run preview`   | Preview the production build locally.                                                                |
 | `npm run astro`     | Passthrough to the Astro CLI (`npm run astro -- <cmd>`).                                             |
 | `npm run hero`      | Generate topic-aware AI hero images for posts (see [Auto-generating blog hero images](#auto-generating-blog-hero-images)). |

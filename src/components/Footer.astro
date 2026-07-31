@@ -4,14 +4,14 @@ const year = new Date().getFullYear();
 ---
 
 <footer
-  class="border-t border-ink-200/70 bg-ink-50/50 dark:border-ink-800/70 dark:bg-ink-950"
+  class="border-ink-200/70 bg-ink-50/50 dark:border-ink-800/70 dark:bg-ink-950 border-t"
 >
   <div
     class="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-10 sm:px-6 md:flex-row md:items-center md:justify-between"
   >
     <div>
-      <p class="font-semibold text-ink-900 dark:text-white">{SITE_TITLE}</p>
-      <p class="text-sm text-ink-500 dark:text-ink-400">{SITE_TAGLINE}</p>
+      <p class="text-ink-900 font-semibold dark:text-white">{SITE_TITLE}</p>
+      <p class="text-ink-500 dark:text-ink-400 text-sm">{SITE_TAGLINE}</p>
     </div>
 
     <nav
@@ -19,10 +19,10 @@ const year = new Date().getFullYear();
       aria-label="Footer navigation"
     >
       {
-        NAV_LINKS.map((link) => (
+        NAV_LINKS.map(link => (
           <a
             href={link.href}
-            class="text-ink-600 transition hover:text-azure-600 dark:text-ink-300 dark:hover:text-azure-400"
+            class="text-ink-600 hover:text-azure-600 dark:text-ink-300 dark:hover:text-azure-400 transition"
           >
             {link.label}
           </a>
@@ -30,8 +30,13 @@ const year = new Date().getFullYear();
       }
       <a
         href="/rss.xml"
-        class="text-ink-600 transition hover:text-azure-600 dark:text-ink-300 dark:hover:text-azure-400"
+        class="text-ink-600 hover:text-azure-600 dark:text-ink-300 dark:hover:text-azure-400 transition"
         >RSS</a
+      >
+      <a
+        href="/privacy"
+        class="text-ink-600 hover:text-azure-600 dark:text-ink-300 dark:hover:text-azure-400 transition"
+        >Privacy</a
       >
     </nav>
 
@@ -41,7 +46,7 @@ const year = new Date().getFullYear();
         target="_blank"
         rel="noopener noreferrer"
         aria-label="LinkedIn"
-        class="text-ink-500 transition hover:text-azure-600 dark:text-ink-400 dark:hover:text-azure-400"
+        class="text-ink-500 hover:text-azure-600 dark:text-ink-400 dark:hover:text-azure-400 transition"
       >
         <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"
           ><path
@@ -54,7 +59,7 @@ const year = new Date().getFullYear();
         target="_blank"
         rel="noopener noreferrer"
         aria-label="GitHub"
-        class="text-ink-500 transition hover:text-azure-600 dark:text-ink-400 dark:hover:text-azure-400"
+        class="text-ink-500 hover:text-azure-600 dark:text-ink-400 dark:hover:text-azure-400 transition"
       >
         <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"
           ><path
@@ -67,12 +72,12 @@ const year = new Date().getFullYear();
     </div>
   </div>
 
-  <div class="border-t border-ink-200/70 dark:border-ink-800/70">
+  <div class="border-ink-200/70 dark:border-ink-800/70 border-t">
     <p
-      class="mx-auto max-w-5xl px-4 py-4 text-center text-xs text-ink-500 sm:px-6 dark:text-ink-400"
+      class="text-ink-500 dark:text-ink-400 mx-auto max-w-5xl px-4 py-4 text-center text-xs sm:px-6"
     >
-      &copy; {year} {SITE_TITLE}. Built with Astro &amp; hosted on Azure Static Web
-      Apps.
+      &copy; {year}&nbsp;{SITE_TITLE}. Built with Astro &amp; hosted on Azure
+      Static Web Apps.
     </p>
   </div>
 </footer>

@@ -2,7 +2,7 @@
 title: "I'm Finally Starting a Blog (and Here's What I've Been Building)"
 heroImage: ../../assets/blog/starting-a-new-blog.webp
 heroAlt: "Cinematic enterprise hero image representing Microsoft — an AI innovation lab bathed in soft volumetric light."
-description: "After years of 'I should really start a blog,' here it is. A quick tour of what I've been building lately — Pulse 360°, Portal 360°, and the Microsoft Communications Portal."
+description: "Why I finally started this blog, plus a tour of Pulse 360°, Portal 360°, and the Microsoft Communications Portal."
 pubDate: 2026-07-10
 updatedDate: 2026-07-29
 tags: ["Microsoft", "Azure", "Power Platform", "Vibe Coding", "Projects"]
@@ -17,6 +17,9 @@ import portalDevices from "@/assets/projects/portal-of-portals/devices.png";
 import portalAzureResources from "@/assets/projects/portal-of-portals/azure-resources.png";
 import portalPowerPlatform from "@/assets/projects/portal-of-portals/power-platform-environments.png";
 import portalServiceHealth from "@/assets/projects/portal-of-portals/service-health.png";
+import communicationsHome from "@/assets/projects/microsoft-communications-portal/home-light.png";
+import communicationsMessageCenter from "@/assets/projects/microsoft-communications-portal/message-center-light.png";
+import communicationsGuidedReport from "@/assets/projects/microsoft-communications-portal/guided-report-light.png";
 
 I've been saying "I should really start a blog" for about three years now. The
 domain has been sitting there. The half-written intro posts have come and gone.
@@ -153,19 +156,31 @@ app registration.
 
 Here's the home dashboard — every communication stream in one filterable view:
 
-![Microsoft Communications Portal home dashboard](https://raw.githubusercontent.com/russrimm/MicrosoftCommunicationsPortal/main/screenshots/home-dark.png)
+<Screenshot
+  src={communicationsHome}
+  alt="Microsoft Communications Portal home dashboard showing Microsoft update streams"
+  caption="The Microsoft Communications Portal home dashboard brings every update stream into one filterable view."
+/>
 
 The Message Center page pulls tenant-specific Microsoft 365 announcements
 straight from Microsoft Graph, filterable by severity and date:
 
-![Microsoft 365 Message Center view](https://raw.githubusercontent.com/russrimm/MicrosoftCommunicationsPortal/main/screenshots/message-center-dark.png)
+<Screenshot
+  src={communicationsMessageCenter}
+  alt="Microsoft 365 Message Center announcements in the Microsoft Communications Portal"
+  caption="Tenant-specific Message Center announcements, filterable by severity and date."
+/>
 
 And my favorite feature — the **Guided Report** builder. It walks you through
 picking sources and produces a clean, shareable report you can export. There's
 even one-click export to a self-contained HTML file you can paste straight into
 an Outlook email:
 
-![Guided Report builder](https://raw.githubusercontent.com/russrimm/MicrosoftCommunicationsPortal/main/screenshots/guided-report-dark.png)
+<Screenshot
+  src={communicationsGuidedReport}
+  alt="Guided Report builder selecting sources for a Microsoft updates report"
+  caption="The Guided Report builder turns selected update sources into a shareable report."
+/>
 
 There's also an optional AI layer that produces a "top 5 most impactful changes
 this week" digest and can summarize any individual announcement into plain
