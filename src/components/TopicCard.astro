@@ -7,9 +7,11 @@ interface Props {
   href: string;
   count: number;
   icon: IconName;
+  headingLevel?: 2 | 3;
 }
 
-const { title, description, href, count, icon } = Astro.props;
+const { title, description, href, count, icon, headingLevel = 3 } = Astro.props;
+const Heading = headingLevel === 2 ? "h2" : "h3";
 ---
 
 <a
@@ -37,7 +39,9 @@ const { title, description, href, count, icon } = Astro.props;
     >
   </div>
 
-  <h3 class="text-base font-semibold text-ink-900 dark:text-white">{title}</h3>
+  <Heading class="text-base font-semibold text-ink-900 dark:text-white">
+    {title}
+  </Heading>
   <p class="text-sm text-ink-600 dark:text-ink-300">{description}</p>
 
   <span

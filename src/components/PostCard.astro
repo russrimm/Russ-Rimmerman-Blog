@@ -7,11 +7,14 @@ import { readingTimeLabel } from "@/utils/readingTime";
 
 interface Props {
   post: CollectionEntry<"blog">;
+  headingLevel?: 2 | 3;
 }
 const { post } = Astro.props;
+const { headingLevel = 3 } = Astro.props;
 const { title, description, pubDate, heroImage, tags } = post.data;
 const url = `/blog/${post.id}/`;
 const readTime = readingTimeLabel(post.body);
+const Heading = headingLevel === 2 ? "h2" : "h3";
 ---
 
 <article
@@ -56,9 +59,9 @@ const readTime = readingTimeLabel(post.body);
       {readTime && <span aria-hidden="true">·</span>}
       {readTime && <span>{readTime}</span>}
     </div>
-    <h3 class="text-ink-900 text-lg font-semibold dark:text-white">
+    <Heading class="text-ink-900 text-lg font-semibold dark:text-white">
       <a href={url} class="after:absolute after:inset-0">{title}</a>
-    </h3>
+    </Heading>
     <p class="text-ink-600 dark:text-ink-300 line-clamp-3 flex-1 text-sm">
       {description}
     </p>

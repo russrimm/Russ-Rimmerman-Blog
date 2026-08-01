@@ -3,6 +3,7 @@ import path from "node:path";
 
 const root = process.cwd();
 const dist = path.join(root, "dist");
+const contentRoot = path.join(root, "src", "content");
 const siteOrigin = "https://www.russrimmerman.com";
 const failures = [];
 const utcDateFormatter = new Intl.DateTimeFormat("en-US", {
@@ -49,9 +50,9 @@ function canonicalFor(route) {
   return `${siteOrigin}/${route.replace(/\.html$/, "/")}`;
 }
 
-async function resolveSitePath(pathname) {
+async function resolveSiteFile(pathname) {
   const decodedPath = decodeURIComponent(pathname);
-  const relativePath = decodedPath.replace(/^\/+/, "");
+  const relativePath = decodedPath.replace(/^\/+/, "").replace(/\/$/, "");
   const candidates = path.extname(relativePath)
     ? [path.join(dist, relativePath)]
     : [
@@ -62,14 +63,50 @@ async function resolveSitePath(pathname) {
   if (!relativePath) candidates.unshift(path.join(dist, "index.html"));
 
   for (const candidate of candidates) {
-    if (await exists(candidate)) return true;
+    if (await exists(candidate)) return candidate;
   }
-  return false;
+  return null;
+}
+
+function plainText(contents) {
+  return contents
+    .replace(/<svg\b[\s\S]*?<\/svg>/gi, "")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&(?:nbsp|#160);/gi, " ")
+    .trim();
+}
+
+function hasAccessibleName(
+  attributes,
+  contents = "",
+  labelledText = new Map()
+) {
+  if (
+    /\baria-label="[^"]+"/i.test(attributes) ||
+    /\btitle="[^"]+"/i.test(attributes)
+  ) {
+    return true;
+  }
+
+  const labelledBy = attributes.match(/\baria-labelledby="([^"]+)"/i)?.[1];
+  if (
+    labelledBy
+      ?.split(/\s+/)
+      .some(id => (labelledText.get(id) ?? "").trim().length > 0)
+  ) {
+    return true;
+  }
+
+  const text = plainText(contents);
+  return text.length > 0 || /<img\b[^>]*\balt="[^"]+"/i.test(contents);
 }
 
 for (const required of [
   "index.html",
   "404.html",
+  "apple-touch-icon.png",
+  "icon-192.png",
+  "icon-512.png",
   "og-default.png",
   "rss.xml",
   "search.json",
@@ -84,17 +121,39 @@ for (const required of [
 
 const files = await walk(dist);
 const htmlFiles = files.filter(file => file.endsWith(".html"));
+const htmlCache = new Map();
+
+async function readHtml(file) {
+  if (!htmlCache.has(file)) {
+    htmlCache.set(file, await readFile(file, "utf8"));
+  }
+  return htmlCache.get(file);
+}
 
 for (const file of htmlFiles) {
   const route = routeFor(file);
-  const html = await readFile(file, "utf8");
-  const h1Count = (html.match(/<h1\b/gi) ?? []).length;
+  const html = await readHtml(file);
+  const markup = html.replace(/<script\b[\s\S]*?<\/script>/gi, "");
+  const headingLevels = [...markup.matchAll(/<h([1-6])\b/gi)].map(match =>
+    Number(match[1])
+  );
+  const h1Count = headingLevels.filter(level => level === 1).length;
 
   if (!/<html\b[^>]*\blang="en"/i.test(html)) {
     fail(`${route}: missing html[lang="en"]`);
   }
   if (!/<meta\b[^>]*\bname="description"/i.test(html)) {
     fail(`${route}: missing meta description`);
+  }
+  const appleIconTag = markup.match(
+    /<link\b[^>]*\brel="apple-touch-icon"[^>]*>/i
+  )?.[0];
+  if (
+    !appleIconTag ||
+    !/\bsizes="180x180"/i.test(appleIconTag) ||
+    !/\bhref="\/apple-touch-icon\.png"/i.test(appleIconTag)
+  ) {
+    fail(`${route}: missing Apple touch icon metadata`);
   }
   const canonicalMatch = html.match(
     /<link\b[^>]*\brel="canonical"[^>]*\bhref="([^"]+)"/i
@@ -112,6 +171,38 @@ for (const file of htmlFiles) {
   }
   if (h1Count !== 1) {
     fail(`${route}: expected exactly 1 h1, found ${h1Count}`);
+  }
+  for (let index = 1; index < headingLevels.length; index += 1) {
+    if (headingLevels[index] > headingLevels[index - 1] + 1) {
+      fail(
+        `${route}: heading level skips from h${headingLevels[index - 1]} to h${headingLevels[index]}`
+      );
+    }
+  }
+
+  const mainCount = (markup.match(/<main\b/gi) ?? []).length;
+  const footerCount = (markup.match(/<footer\b/gi) ?? []).length;
+  const mainStart = markup.search(/<main\b/i);
+  const bannerCount =
+    mainStart >= 0
+      ? (markup.slice(0, mainStart).match(/<header\b/gi) ?? []).length
+      : 0;
+  if (mainCount !== 1 || footerCount !== 1 || bannerCount !== 1) {
+    fail(
+      `${route}: expected one banner, main, and footer landmark; found ${bannerCount}/${mainCount}/${footerCount}`
+    );
+  }
+
+  const ids = [...markup.matchAll(/\bid="([^"]+)"/gi)].map(match => match[1]);
+  const labelledText = new Map();
+  for (const match of markup.matchAll(
+    /<([a-z][\w-]*)\b[^>]*\bid="([^"]+)"[^>]*>([\s\S]*?)<\/\1>/gi
+  )) {
+    labelledText.set(match[2], plainText(match[3]));
+  }
+  const duplicateIds = ids.filter((id, index) => ids.indexOf(id) !== index);
+  for (const id of new Set(duplicateIds)) {
+    fail(`${route}: duplicate id "${id}"`);
   }
 
   const jsonLdMatch = html.match(
@@ -145,10 +236,26 @@ for (const file of htmlFiles) {
     fail(`${route}: expected noindex robots metadata`);
   }
 
-  for (const match of html.matchAll(/<img\b([^>]*)>/gi)) {
+  for (const match of markup.matchAll(/<img\b([^>]*)>/gi)) {
     const attributes = match[1];
-    if (!/\balt(?:="[^"]*")?(?:\s|$)/i.test(attributes)) {
+    const altMatch = attributes.match(/\balt(?:="([^"]*)")?(?=\s|$)/i);
+    if (!altMatch) {
       fail(`${route}: image is missing alt text`);
+    } else if ((altMatch[1] ?? "").trim() === "") {
+      const preceding = markup.slice(0, match.index);
+      const openAnchor = preceding.lastIndexOf("<a");
+      const closeAnchor = preceding.lastIndexOf("</a>");
+      const anchorTag =
+        openAnchor > closeAnchor
+          ? preceding.slice(openAnchor, preceding.indexOf(">", openAnchor) + 1)
+          : "";
+      if (
+        anchorTag &&
+        !/\baria-hidden="true"/i.test(anchorTag) &&
+        !hasAccessibleName(anchorTag, "", labelledText)
+      ) {
+        fail(`${route}: linked decorative image has no accessible link name`);
+      }
     }
 
     if (
@@ -159,7 +266,36 @@ for (const file of htmlFiles) {
     }
   }
 
-  for (const match of html.matchAll(
+  const labels = new Set(
+    [...markup.matchAll(/<label\b[^>]*\bfor="([^"]+)"/gi)].map(
+      match => match[1]
+    )
+  );
+  for (const match of markup.matchAll(/<(input|select|textarea)\b([^>]*)>/gi)) {
+    const attributes = match[2];
+    if (/\btype="hidden"/i.test(attributes)) continue;
+    const id = attributes.match(/\bid="([^"]+)"/i)?.[1];
+    if (
+      !hasAccessibleName(attributes, "", labelledText) &&
+      (!id || !labels.has(id))
+    ) {
+      fail(`${route}: ${match[1].toLowerCase()} control is missing a label`);
+    }
+  }
+
+  for (const match of markup.matchAll(
+    /<(button|a)\b([^>]*)>([\s\S]*?)<\/\1>/gi
+  )) {
+    const [, element, attributes, contents] = match;
+    if (/\baria-hidden="true"/i.test(attributes)) continue;
+    if (!hasAccessibleName(attributes, contents, labelledText)) {
+      fail(
+        `${route}: ${element.toLowerCase()} control is missing an accessible name`
+      );
+    }
+  }
+
+  for (const match of markup.matchAll(
     /<time\b[^>]*\bdatetime="([^"]+)"[^>]*>([^<]+)<\/time>/gi
   )) {
     const date = new Date(match[1]);
@@ -169,7 +305,7 @@ for (const file of htmlFiles) {
     }
   }
 
-  for (const match of html.matchAll(/<pre\b([^>]*)>/gi)) {
+  for (const match of markup.matchAll(/<pre\b([^>]*)>/gi)) {
     if (
       !/\btabindex="0"/i.test(match[1]) ||
       !/\baria-label="Code example"/i.test(match[1])
@@ -178,9 +314,14 @@ for (const file of htmlFiles) {
     }
   }
 
-  const internalTargets = [
-    ...html.matchAll(/\b(?:href|src)="(\/[^"]*)"/gi),
-  ].map(match => match[1]);
+  const internalTargets = [...markup.matchAll(/\b(?:href|src)="([^"]*)"/gi)]
+    .map(match => match[1].replaceAll("&amp;", "&"))
+    .filter(
+      target =>
+        target.startsWith("/") ||
+        target.startsWith("#") ||
+        target.startsWith(siteOrigin)
+    );
 
   for (const target of internalTargets) {
     if (
@@ -190,7 +331,7 @@ for (const file of htmlFiles) {
     ) {
       continue;
     }
-    const url = new URL(target.replaceAll("&amp;", "&"), "https://example.com");
+    const url = new URL(target, canonicalFor(route));
     if (
       url.pathname !== "/" &&
       !url.pathname.endsWith("/") &&
@@ -201,8 +342,42 @@ for (const file of htmlFiles) {
     ) {
       fail(`${route}: non-canonical internal target ${url.pathname}`);
     }
-    if (!(await resolveSitePath(url.pathname))) {
+    const targetFile = await resolveSiteFile(url.pathname);
+    if (!targetFile) {
       fail(`${route}: broken internal target ${url.pathname}`);
+      continue;
+    }
+    if (url.hash) {
+      const targetHtml = await readHtml(targetFile);
+      const targetId = decodeURIComponent(url.hash.slice(1));
+      const targetIds = new Set(
+        [...targetHtml.matchAll(/\bid="([^"]+)"/gi)].map(match => match[1])
+      );
+      if (!targetIds.has(targetId)) {
+        fail(`${route}: broken internal anchor ${url.pathname}${url.hash}`);
+      }
+    }
+  }
+}
+
+for (const sourceFile of (await walk(contentRoot)).filter(file =>
+  /\.(?:md|mdx)$/i.test(file)
+)) {
+  const source = await readFile(sourceFile, "utf8");
+  const targets = [
+    ...source.matchAll(/\]\((\/[^)\s]+)\)/g),
+    ...source.matchAll(/\bhref=["'](\/[^"']+)["']/g),
+  ].map(match => match[1]);
+  for (const target of targets) {
+    const url = new URL(target, siteOrigin);
+    if (
+      url.pathname !== "/" &&
+      !url.pathname.endsWith("/") &&
+      !path.extname(url.pathname)
+    ) {
+      fail(
+        `${path.relative(root, sourceFile)}: non-canonical content link ${url.pathname}`
+      );
     }
   }
 }
@@ -235,6 +410,41 @@ const searchHtml = await readFile(
 );
 if (!/timeZone:[`'"]UTC[`'"]/.test(searchHtml)) {
   fail("Search date formatter is not pinned to UTC");
+}
+
+const manifest = JSON.parse(
+  await readFile(path.join(dist, "site.webmanifest"), "utf8")
+);
+for (const expected of [
+  { src: "/icon-192.png", sizes: "192x192", type: "image/png" },
+  { src: "/icon-512.png", sizes: "512x512", type: "image/png" },
+]) {
+  if (
+    !manifest.icons?.some(
+      icon =>
+        icon.src === expected.src &&
+        icon.sizes === expected.sizes &&
+        icon.type === expected.type
+    )
+  ) {
+    fail(`Web manifest is missing ${expected.src} metadata`);
+  }
+}
+
+const css = (
+  await Promise.all(
+    files
+      .filter(file => file.endsWith(".css"))
+      .map(file => readFile(file, "utf8"))
+  )
+).join("\n");
+if (
+  !/@media\s*\(prefers-reduced-motion:\s*reduce\)/i.test(css) ||
+  !/transition-duration:\s*0?\.0+1ms\s*!important/i.test(css) ||
+  !/animation-duration:\s*0?\.0+1ms\s*!important/i.test(css) ||
+  !/animation-iteration-count:\s*1\s*!important/i.test(css)
+) {
+  fail("Generated CSS is missing the reduced-motion override");
 }
 
 if (failures.length > 0) {

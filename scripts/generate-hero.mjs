@@ -49,17 +49,6 @@ const ROOT = path.resolve(fileURLToPath(import.meta.url), "../..");
 const BLOG_DIR = path.join(ROOT, "src/content/blog");
 const HEADSHOT_PATH = path.join(ROOT, "src/assets/author/headshot.jpg");
 
-// Words that indicate a human figure is part of a scene's subjects. When a hero
-// scene includes a person, we render that person to resemble the site author by
-// passing headshot.jpg as a reference image to the image-edit endpoint. Short
-// words use word boundaries so "man" doesn't match "command"/"human", etc.
-const HUMAN_RE =
-  /\b(developer|architect|analyst|engineer|maker|person|people|human|professional|team|worker|woman|women|man|men|employee|executive|colleague|designer|specialist|technician|scientist|operator|staff|leader|manager|pairing|collaborating)\b/i;
-
-function sceneHasHuman(brief) {
-  return HUMAN_RE.test(brief?.subjects || "");
-}
-
 // --- Topic → enterprise scene map --------------------------------------------
 // The most specific matching topic wins (list runs specific → generic). Keys are
 // matched case-insensitively as substrings against the post's tags, then title.
@@ -539,7 +528,7 @@ async function loadHeadshotPng() {
 const REF_IMAGE_EXTS = /\.(png|jpe?g|webp|gif|bmp|avif)$/i;
 const MAX_REFERENCE_IMAGES = 3;
 
-function collectPostImages(slug, raw) {
+function collectPostImages(raw) {
   const refs = [];
   const seen = new Set();
 
@@ -616,8 +605,8 @@ async function loadReferenceImagePng(ref) {
   }
 }
 
-async function loadReferenceImages(slug, raw) {
-  const refs = collectPostImages(slug, raw);
+async function loadReferenceImages(raw) {
+  const refs = collectPostImages(raw);
   if (refs.length === 0) return [];
   const loaded = await Promise.all(refs.map((r) => loadReferenceImagePng(r)));
   return loaded.filter(Boolean);
@@ -709,7 +698,7 @@ async function generatePost(slug, { force, dryRun, cfg, contentOnly }) {
   // headshot as a likeness reference. In `--content-only` mode we skip the
   // author entirely: no headshot, no venue, subject-matter-only illustration.
   const withHeadshot = !contentOnly;
-  const refImages = await loadReferenceImages(slug, raw);
+  const refImages = await loadReferenceImages(raw);
   const prompt = contentOnly
     ? buildContentPrompt({
         title: fm.title,
