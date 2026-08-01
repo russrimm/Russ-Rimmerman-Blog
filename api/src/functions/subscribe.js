@@ -3,6 +3,7 @@ const { app } = require("@azure/functions");
 // Basic RFC-5322-ish email sanity check. The provider does the authoritative
 // validation; this just avoids obviously bad input reaching the API.
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PROVIDER_TIMEOUT_MS = 10_000;
 
 /**
  * Subscribe an email address to the configured newsletter provider.
@@ -34,6 +35,7 @@ async function subscribeButtondown(email) {
       Authorization: `Token ${key}`,
       "Content-Type": "application/json",
     },
+    signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS),
     body: JSON.stringify({ email_address: email }),
   });
 
@@ -85,6 +87,7 @@ async function subscribeMailchimp(email) {
         Authorization: `Basic ${Buffer.from(`anystring:${key}`).toString("base64")}`,
         "Content-Type": "application/json",
       },
+      signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS),
       body: JSON.stringify({ email_address: email, status: "subscribed" }),
     }
   );
