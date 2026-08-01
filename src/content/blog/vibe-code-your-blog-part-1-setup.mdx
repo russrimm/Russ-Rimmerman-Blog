@@ -2,7 +2,7 @@
 title: "Ready, Set, Vibe! (Using AI)"
 heroImage: ../../assets/blog/vibe-code-your-blog-part-1-setup.webp
 heroAlt: "Cinematic enterprise hero image representing Vibe Coding — an AI innovation lab bathed in soft volumetric light."
-description: "A beginner-friendly setup guide for building your first project with AI: GitHub, Git, Node.js, Python, Copilot, agents, and reusable skills."
+description: "A beginner-friendly setup guide for building your first project with AI: a GitHub account, Git, Node.js, Python, GitHub Copilot, agents, and reusable skills."
 pubDate: 2026-07-15
 updatedDate: 2026-08-01
 tags:
@@ -80,14 +80,15 @@ you instead of guessing. Let's go.
 Head to [github.com](https://github.com) and sign up. Pick a username you won't
 be embarrassed by later — it shows up in your project URLs. Verify the
 confirmation email before you close the tab; an unverified account can't push
-code or use Copilot.
+code or use GitHub Copilot.
 
 <Explain title="Why do I need GitHub for a blog?">
   Three reasons. First, it's a **backup** — your writing and code live safely in
   the cloud, not just on one laptop. Second, it's a **time machine** — every
   change is versioned, so you can undo anything, even a week later. Third, it's
-  **free hosting and the front door for AI tools** — Copilot and the agents you'll
-  use authenticate through your GitHub identity. One account unlocks all of it.
+  **free hosting and the front door for AI tools** — GitHub Copilot and the agents
+  you'll use authenticate through your GitHub identity. One account unlocks all of
+  it.
 </Explain>
 
 While you're there, [enable **two-factor authentication** in your account](https://docs.github.com/en/authentication/securing-your-account-with-two-factor-authentication-2fa/configuring-two-factor-authentication)
@@ -98,20 +99,21 @@ step constantly and then get locked out of the account holding all their work.
 
 <Explain title="Free, Pro, Enterprise, or Education — which one do I need?">
   A free GitHub account is enough for the repositories and Actions work in this
-  series. **Copilot Free** is more limited, though, and doesn't include Copilot
-  cloud agent. If you want the asynchronous branch-and-PR workflow described
-  here, you'll need a paid Copilot plan or an eligible Education plan.
+  series. **GitHub Copilot Free** is more limited, though, and doesn't include
+  GitHub Copilot cloud agent. If you want the asynchronous branch-and-PR workflow
+  described here, you'll need a paid GitHub Copilot plan or an eligible Education
+  plan.
 
   As of July 2026, [**GitHub Copilot Pro is $10 USD per month**](https://docs.github.com/en/copilot/get-started/plans).
-  It includes unlimited completions, access to a selection of models, Copilot
-  cloud agent, and a monthly allowance of AI credits. Check the plan table before
-  buying because prices, model access, and usage allowances change.
+  It includes unlimited completions, access to a selection of models, GitHub
+  Copilot cloud agent, and a monthly allowance of AI credits. Check the plan table
+  before buying because prices, model access, and usage allowances change.
 
   And if you're a **student or teacher**, don't pay a cent yet — apply for
   [**GitHub Education**](https://github.com/education) first. Verified students
-  get the free **Copilot Student** plan, which has unlimited completions but more
-  limited chat, agent, and model access than Pro. Verified teachers are eligible
-  for **Copilot Pro at no charge**.
+  get the free **GitHub Copilot Student** plan, which has unlimited completions
+  but more limited chat, agent, and model access than Pro. Verified teachers are
+  eligible for **GitHub Copilot Pro at no charge**.
 </Explain>
 
 ## Step 2: Install Git (this is not the same as a GitHub account)
@@ -229,26 +231,26 @@ requests without leaving the session you're in. That's the entire cycle you'd
 otherwise be stitching together across an editor, a terminal, and a browser.
 
 <Explain title="Do I need a paid plan for the app?">
-  No. GitHub lists the Copilot app as included on **every** Copilot plan,
+  No. The GitHub Copilot app is included on **every** GitHub Copilot plan,
   including Free — and you can bring your own model key instead. Where the paid
-  plans matter is elsewhere: **Copilot cloud agent** and Copilot code review start
-  at Pro. So the app itself isn't the paywall; the asynchronous
+  plans matter is elsewhere: **GitHub Copilot cloud agent** and GitHub Copilot
+  code review start at Pro. So the app itself isn't the paywall; the asynchronous
   "assign it and walk away" workflow is.
 </Explain>
 
 There's a second surface worth knowing about, and it needs no install:
-[**Copilot cloud agent** on GitHub.com](https://docs.github.com/en/copilot/concepts/agents/cloud-agent/about-cloud-agent).
+[**GitHub Copilot cloud agent** on GitHub.com](https://docs.github.com/en/copilot/concepts/agents/cloud-agent/about-cloud-agent).
 You describe work in the browser, the agent runs it on a branch, and it comes
 back as a pull request for you to review. It's the asynchronous counterpart to
-the app, and it's on a Pro plan or better.
+the GitHub Copilot app, and it's on a Pro plan or better.
 
 <Explain title="App or cloud agent — which do I reach for?">
-  I use both, for different shapes of work. The **desktop app** is for anything I
-  want to watch and steer: building a feature, debugging, poking at output as it
-  appears. **Cloud agent** is for "describe it, let it run, review the PR when I
-  get back" — the tasks I can hand off and stop thinking about. Start with the app.
-  Cloud agent makes more sense once you have a repository and a rhythm, which is
-  Part 2.
+  I use both, for different shapes of work. The **GitHub Copilot app** is for
+  anything I want to watch and steer: building a feature, debugging, poking at
+  output as it appears. **GitHub Copilot cloud agent** is for "describe it, let it
+  run, review the PR when I get back" — the tasks I can hand off and stop thinking
+  about. Start with the app. Cloud agent makes more sense once you have a
+  repository and a rhythm, which is Part 2.
 </Explain>
 
 ## Step 5: Install Node.js (LTS) and confirm npm works
@@ -287,8 +289,8 @@ Node yet.
 
 **The reliable fix** for a "not found" error:
 
-1. Fully quit and reopen your terminal (and the Copilot app) — the installer
-   updates `PATH`, but only new terminal sessions see it.
+1. Fully quit and reopen your terminal (and the GitHub Copilot app) — the
+   installer updates `PATH`, but only new terminal sessions see it.
 2. Restart your computer if reopening the terminal doesn't do it.
 3. If it *still* fails, don't hand-edit PATH. Instead, uninstall Node and
    reinstall it with a **version manager**, which handles PATH for you:
@@ -392,13 +394,13 @@ repo *is* the source of truth. When you're done working on a project for a while
 and you're tight on disk, delete the local folder — you can always clone it back
 down the moment you want to pick it up again.
 
-## Using source control through Copilot
+## Using source control through GitHub Copilot
 
 Git is the safety net under everything you vibe code, and the good news is you
-barely have to operate it by hand anymore. The Copilot app gives every session
-its own workspace with its own branch and files, so two pieces of work in flight
-can't tangle with each other. You review diffs in the session, run terminal
-checks there, and open or merge the pull request from the same window.
+barely have to operate it by hand anymore. The GitHub Copilot app gives every
+session its own workspace with its own branch and files, so two pieces of work in
+flight can't tangle with each other. You review diffs in the session, run
+terminal checks there, and open or merge the pull request from the same window.
 
 Which means most source control now happens by asking:
 
@@ -433,8 +435,8 @@ post, and it's why the app puts diff review in the same window as the agent that
 wrote the code.
 
 **A pull request is a diff with a conversation attached.** It's how you review a
-batch of work before it lands on `main`, and it's where Copilot code review can
-weigh in if you're on a paid plan.
+batch of work before it lands on `main`, and it's where GitHub Copilot code
+review can weigh in if you're on a paid plan.
 
 <Explain title="What's the difference between staging and committing?">
   **Staging** is choosing *which* changes go into the next snapshot; **committing**
@@ -510,14 +512,14 @@ across every project:
   The `.github` folder is **team- and project-scoped** — it ships with the repo so
   the customization is guaranteed to be there. Your `~/.agents/skills` folder is
   **personal and portable** — reusable skills you want on hand no matter what
-  you're building. Copilot reads both, so you get project-specific rules and your
-  own toolkit at the same time.
+  you're building. GitHub Copilot reads both, so you get project-specific rules
+  and your own toolkit at the same time.
 </Explain>
 
 You don't need to author anything elaborate yet — and you don't need to create
 the folders by hand either. This is a perfect first taste of vibe coding: **let
-the AI scaffold it for you.** Start a session in the Copilot app and paste a
-prompt like this:
+the AI scaffold it for you.** Start a session in the GitHub Copilot app and paste
+a prompt like this:
 
 ```text
 Create my portable skills library at ~/.agents/skills. Just create the
