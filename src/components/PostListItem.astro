@@ -9,16 +9,14 @@ interface Props {
 
 const { post } = Astro.props;
 const { title, description, pubDate, tags } = post.data;
-const url = `/blog/${post.id}`;
+const url = `/blog/${post.id}/`;
 const readTime = readingTimeLabel(post.body);
 const primaryTag = tags[0];
 ---
 
-<article
-  class="group relative py-5 first:pt-0 last:pb-0"
->
+<article class="group relative py-5 first:pt-0 last:pb-0">
   <div
-    class="flex flex-wrap items-center gap-2 text-xs font-medium text-ink-500 dark:text-ink-400"
+    class="text-ink-500 dark:text-ink-400 flex flex-wrap items-center gap-2 text-xs font-medium"
   >
     <FormattedDate date={pubDate} />
     {readTime && <span aria-hidden="true">·</span>}
@@ -34,12 +32,12 @@ const primaryTag = tags[0];
   </div>
 
   <h3
-    class="mt-1.5 text-lg font-semibold text-ink-900 transition group-hover:text-azure-600 dark:text-white dark:group-hover:text-azure-400"
+    class="text-ink-900 group-hover:text-azure-600 dark:group-hover:text-azure-400 mt-1.5 text-lg font-semibold transition dark:text-white"
   >
     <a href={url} class="after:absolute after:inset-0">{title}</a>
   </h3>
 
-  <p class="mt-1 line-clamp-2 text-sm text-ink-600 dark:text-ink-300">
+  <p class="text-ink-600 dark:text-ink-300 mt-1 line-clamp-2 text-sm">
     {description}
   </p>
 </article>

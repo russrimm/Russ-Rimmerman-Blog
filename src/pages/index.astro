@@ -22,7 +22,7 @@ const topics = TOPICS.map(topic => ({
 })).filter(topic => topic.count > 0);
 const heroTopics = topics.slice(0, 4).map(topic => ({
   label: topic.title,
-  href: `/topics/${topic.slug}`,
+  href: `/topics/${topic.slug}/`,
 }));
 ---
 
@@ -41,7 +41,7 @@ const heroTopics = topics.slice(0, 4).map(topic => ({
               Latest posts
             </h2>
             <a
-              href="/blog"
+              href="/blog/"
               class="text-azure-600 dark:text-azure-400 shrink-0 text-sm font-medium hover:underline"
             >
               All posts &rarr;
@@ -68,7 +68,7 @@ const heroTopics = topics.slice(0, 4).map(topic => ({
                 Explore topics
               </h2>
               <a
-                href="/topics"
+                href="/topics/"
                 class="text-azure-600 dark:text-azure-400 text-xs font-medium hover:underline"
               >
                 All
@@ -78,7 +78,7 @@ const heroTopics = topics.slice(0, 4).map(topic => ({
               {topics.map(topic => (
                 <li>
                   <a
-                    href={`/topics/${topic.slug}`}
+                    href={`/topics/${topic.slug}/`}
                     class="group text-ink-700 hover:bg-ink-50 hover:text-azure-600 dark:text-ink-200 dark:hover:bg-ink-800 dark:hover:text-azure-400 flex items-center justify-between rounded-lg px-2 py-1.5 text-sm transition"
                   >
                     <span>{topic.title}</span>

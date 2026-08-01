@@ -12,17 +12,17 @@ export const AUTHOR = {
 
 export const SOCIALS = {
   linkedin: "https://www.linkedin.com/in/russrimm",
-  github: "https://www.github.com/russrimm",
+  github: "https://github.com/russrimm",
   buymeacoffee: "https://www.buymeacoffee.com/russrimm",
 };
 
 export const NAV_LINKS = [
   { href: "/", label: "Home" },
-  { href: "/blog", label: "Blog" },
-  { href: "/topics", label: "Topics" },
-  { href: "/projects", label: "Projects" },
-  { href: "/about", label: "About" },
-  { href: "/contact", label: "Contact" },
+  { href: "/blog/", label: "Blog" },
+  { href: "/topics/", label: "Topics" },
+  { href: "/projects/", label: "Projects" },
+  { href: "/about/", label: "About" },
+  { href: "/contact/", label: "Contact" },
 ];
 
 // Giscus comments configuration.

@@ -40,7 +40,7 @@ const relatedTopics = TOPICS.filter(
 <BaseLayout title={topic.title} description={topic.description}>
   <div class="mx-auto max-w-5xl px-4 py-12 sm:px-6">
     <a
-      href="/topics"
+      href="/topics/"
       class="text-ink-500 hover:text-azure-600 dark:text-ink-400 dark:hover:text-azure-400 mb-6 inline-flex items-center gap-1 text-sm font-medium transition"
     >
       &larr; All topics
@@ -120,7 +120,7 @@ const relatedTopics = TOPICS.filter(
             visibleTopicTags.map(tag => (
               <li>
                 <a
-                  href={`/tags/${slugify(tag)}`}
+                  href={`/tags/${slugify(tag)}/`}
                   class="border-azure-200 bg-azure-50 text-azure-700 hover:border-azure-400 hover:bg-azure-100 dark:border-ink-700 dark:bg-ink-800 dark:text-azure-300 dark:hover:border-azure-500 inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium transition"
                 >
                   #{tag}
@@ -162,7 +162,7 @@ const relatedTopics = TOPICS.filter(
       >
         {
           posts.map(post => {
-            const url = `/blog/${post.id}`;
+            const url = `/blog/${post.id}/`;
             const readTime = readingTimeLabel(post.body);
             const primaryTag = post.data.tags[0];
             return (
@@ -211,7 +211,7 @@ const relatedTopics = TOPICS.filter(
             {relatedTopics.map(t => (
               <li>
                 <a
-                  href={`/topics/${t.slug}`}
+                  href={`/topics/${t.slug}/`}
                   class="border-ink-200 text-ink-700 hover:border-azure-400 hover:text-azure-600 dark:border-ink-800 dark:bg-ink-900 dark:text-ink-200 dark:hover:border-azure-500 dark:hover:text-azure-400 inline-flex items-center gap-2 rounded-full border bg-white px-4 py-2 text-sm font-medium transition"
                 >
                   {t.title}
