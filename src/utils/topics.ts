@@ -133,21 +133,21 @@ export const TOPICS: TopicDef[] = [
 /** True when a post carries any tag that belongs to the topic. */
 export const postMatchesTopic = (
   post: CollectionEntry<"blog">,
-  topic: TopicDef,
+  topic: TopicDef
 ): boolean => {
-  const topicTags = topic.tags.map((t) => t.toLowerCase());
-  return post.data.tags.some((tag) => topicTags.includes(tag.toLowerCase()));
+  const topicTags = topic.tags.map(t => t.toLowerCase());
+  return post.data.tags.some(tag => topicTags.includes(tag.toLowerCase()));
 };
 
 /** Posts belonging to a topic, sorted newest first. */
 export const getTopicPosts = (
   topic: TopicDef,
-  posts: CollectionEntry<"blog">[],
+  posts: CollectionEntry<"blog">[]
 ): CollectionEntry<"blog">[] =>
   posts
-    .filter((post) => postMatchesTopic(post, topic))
+    .filter(post => postMatchesTopic(post, topic))
     .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
 
 /** Look up a topic by its slug. */
 export const getTopicBySlug = (slug: string): TopicDef | undefined =>
-  TOPICS.find((topic) => topic.slug === slug);
+  TOPICS.find(topic => topic.slug === slug);

@@ -49,103 +49,169 @@ const ROOT = path.resolve(fileURLToPath(import.meta.url), "../..");
 const BLOG_DIR = path.join(ROOT, "src/content/blog");
 const HEADSHOT_PATH = path.join(ROOT, "src/assets/author/headshot.jpg");
 
-// Words that indicate a human figure is part of a scene's subjects. When a hero
-// scene includes a person, we render that person to resemble the site author by
-// passing headshot.jpg as a reference image to the image-edit endpoint. Short
-// words use word boundaries so "man" doesn't match "command"/"human", etc.
-const HUMAN_RE =
-  /\b(developer|architect|analyst|engineer|maker|person|people|human|professional|team|worker|woman|women|man|men|employee|executive|colleague|designer|specialist|technician|scientist|operator|staff|leader|manager|pairing|collaborating)\b/i;
-
-function sceneHasHuman(brief) {
-  return HUMAN_RE.test(brief?.subjects || "");
-}
-
 // --- Topic → enterprise scene map --------------------------------------------
 // The most specific matching topic wins (list runs specific → generic). Keys are
 // matched case-insensitively as substrings against the post's tags, then title.
 // Each entry supplies an enterprise ENVIRONMENT, SUBJECTS, and the TECHNOLOGY to
 // make the visual centerpiece — all rendered abstractly, never as logos.
 const TOPIC_SCENES = [
-  ["vibe coding", {
-    environment: "an AI innovation lab bathed in soft volumetric light",
-    subjects: "a developer collaborating with a generative-AI presence that assembles glowing, weightless code structures in mid-air",
-    technology: "generative AI systems and intelligent, conversational code generation",
-  }],
-  ["copilot studio", {
-    environment: "an intelligent business operations center",
-    subjects: "an architect orchestrating conversational AI agents that route glowing request threads to the right business systems",
-    technology: "low-code AI agent orchestration and secured connections to enterprise data sources",
-  }],
-  ["copilot", {
-    environment: "a modern enterprise architecture workspace",
-    subjects: "a developer pairing with an ambient AI assistant that surfaces suggestions as luminous, structured guidance",
-    technology: "AI copilots grounded in enterprise knowledge and context",
-  }],
-  ["foundry", {
-    environment: "an AI model factory visualized as a clean, cathedral-like assembly hall",
-    subjects: "an architect assembling an AI agent from modular, glowing building blocks on a holographic blueprint",
-    technology: "AI model deployment, agent building, and orchestration pipelines",
-  }],
-  ["agent", {
-    environment: "a digital transformation command center",
-    subjects: "autonomous AI agents depicted as coordinated points of light orchestrating workflows across a layered architecture",
-    technology: "agentic automation and event-driven workflow orchestration",
-  }],
-  ["intune", {
-    environment: "a secure enterprise access gateway visualization",
-    subjects: "a stream of device and permission tokens passing through a precise, glowing policy checkpoint",
-    technology: "endpoint governance, scoped permissions, and least-privilege access control",
-  }],
-  ["entra", {
-    environment: "a secure identity gateway rendered as a luminous architectural threshold",
-    subjects: "identity tokens flowing through a trust boundary where each request is verified before it proceeds",
-    technology: "enterprise identity, single sign-on, and per-user authentication trust chains",
-  }],
-  ["identity", {
-    environment: "a secure identity gateway rendered as a luminous architectural threshold",
-    subjects: "identity tokens flowing through a trust boundary where each request is verified before it proceeds",
-    technology: "enterprise identity, single sign-on, and per-user authentication trust chains",
-  }],
-  ["servicenow", {
-    environment: "a hybrid enterprise integration hub",
-    subjects: "two large enterprise platforms connected by a verified, per-user identity bridge carrying glowing request threads",
-    technology: "cross-platform integration governed by user identity, roles, and audit trails",
-  }],
-  ["security", {
-    environment: "a secure cloud operations center with a calm, watchful atmosphere",
-    subjects: "an analyst reviewing a layered defense architecture where a subtle flaw is caught and isolated before it spreads",
-    technology: "defense-in-depth, threat detection, and secure-by-default architecture",
-  }],
-  ["power platform", {
-    environment: "an enterprise low-code studio",
-    subjects: "a maker snapping together modular low-code building blocks into a working automated business process",
-    technology: "low-code app building, automation, and connected business data",
-  }],
-  ["mcp", {
-    environment: "a data-grounding operations center",
-    subjects: "live data conduits connecting an AI model to trusted enterprise sources so its answers stay grounded",
-    technology: "model context grounding, tool connections, and retrieval over enterprise data",
-  }],
-  ["azure", {
-    environment: "a modern cloud operations center",
-    subjects: "an architect wiring together glowing cloud services across a layered, interconnected digital architecture",
-    technology: "cloud infrastructure, connected services, and scalable enterprise architecture",
-  }],
-  ["ai", {
-    environment: "an AI innovation lab bathed in soft volumetric light",
-    subjects: "an engineer shaping a luminous generative-AI system that turns raw data into structured intelligence",
-    technology: "generative AI systems, models, and knowledge graphs",
-  }],
-  ["microsoft", {
-    environment: "a modern cloud operations center",
-    subjects: "an architect at a mission-control console coordinating a connected estate of glowing cloud services",
-    technology: "an integrated enterprise cloud platform and its connected services",
-  }],
+  [
+    "vibe coding",
+    {
+      environment: "an AI innovation lab bathed in soft volumetric light",
+      subjects:
+        "a developer collaborating with a generative-AI presence that assembles glowing, weightless code structures in mid-air",
+      technology:
+        "generative AI systems and intelligent, conversational code generation",
+    },
+  ],
+  [
+    "copilot studio",
+    {
+      environment: "an intelligent business operations center",
+      subjects:
+        "an architect orchestrating conversational AI agents that route glowing request threads to the right business systems",
+      technology:
+        "low-code AI agent orchestration and secured connections to enterprise data sources",
+    },
+  ],
+  [
+    "copilot",
+    {
+      environment: "a modern enterprise architecture workspace",
+      subjects:
+        "a developer pairing with an ambient AI assistant that surfaces suggestions as luminous, structured guidance",
+      technology: "AI copilots grounded in enterprise knowledge and context",
+    },
+  ],
+  [
+    "foundry",
+    {
+      environment:
+        "an AI model factory visualized as a clean, cathedral-like assembly hall",
+      subjects:
+        "an architect assembling an AI agent from modular, glowing building blocks on a holographic blueprint",
+      technology:
+        "AI model deployment, agent building, and orchestration pipelines",
+    },
+  ],
+  [
+    "agent",
+    {
+      environment: "a digital transformation command center",
+      subjects:
+        "autonomous AI agents depicted as coordinated points of light orchestrating workflows across a layered architecture",
+      technology: "agentic automation and event-driven workflow orchestration",
+    },
+  ],
+  [
+    "intune",
+    {
+      environment: "a secure enterprise access gateway visualization",
+      subjects:
+        "a stream of device and permission tokens passing through a precise, glowing policy checkpoint",
+      technology:
+        "endpoint governance, scoped permissions, and least-privilege access control",
+    },
+  ],
+  [
+    "entra",
+    {
+      environment:
+        "a secure identity gateway rendered as a luminous architectural threshold",
+      subjects:
+        "identity tokens flowing through a trust boundary where each request is verified before it proceeds",
+      technology:
+        "enterprise identity, single sign-on, and per-user authentication trust chains",
+    },
+  ],
+  [
+    "identity",
+    {
+      environment:
+        "a secure identity gateway rendered as a luminous architectural threshold",
+      subjects:
+        "identity tokens flowing through a trust boundary where each request is verified before it proceeds",
+      technology:
+        "enterprise identity, single sign-on, and per-user authentication trust chains",
+    },
+  ],
+  [
+    "servicenow",
+    {
+      environment: "a hybrid enterprise integration hub",
+      subjects:
+        "two large enterprise platforms connected by a verified, per-user identity bridge carrying glowing request threads",
+      technology:
+        "cross-platform integration governed by user identity, roles, and audit trails",
+    },
+  ],
+  [
+    "security",
+    {
+      environment:
+        "a secure cloud operations center with a calm, watchful atmosphere",
+      subjects:
+        "an analyst reviewing a layered defense architecture where a subtle flaw is caught and isolated before it spreads",
+      technology:
+        "defense-in-depth, threat detection, and secure-by-default architecture",
+    },
+  ],
+  [
+    "power platform",
+    {
+      environment: "an enterprise low-code studio",
+      subjects:
+        "a maker snapping together modular low-code building blocks into a working automated business process",
+      technology:
+        "low-code app building, automation, and connected business data",
+    },
+  ],
+  [
+    "mcp",
+    {
+      environment: "a data-grounding operations center",
+      subjects:
+        "live data conduits connecting an AI model to trusted enterprise sources so its answers stay grounded",
+      technology:
+        "model context grounding, tool connections, and retrieval over enterprise data",
+    },
+  ],
+  [
+    "azure",
+    {
+      environment: "a modern cloud operations center",
+      subjects:
+        "an architect wiring together glowing cloud services across a layered, interconnected digital architecture",
+      technology:
+        "cloud infrastructure, connected services, and scalable enterprise architecture",
+    },
+  ],
+  [
+    "ai",
+    {
+      environment: "an AI innovation lab bathed in soft volumetric light",
+      subjects:
+        "an engineer shaping a luminous generative-AI system that turns raw data into structured intelligence",
+      technology: "generative AI systems, models, and knowledge graphs",
+    },
+  ],
+  [
+    "microsoft",
+    {
+      environment: "a modern cloud operations center",
+      subjects:
+        "an architect at a mission-control console coordinating a connected estate of glowing cloud services",
+      technology:
+        "an integrated enterprise cloud platform and its connected services",
+    },
+  ],
 ];
 
 const GENERIC_SCENE = {
   environment: "a modern enterprise architecture workspace",
-  subjects: "an architect reviewing a large holographic architecture diagram that maps ideas into a clean, connected system",
+  subjects:
+    "an architect reviewing a large holographic architecture diagram that maps ideas into a clean, connected system",
   technology: "enterprise cloud architecture and connected digital services",
 };
 
@@ -274,8 +340,12 @@ function buildPrompt({
     "HUMAN ANATOMY RULE (critical): render every visible person with a plausible, fully-connected human body. Every hand, arm, wrist, and finger visible in the frame must be attached to a real shoulder and torso through a continuous, correctly-proportioned limb. Never render a floating, disembodied, extra, or duplicate hand, arm, or finger anywhere in the frame \u2014 not near the whiteboard, not near the marker, not near the audience, not at the edges. The author has exactly two arms with exactly one hand each, exactly five fingers per hand (or fewer only when the rest are naturally hidden by grip on the marker), with correct thumb placement and correct handedness. Do not double up limbs, do not sprout an extra hand out of a sleeve, and do not paint a second gesturing hand in the space next to a shoulder or torso. All fingers curve naturally around any object being held (marker, clicker) with no fused, missing, or extra digits. The same rule applies to every attendee in the audience: no floating hands, no extra arms, no fused-together heads, no bodies clipping through chairs or through the person in front of them.",
     `Article title: ${title}.`,
     `Primary idea to draw on the board: ${primaryTopic}.`,
-    secondaryTopics ? `Secondary themes that can appear as smaller connected diagram fragments on the board: ${secondaryTopics}.` : "",
-    summary ? `What the article is really about (use this to decide what the diagram depicts): ${summary}.` : "",
+    secondaryTopics
+      ? `Secondary themes that can appear as smaller connected diagram fragments on the board: ${secondaryTopics}.`
+      : "",
+    summary
+      ? `What the article is really about (use this to decide what the diagram depicts): ${summary}.`
+      : "",
     technologies
       ? `Underlying technologies to reference in the diagram \u2014 draw each as a small labeled component with its short official product name (spelled exactly as given) and a hand-sketched approximation of its logo where recognizable: ${technologies}.`
       : "",
@@ -285,7 +355,7 @@ function buildPrompt({
     `Composition: single 16:9 hero frame. ${composition}`,
     "Style direction: contemporary editorial portrait photography, natural but flattering studio-quality lighting, shallow-to-medium depth of field so the author's face and the whiteboard content are the sharpest elements while the background wall softens into a gentle blur. Real-world materials and textures: marker sheen on the board, subtle glare, matte fabric, warm wood grain, realistic skin tones and hair detail. Not stylized, not illustrated, not cartoon \u2014 this is a real-photograph aesthetic.",
     "Color language accent (keep consistent across the series): the background allows quiet accents of warm wood, deep navy, or soft neutral plaster; there is no colored wall art, window film, or signage in the frame. The whiteboard drawing itself uses primarily black marker with restrained blue and red (or orange) highlights. Logos and product names appear ONLY on the whiteboard \u2014 never on the author's clothing, never on walls, and never as room signage or watermarks.",
-    "Tone: warm, credible, and human. The author looks confident and mid-thought \u2014 focused on the board, not the camera; not smug, not stiff, not a stock \"presenter smile.\"",
+    'Tone: warm, credible, and human. The author looks confident and mid-thought \u2014 focused on the board, not the camera; not smug, not stiff, not a stock "presenter smile."',
     withHeadshot
       ? `IMPORTANT: the author is the named human presenter in this scene. Render that person to closely resemble the individual in the provided reference headshot photograph \u2014 matching their facial features, hair, skin tone, glasses (if any), facial hair, and overall likeness. Dress that person specifically in ${outfit}. Do not default to a random look; do not repeat a look from another image in this series. The author's exact pose (drawing on the board, standing back to study it, gesturing at the board or stage screen with the marker capped, turned partway toward the audience, or delivering a keynote on a large stage with a lavalier microphone) and the venue scale (intimate room, small meeting room, medium event room, large auditorium, or convention-center keynote stage) are dictated by the Composition line \u2014 follow that composition precisely and do not force the author into a mid-stroke drawing pose if the composition says otherwise. Integrate the author with realistic lighting and matching perspective. Never show the reference headshot photo itself in the frame. Any additional people in the frame (attendees, audience) must be believable, generic, softly out-of-focus adults \u2014 never other named individuals, never anyone resembling the reference headshot.`
       : "",
@@ -320,8 +390,12 @@ function buildContentPrompt({
     "LABELS AND LOGOS: short, correctly-spelled English or product labels are welcome next to the components they describe \u2014 keep them one to three words each so the model spells them perfectly. Where a real brand, product, or service from this post's tags is depicted, include a small, recognizable, tastefully stylized approximation of that product's official logo next to its label (for example: Microsoft, Azure, Copilot, Copilot Studio, Power Platform, Dataverse, GitHub, VS Code, Teams, SharePoint, Dynamics 365, Foundry, Intune, Entra, ServiceNow). Do NOT invent words, do NOT produce jumbled or partial letters, and do NOT leave squiggle-text where a label belongs. If a phrase cannot be rendered legibly, replace it with a labeled icon instead.",
     `Article title: ${title}.`,
     `Primary idea to illustrate: ${primaryTopic}.`,
-    secondaryTopics ? `Secondary themes that can appear as smaller connected elements: ${secondaryTopics}.` : "",
-    summary ? `What the article is really about (use this to decide what to depict): ${summary}.` : "",
+    secondaryTopics
+      ? `Secondary themes that can appear as smaller connected elements: ${secondaryTopics}.`
+      : "",
+    summary
+      ? `What the article is really about (use this to decide what to depict): ${summary}.`
+      : "",
     technologies
       ? `Underlying technologies to reference \u2014 draw each as a small labeled component with its short official product name (spelled exactly as given) and a stylized approximation of its logo where recognizable: ${technologies}.`
       : "",
@@ -370,7 +444,7 @@ function parseFrontmatter(raw) {
 
   const tagsBlock = body.match(/^tags:\s*([\s\S]*?)(?=^\w|\Z)/m);
   const tags = tagsBlock
-    ? [...tagsBlock[1].matchAll(/["']([^"']+)["']/g)].map((m) => m[1])
+    ? [...tagsBlock[1].matchAll(/["']([^"']+)["']/g)].map(m => m[1])
     : [];
 
   return {
@@ -396,9 +470,9 @@ function extractBody(raw) {
 }
 
 function pickScene(tags, title) {
-  const haystacks = [...tags, title].map((t) => t.toLowerCase());
+  const haystacks = [...tags, title].map(t => t.toLowerCase());
   for (const [key, brief] of TOPIC_SCENES) {
-    if (haystacks.some((h) => h.includes(key))) return brief;
+    if (haystacks.some(h => h.includes(key))) return brief;
   }
   return GENERIC_SCENE;
 }
@@ -424,8 +498,7 @@ async function deriveBrief({ title, description, body }, cfg) {
     '8-20 words, specific to this post. "technology" is the single technology or concept to make the ' +
     "visual centerpiece, described abstractly with NO product logos, names, or readable UI. Make " +
     "different posts look clearly different. No text, logos, camera terms, markdown, or commentary.";
-  const user =
-    `Title: ${title}\n\nSummary: ${description}\n\nExcerpt:\n${body.slice(0, 2000)}`;
+  const user = `Title: ${title}\n\nSummary: ${description}\n\nExcerpt:\n${body.slice(0, 2000)}`;
 
   try {
     const token = await getAccessToken();
@@ -446,7 +519,9 @@ async function deriveBrief({ title, description, body }, cfg) {
     });
     if (!res.ok) {
       const text = await res.text().catch(() => "");
-      console.warn(`  ! brief model returned ${res.status} ${res.statusText}; using topic fallback.\n${text}`);
+      console.warn(
+        `  ! brief model returned ${res.status} ${res.statusText}; using topic fallback.\n${text}`
+      );
       return null;
     }
     const json = await res.json();
@@ -464,7 +539,8 @@ async function deriveBrief({ title, description, body }, cfg) {
       return null;
     }
 
-    const clean = (v) => (typeof v === "string" ? v.trim().replace(/\.$/, "") : "");
+    const clean = v =>
+      typeof v === "string" ? v.trim().replace(/\.$/, "") : "";
     const environment = clean(parsed.environment);
     const subjects = clean(parsed.subjects);
     const technology = clean(parsed.technology);
@@ -472,7 +548,9 @@ async function deriveBrief({ title, description, body }, cfg) {
     if (!environment && !subjects && !technology) return null;
     return { primaryTopic, environment, subjects, technology };
   } catch (err) {
-    console.warn(`  ! brief model failed (${err.message}); using topic fallback.`);
+    console.warn(
+      `  ! brief model failed (${err.message}); using topic fallback.`
+    );
     return null;
   }
 }
@@ -488,8 +566,8 @@ async function resolvePostPath(slug) {
 async function listPosts() {
   const files = await readdir(BLOG_DIR);
   return files
-    .filter((f) => f.endsWith(".mdx") || f.endsWith(".md"))
-    .map((f) => f.replace(/\.mdx?$/, ""));
+    .filter(f => f.endsWith(".mdx") || f.endsWith(".md"))
+    .map(f => f.replace(/\.mdx?$/, ""));
 }
 
 // --- Auth --------------------------------------------------------------------
@@ -499,11 +577,13 @@ async function getAccessToken() {
   try {
     const credential = new DefaultAzureCredential();
     const token = await credential.getToken(
-      "https://cognitiveservices.azure.com/.default",
+      "https://cognitiveservices.azure.com/.default"
     );
     cachedToken = token?.token;
   } catch (err) {
-    fail(`Could not get an Entra ID token: ${err.message}\nRun \`az login\` first.`);
+    fail(
+      `Could not get an Entra ID token: ${err.message}\nRun \`az login\` first.`
+    );
   }
   if (!cachedToken) fail("Entra ID token was empty. Run `az login` and retry.");
   return cachedToken;
@@ -519,7 +599,7 @@ async function loadHeadshotPng() {
   if (!(await exists(HEADSHOT_PATH))) {
     console.warn(
       `  ! headshot not found at ${path.relative(ROOT, HEADSHOT_PATH)} \u2014 ` +
-        "generating without author likeness.",
+        "generating without author likeness."
     );
     cachedHeadshot = null;
     return cachedHeadshot;
@@ -539,11 +619,11 @@ async function loadHeadshotPng() {
 const REF_IMAGE_EXTS = /\.(png|jpe?g|webp|gif|bmp|avif)$/i;
 const MAX_REFERENCE_IMAGES = 3;
 
-function collectPostImages(slug, raw) {
+function collectPostImages(raw) {
   const refs = [];
   const seen = new Set();
 
-  const push = (source) => {
+  const push = source => {
     if (!source) return;
     const key = source.trim();
     if (!key || seen.has(key)) return;
@@ -569,7 +649,10 @@ function resolveImageRef(ref) {
     return { kind: "local", value: path.join(ROOT, "src", ref.slice(2)) };
   }
   if (ref.startsWith("/")) {
-    return { kind: "local", value: path.join(ROOT, "public", ref.replace(/^\/+/, "")) };
+    return {
+      kind: "local",
+      value: path.join(ROOT, "public", ref.replace(/^\/+/, "")),
+    };
   }
   return {
     kind: "local",
@@ -588,13 +671,17 @@ async function loadReferenceImagePng(ref) {
     if (resolved.kind === "remote") {
       const res = await fetch(resolved.value);
       if (!res.ok) {
-        console.warn(`  ! reference image ${resolved.value} returned ${res.status} \u2014 skipping.`);
+        console.warn(
+          `  ! reference image ${resolved.value} returned ${res.status} \u2014 skipping.`
+        );
         return null;
       }
       source = Buffer.from(await res.arrayBuffer());
     } else {
       if (!(await exists(resolved.value))) {
-        console.warn(`  ! reference image not found: ${path.relative(ROOT, resolved.value)} \u2014 skipping.`);
+        console.warn(
+          `  ! reference image not found: ${path.relative(ROOT, resolved.value)} \u2014 skipping.`
+        );
         return null;
       }
       source = resolved.value;
@@ -604,11 +691,12 @@ async function loadReferenceImagePng(ref) {
       .resize(1024, 1024, { fit: "inside", withoutEnlargement: true })
       .png()
       .toBuffer();
-    const base = path
-      .basename(cleanPath)
-      .replace(/\.[^.]+$/, "")
-      .replace(/[^a-z0-9_-]+/gi, "-")
-      .slice(0, 40) || "ref";
+    const base =
+      path
+        .basename(cleanPath)
+        .replace(/\.[^.]+$/, "")
+        .replace(/[^a-z0-9_-]+/gi, "-")
+        .slice(0, 40) || "ref";
     return { buffer, filename: `${base}.png` };
   } catch (err) {
     console.warn(`  ! reference image ${ref} failed to load: ${err.message}`);
@@ -616,10 +704,10 @@ async function loadReferenceImagePng(ref) {
   }
 }
 
-async function loadReferenceImages(slug, raw) {
-  const refs = collectPostImages(slug, raw);
+async function loadReferenceImages(raw) {
+  const refs = collectPostImages(raw);
   if (refs.length === 0) return [];
-  const loaded = await Promise.all(refs.map((r) => loadReferenceImagePng(r)));
+  const loaded = await Promise.all(refs.map(r => loadReferenceImagePng(r)));
   return loaded.filter(Boolean);
 }
 
@@ -629,8 +717,7 @@ async function loadReferenceImages(slug, raw) {
 // otherwise use pure text-to-image generation.
 async function requestImage({ cfg, prompt, headshot, refImages = [] }) {
   const token = await getAccessToken();
-  const base =
-    `${cfg.endpoint.replace(/\/$/, "")}/openai/deployments/${cfg.deployment}`;
+  const base = `${cfg.endpoint.replace(/\/$/, "")}/openai/deployments/${cfg.deployment}`;
 
   const images = [];
   if (headshot) images.push({ buffer: headshot, filename: "headshot.png" });
@@ -647,7 +734,7 @@ async function requestImage({ cfg, prompt, headshot, refImages = [] }) {
       form.append(
         field,
         new Blob([img.buffer], { type: "image/png" }),
-        img.filename,
+        img.filename
       );
     }
     return fetch(`${base}/images/edits?api-version=${cfg.apiVersion}`, {
@@ -663,7 +750,12 @@ async function requestImage({ cfg, prompt, headshot, refImages = [] }) {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ prompt, size: "1536x1024", quality: "medium", n: 1 }),
+    body: JSON.stringify({
+      prompt,
+      size: "1536x1024",
+      quality: "medium",
+      n: 1,
+    }),
   });
 }
 
@@ -683,13 +775,15 @@ async function generatePost(slug, { force, dryRun, cfg, contentOnly }) {
   }
 
   if (fm.hasHero && !force && !dryRun) {
-    console.log(`\u2013 "${slug}" already has a heroImage — skipping (use --force to overwrite).`);
+    console.log(
+      `\u2013 "${slug}" already has a heroImage — skipping (use --force to overwrite).`
+    );
     return "skipped";
   }
 
   const derived = await deriveBrief(
     { title: fm.title, description: fm.description, body: extractBody(raw) },
-    cfg,
+    cfg
   );
   const fallback = pickScene(fm.tags, fm.title);
   const brief = {
@@ -699,7 +793,7 @@ async function generatePost(slug, { force, dryRun, cfg, contentOnly }) {
   };
   const primaryTopic = derived?.primaryTopic || fm.tags[0] || fm.title;
   const secondaryTopics = fm.tags
-    .filter((t) => t.toLowerCase() !== primaryTopic.toLowerCase())
+    .filter(t => t.toLowerCase() !== primaryTopic.toLowerCase())
     .join(", ");
   const technologies = fm.tags.join(", ");
 
@@ -709,7 +803,7 @@ async function generatePost(slug, { force, dryRun, cfg, contentOnly }) {
   // headshot as a likeness reference. In `--content-only` mode we skip the
   // author entirely: no headshot, no venue, subject-matter-only illustration.
   const withHeadshot = !contentOnly;
-  const refImages = await loadReferenceImages(slug, raw);
+  const refImages = await loadReferenceImages(raw);
   const prompt = contentOnly
     ? buildContentPrompt({
         title: fm.title,
@@ -737,12 +831,16 @@ async function generatePost(slug, { force, dryRun, cfg, contentOnly }) {
     : `Cinematic enterprise hero image representing ${primaryTopic} \u2014 ${brief.environment}.`;
 
   console.log(`\n\u25b6 ${fm.title || slug}`);
-  console.log(`  style:  ${contentOnly ? "content-only (no author, no venue)" : "presenter (whiteboard scene)"}`);
+  console.log(
+    `  style:  ${contentOnly ? "content-only (no author, no venue)" : "presenter (whiteboard scene)"}`
+  );
   console.log(`  tags:   ${fm.tags.join(", ") || "(none)"}`);
   console.log(`  topic:  ${primaryTopic}`);
   if (withHeadshot) console.log(`  outfit: ${outfit}`);
   if (refImages.length > 0) {
-    console.log(`  refs:   ${refImages.length} article image(s) attached as visual context.`);
+    console.log(
+      `  refs:   ${refImages.length} article image(s) attached as visual context.`
+    );
   }
   console.log(`  prompt: ${prompt}`);
 
@@ -756,7 +854,7 @@ async function generatePost(slug, { force, dryRun, cfg, contentOnly }) {
     console.log(
       headshot
         ? "  human:  yes \u2014 using headshot.jpg as the person's likeness reference."
-        : "  human:  yes \u2014 headshot unavailable, generating without likeness.",
+        : "  human:  yes \u2014 headshot unavailable, generating without likeness."
     );
   }
 
@@ -764,7 +862,9 @@ async function generatePost(slug, { force, dryRun, cfg, contentOnly }) {
 
   if (!res.ok) {
     const text = await res.text().catch(() => "");
-    console.error(`\u2716 "${slug}": image API returned ${res.status} ${res.statusText}\n${text}`);
+    console.error(
+      `\u2716 "${slug}": image API returned ${res.status} ${res.statusText}\n${text}`
+    );
     return "failed";
   }
 
@@ -788,17 +888,19 @@ async function generatePost(slug, { force, dryRun, cfg, contentOnly }) {
     .replace(/^heroAlt:.*$\n?/m, "");
   const patched = cleaned.replace(
     /^(title:.*)$/m,
-    `$1\nheroImage: ${relFromPost}\nheroAlt: ${JSON.stringify(alt)}`,
+    `$1\nheroImage: ${relFromPost}\nheroAlt: ${JSON.stringify(alt)}`
   );
   await writeFile(postPath, patched);
-  console.log(`  \u2714 set heroImage + heroAlt in ${path.relative(ROOT, postPath)}`);
+  console.log(
+    `  \u2714 set heroImage + heroAlt in ${path.relative(ROOT, postPath)}`
+  );
   return "generated";
 }
 
 // --- Main --------------------------------------------------------------------
 const args = process.argv.slice(2);
-const flags = new Set(args.filter((a) => a.startsWith("--")));
-const positional = args.filter((a) => !a.startsWith("--"));
+const flags = new Set(args.filter(a => a.startsWith("--")));
+const positional = args.filter(a => !a.startsWith("--"));
 const force = flags.has("--force");
 const dryRun = flags.has("--dry-run");
 const missing = flags.has("--missing");
@@ -828,13 +930,17 @@ let targets;
 if (missing) {
   targets = await missingSlugs();
   if (!targets.length) {
-    console.log("\u2714 Every eligible post already has a heroImage. Nothing to do.");
+    console.log(
+      "\u2714 Every eligible post already has a heroImage. Nothing to do."
+    );
     process.exit(0);
   }
 } else if (positional.length) {
   targets = positional;
 } else {
-  fail("Provide a post slug, or use --missing. See the header of this file for usage.");
+  fail(
+    "Provide a post slug, or use --missing. See the header of this file for usage."
+  );
 }
 
 // Config is only needed for real generation (not dry runs).
@@ -843,17 +949,18 @@ if (!dryRun) {
   const endpoint = process.env.AZURE_OPENAI_ENDPOINT;
   const deployment = process.env.AZURE_OPENAI_IMAGE_DEPLOYMENT;
   const chatDeployment = process.env.AZURE_OPENAI_CHAT_DEPLOYMENT || null;
-  const apiVersion = process.env.AZURE_OPENAI_API_VERSION || "2025-04-01-preview";
+  const apiVersion =
+    process.env.AZURE_OPENAI_API_VERSION || "2025-04-01-preview";
   if (!endpoint || !deployment) {
     fail(
       "Missing Azure OpenAI config. Set AZURE_OPENAI_ENDPOINT and " +
-        "AZURE_OPENAI_IMAGE_DEPLOYMENT (in .env locally, or as CI env vars).",
+        "AZURE_OPENAI_IMAGE_DEPLOYMENT (in .env locally, or as CI env vars)."
     );
   }
   if (!chatDeployment) {
     console.warn(
       "! AZURE_OPENAI_CHAT_DEPLOYMENT is not set \u2014 falling back to the static " +
-        "topic map, so hero scenes will be less content-specific.",
+        "topic map, so hero scenes will be less content-specific."
     );
   }
   cfg = { endpoint, deployment, chatDeployment, apiVersion };
@@ -867,6 +974,6 @@ for (const slug of targets) {
 
 console.log(
   `\nDone. generated: ${results.generated}, skipped: ${results.skipped}, failed: ${results.failed}` +
-    (dryRun ? `, dry-run: ${results["dry-run"]}` : ""),
+    (dryRun ? `, dry-run: ${results["dry-run"]}` : "")
 );
 if (results.failed > 0) process.exit(1);

@@ -1,10 +1,5 @@
 export type IconName =
-  | "sparkles"
-  | "shield"
-  | "chip"
-  | "code"
-  | "device"
-  | "flow";
+  "sparkles" | "shield" | "chip" | "code" | "device" | "flow";
 
 /** SVG path data for the small line-icon set used across topic UI. */
 export const ICON_PATHS: Record<IconName, string> = {

@@ -35,7 +35,7 @@ const tags = [...tagCounts.entries()].sort((a, b) => a[0].localeCompare(b[0]));
           {tags.map(([tag, count]) => (
             <li>
               <a
-                href={`/tags/${slugify(tag)}`}
+                href={`/tags/${slugify(tag)}/`}
                 class="border-ink-200 text-ink-700 hover:border-azure-400 hover:text-azure-600 dark:border-ink-800 dark:bg-ink-900 dark:text-ink-200 dark:hover:border-azure-500 dark:hover:text-azure-400 inline-flex items-center gap-2 rounded-full border bg-white px-4 py-2 text-sm font-medium transition"
               >
                 {tag}

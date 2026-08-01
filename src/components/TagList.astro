@@ -16,11 +16,11 @@ const slugify = (tag: string) =>
 {
   tags.length > 0 && (
     <ul class:list={["flex flex-wrap gap-2", className]}>
-      {tags.map((tag) => (
+      {tags.map(tag => (
         <li>
           <a
-            href={`/tags/${slugify(tag)}`}
-            class="inline-flex items-center rounded-full border border-azure-200 bg-azure-50 px-2.5 py-0.5 text-xs font-medium text-azure-700 transition hover:border-azure-400 hover:bg-azure-100 dark:border-ink-700 dark:bg-ink-800 dark:text-azure-300 dark:hover:border-azure-500"
+            href={`/tags/${slugify(tag)}/`}
+            class="border-azure-200 bg-azure-50 text-azure-700 hover:border-azure-400 hover:bg-azure-100 dark:border-ink-700 dark:bg-ink-800 dark:text-azure-300 dark:hover:border-azure-500 inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium transition"
           >
             {tag}
           </a>

@@ -11,7 +11,7 @@ interface Props {
 
 const { post } = Astro.props;
 const { title, description, pubDate, heroImage, tags } = post.data;
-const url = `/blog/${post.id}`;
+const url = `/blog/${post.id}/`;
 const readTime = readingTimeLabel(post.body);
 const primaryTag = tags[0];
 ---

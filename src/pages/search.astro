@@ -62,7 +62,7 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
     <noscript>
       <p class="text-ink-600 dark:text-ink-300 mt-6 text-sm">
         Search requires JavaScript. You can still <a
-          href="/blog"
+          href="/blog/"
           class="text-azure-600 dark:text-azure-400 font-medium hover:underline"
           >browse every article</a
         >.
@@ -85,6 +85,7 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
     year: "numeric",
     month: "long",
     day: "numeric",
+    timeZone: "UTC",
   });
 
   const escapeHtml = (value: string) =>

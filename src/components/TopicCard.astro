@@ -7,18 +7,20 @@ interface Props {
   href: string;
   count: number;
   icon: IconName;
+  headingLevel?: 2 | 3;
 }
 
-const { title, description, href, count, icon } = Astro.props;
+const { title, description, href, count, icon, headingLevel = 3 } = Astro.props;
+const Heading = headingLevel === 2 ? "h2" : "h3";
 ---
 
 <a
   href={href}
-  class="group relative flex flex-col gap-3 rounded-2xl border border-ink-200 bg-white p-6 transition hover:-translate-y-1 hover:border-azure-300 hover:shadow-lg hover:shadow-azure-500/5 dark:border-ink-800 dark:bg-ink-900 dark:hover:border-azure-700"
+  class="group border-ink-200 hover:border-azure-300 hover:shadow-azure-500/5 dark:border-ink-800 dark:bg-ink-900 dark:hover:border-azure-700 relative flex flex-col gap-3 rounded-2xl border bg-white p-6 transition hover:-translate-y-1 hover:shadow-lg"
 >
   <div class="flex items-center justify-between">
     <span
-      class="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-azure-50 text-azure-600 transition group-hover:bg-azure-600 group-hover:text-white dark:bg-ink-800 dark:text-azure-400"
+      class="bg-azure-50 text-azure-600 group-hover:bg-azure-600 dark:bg-ink-800 dark:text-azure-400 inline-flex h-11 w-11 items-center justify-center rounded-xl transition group-hover:text-white"
     >
       <svg
         class="h-5 w-5"
@@ -28,20 +30,24 @@ const { title, description, href, count, icon } = Astro.props;
         stroke-width="1.8"
         aria-hidden="true"
       >
-        <path stroke-linecap="round" stroke-linejoin="round" d={ICON_PATHS[icon]}></path>
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d={ICON_PATHS[icon]}></path>
       </svg>
     </span>
-    <span
-      class="text-xs font-medium text-ink-400 dark:text-ink-500"
+    <span class="text-ink-400 dark:text-ink-500 text-xs font-medium"
       >{count} {count === 1 ? "article" : "articles"}</span
     >
   </div>
 
-  <h3 class="text-base font-semibold text-ink-900 dark:text-white">{title}</h3>
-  <p class="text-sm text-ink-600 dark:text-ink-300">{description}</p>
+  <Heading class="text-ink-900 text-base font-semibold dark:text-white">
+    {title}
+  </Heading>
+  <p class="text-ink-600 dark:text-ink-300 text-sm">{description}</p>
 
   <span
-    class="mt-auto inline-flex items-center gap-1 pt-1 text-sm font-semibold text-azure-600 dark:text-azure-400"
+    class="text-azure-600 dark:text-azure-400 mt-auto inline-flex items-center gap-1 pt-1 text-sm font-semibold"
   >
     Explore
     <svg
@@ -52,7 +58,10 @@ const { title, description, href, count, icon } = Astro.props;
       stroke-width="2"
       aria-hidden="true"
     >
-      <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14m-6-6 6 6-6 6"></path>
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        d="M5 12h14m-6-6 6 6-6 6"></path>
     </svg>
   </span>
 </a>

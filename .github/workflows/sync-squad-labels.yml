@@ -3,7 +3,7 @@ name: Sync Squad Labels
 on:
   push:
     paths:
-      - '.squad/team.md'
+      - ".squad/team.md"
   workflow_dispatch:
 
 permissions:

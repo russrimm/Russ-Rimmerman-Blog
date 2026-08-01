@@ -4,10 +4,12 @@ import { Image } from "astro:assets";
 
 interface Props {
   project: CollectionEntry<"projects">;
+  headingLevel?: 2 | 3;
 }
-const { project } = Astro.props;
+const { project, headingLevel = 3 } = Astro.props;
 const { title, summary, tech, repoUrl, liveUrl, image, imageAlt } =
   project.data;
+const Heading = headingLevel === 2 ? "h2" : "h3";
 ---
 
 <article
@@ -28,14 +30,14 @@ const { title, summary, tech, repoUrl, liveUrl, image, imageAlt } =
     )
   }
   <div class="flex flex-1 flex-col gap-3 p-6">
-    <h3 class="text-ink-900 text-lg font-semibold dark:text-white">
+    <Heading class="text-ink-900 text-lg font-semibold dark:text-white">
       <a
-        href={`/projects/${project.id}`}
+        href={`/projects/${project.id}/`}
         class="group-hover:text-azure-600 focus-visible:after:ring-azure-500 dark:group-hover:text-azure-400 transition after:absolute after:inset-0 focus-visible:outline-none focus-visible:after:rounded-2xl focus-visible:after:ring-2"
       >
         {title}
       </a>
-    </h3>
+    </Heading>
     <p class="text-ink-600 dark:text-ink-300 flex-1 text-sm">{summary}</p>
 
     {
