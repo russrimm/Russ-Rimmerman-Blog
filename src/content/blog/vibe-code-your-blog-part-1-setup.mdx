@@ -4,7 +4,7 @@ heroImage: ../../assets/blog/vibe-code-your-blog-part-1-setup.webp
 heroAlt: "Cinematic enterprise hero image representing Vibe Coding — an AI innovation lab bathed in soft volumetric light."
 description: "A beginner-friendly setup guide for building your first project with AI: GitHub, Git, Node.js, Python, Copilot, agents, and reusable skills."
 pubDate: 2026-07-15
-updatedDate: 2026-07-31
+updatedDate: 2026-08-01
 tags:
   ["Vibe Coding", "Vibe Coding Blog Series", "AI", "Getting Started", "Copilot"]
 featured: false
@@ -56,17 +56,19 @@ Real Apps](/blog/vibe-coding-lessons/). Read that for the *why*. This post is th
 
 ## Before you install anything: the plan
 
-You're going to set up seven things, in this order, because each one builds on the
+You're going to set up eight things, in this order, because each one builds on the
 last:
 
 1. **A GitHub account** — your home base for code, history, and hosting.
 2. **Git** — the tool that actually tracks your changes locally.
-3. **A Copilot agent surface** — use the native GitHub Copilot desktop app,
-   Copilot cloud agent on GitHub.com, or both.
-4. **VS Code Insiders** *(optional)* — the editor where the deeper vibe coding happens, if you want a local editor alongside the app.
-5. **Node LTS + npm** — the engine that runs a modern website.
-6. **Python (latest)** — not strictly required to run the blog, but so much of the vibe-coding ecosystem (scripts, tools, MCP servers, AI helpers) assumes it's there that you'll save yourself pain by installing it now.
-7. **GitHub Copilot** — the AI you'll be steering inside the app (and inside the editor, if you install one).
+3. **The GitHub CLI (`gh`)** — the tool that introduces your local Git to your
+   GitHub account, so pushing your work just works.
+4. **A Copilot agent surface** — the native GitHub Copilot desktop app, Copilot
+   cloud agent on GitHub.com, or both.
+5. **VS Code Insiders** *(optional)* — a local editor for hands-on, line-by-line work alongside the app.
+6. **Copilot in VS Code** *(only if you did step 5)* — signing the editor in so the AI is actually available where you're typing.
+7. **Node LTS + npm** — the engine that runs a modern website.
+8. **Python (latest)** — not strictly required to run the blog, but so much of the vibe-coding ecosystem (scripts, tools, MCP servers, AI helpers) assumes it's there that you'll save yourself pain by installing it now.
 
 Then you'll scaffold a home for your agents and skills so the AI works *with*
 you instead of guessing. Let's go.
@@ -78,7 +80,9 @@ you instead of guessing. Let's go.
 ## Step 1: Create a GitHub account
 
 Head to [github.com](https://github.com) and sign up. Pick a username you won't
-be embarrassed by later — it shows up in your project URLs.
+be embarrassed by later — it shows up in your project URLs. Verify the
+confirmation email before you close the tab; an unverified account can't push
+code or use Copilot.
 
 <Explain title="Why do I need GitHub for a blog?">
   Three reasons. First, it's a **backup** — your writing and code live safely in
@@ -90,7 +94,9 @@ be embarrassed by later — it shows up in your project URLs.
 
 While you're there, [enable **two-factor authentication** in your account](https://docs.github.com/en/authentication/securing-your-account-with-two-factor-authentication-2fa/configuring-two-factor-authentication)
 settings. GitHub requires it for most contributors now, and you don't want to hit
-that wall mid-project.
+that wall mid-project. When GitHub shows you the **recovery codes**, save them
+somewhere you'll still have access to if you lose your phone. People skip this
+step constantly and then get locked out of the account holding all their work.
 
 <Explain title="Free, Pro, Enterprise, or Education — which one do I need?">
   A free GitHub account is enough for the repositories and Actions work in this
@@ -117,18 +123,22 @@ This trips people up constantly: your GitHub *account* lives on the web, but
 of tracking changes.
 
 - **Windows:** download and run the installer from
-  [git-scm.com](https://git-scm.com). Accept the defaults — they're sensible.
+  [git-scm.com](https://git-scm.com). Accept the defaults — with one exception.
+  On the screen titled *Choosing the default editor used by Git*, the default is
+  **Vim**, which is famously hard to get out of if you've never used it. Pick
+  Notepad, or VS Code if you plan to install it in step 5.
 - **macOS:** run `git --version` in Terminal; if Git isn't installed, macOS
   offers to install it for you. Or use [Homebrew](https://brew.sh):
   `brew install git`.
 - **Linux:** `sudo apt install git` (Debian/Ubuntu) or your distro's equivalent.
 
 Once installed, tell Git who you are — this stamps your name on every change you
-save:
+save — and set the default branch name to match GitHub's:
 
 ```bash
 git config --global user.name "Your Name"
 git config --global user.email "you@example.com"
+git config --global init.defaultBranch main
 ```
 
 <Explain title="Why does Git need my name and email?">
@@ -137,7 +147,75 @@ git config --global user.email "you@example.com"
   label on your history.
 </Explain>
 
-## Step 3: Choose your Copilot agent surface
+<Explain title="What's that third line about?">
+  Git has historically named the first branch in a new repository `master`, while
+  GitHub names it `main`. Leave them mismatched and your first push lands in a
+  branch GitHub doesn't consider the default, which quietly breaks deployment
+  workflows in Part 2 and produces a repository with two half-empty branches.
+  Setting `init.defaultBranch` to `main` once, now, avoids the whole mess. It only
+  affects repositories you create *after* running it.
+</Explain>
+
+## Step 3: Connect Git to GitHub with the GitHub CLI
+
+You now have an account in the cloud and Git on your machine, and the two have
+never met. Nothing you commit locally reaches GitHub until you can prove to
+GitHub that you're you.
+
+The old answer to that was SSH keys, or a personal access token you pasted into a
+prompt once and then lost. The current answer is the **GitHub CLI** (`gh`), which
+handles the login and then configures Git to reuse those credentials from that
+point on. This series leans on `gh` in Part 2 as well, so install it now.
+
+- **Windows:** `winget install --id GitHub.cli` in a terminal, or grab the
+  installer from [cli.github.com](https://cli.github.com).
+- **macOS:** `brew install gh`.
+- **Linux:** follow the package instructions for your distro at
+  [cli.github.com](https://cli.github.com).
+
+Close and reopen your terminal, confirm `gh` is on your PATH, then log in:
+
+```bash
+gh --version
+gh auth login
+```
+
+`gh auth login` asks a short series of questions. The answers that matter:
+
+1. **What account do you want to log into?** → `GitHub.com`
+2. **What is your preferred protocol for Git operations?** → `HTTPS`
+3. **Authenticate Git with your GitHub credentials?** → `Yes`
+4. **How would you like to authenticate GitHub CLI?** → `Login with a web browser`
+
+It prints a one-time code, opens your browser, and you paste the code and
+approve. Then confirm it stuck:
+
+```bash
+gh auth status
+```
+
+You should see your GitHub username and the scopes you're authenticated with. If
+you do, your machine and your account are connected.
+
+<Explain title="What did answering 'Yes' to question 3 actually do?">
+  It pointed Git's **credential helper** at your GitHub CLI login. From then on,
+  `git push` quietly borrows that token instead of stopping to ask you for a
+  password. This is the single step that makes "I committed something" and "it's
+  safely on GitHub" feel like one action instead of two.
+
+  Skip it and your first push throws a confusing authentication prompt — and your
+  GitHub *password* won't work there, because GitHub stopped accepting passwords
+  for Git operations years ago.
+</Explain>
+
+<Explain title="HTTPS or SSH?">
+  Both work. **HTTPS is the easier first answer**: no keys to generate, no agent
+  to configure, and it gets through corporate networks that block SSH. SSH is
+  worth learning later, especially if you juggle personal and work accounts on one
+  machine. Start with HTTPS. You can switch any time with `gh auth login` again.
+</Explain>
+
+## Step 4: Choose your Copilot agent surface
 
 Before you install a full editor, choose the agent surface you'll use. The
 [GitHub Copilot app](https://github.com/features/ai/github-app) is GitHub's native
@@ -159,7 +237,7 @@ is the browser-based surface. You can use either one or both.
   still where I go for hands-on, line-by-line work.
 </Explain>
 
-## Step 4: Install VS Code Insiders *(optional)*
+## Step 5: Install VS Code Insiders *(optional)*
 
 **You can skip this step entirely.** The GitHub Copilot app covers native
 agent-driven work, while Copilot cloud agent handles asynchronous branch-and-PR
@@ -180,11 +258,40 @@ newest Copilot and AI-agent features before anyone else. Download it from
   fallback — your projects work in both.
 </Explain>
 
-If you install it, when you first open it, sign in with the same GitHub account
-(bottom-left account icon). This connects the editor to your identity and, in a
-moment, to Copilot.
+If you install it, sign in with the same GitHub account when you first open it
+(the account icon in the bottom-left). That connects the editor to your identity,
+which is what the next step builds on.
 
-## Step 5: Install Node.js (LTS) and confirm npm works
+## Step 6: Turn on Copilot in VS Code *(only if you did step 5)*
+
+Copilot ships **inside** VS Code now — there's no separate extension to hunt down
+in the Marketplace. What it needs from you is your identity. Sign in any of these
+ways:
+
+- Click the **Copilot icon in the Status Bar** at the bottom of the window and
+  choose to sign in.
+- Or open the **Accounts** menu in the Activity Bar (bottom-left) and pick **Sign
+  in with GitHub to use GitHub Copilot**.
+- Or press `Ctrl+Shift+P` (`Cmd+Shift+P` on macOS) and run **GitHub Copilot: Sign
+  in**.
+
+Use the same GitHub account from Step 1. Then prove it actually works rather than
+assuming: open the Chat view with `Ctrl+Alt+I` (`Ctrl+Cmd+I` on macOS) and ask it
+something trivial, like *"what files are in this folder?"* If you get a real
+answer back, the editor, your account, and your Copilot plan are all talking to
+each other.
+
+<Explain title="Chat opens but never answers — now what?">
+  It's almost always one of three things. **Wrong account:** check the Accounts
+  menu and confirm you're signed in as the GitHub user who has the Copilot plan,
+  not a stray work or personal account. **Plan doesn't cover it:** Copilot Free
+  has real limits on chat and agent usage. **No seat assigned:** if you signed in
+  with a work or school account, an admin has to grant you a Copilot seat before
+  anything works. Signing out and back in resolves more of these than it has any
+  right to.
+</Explain>
+
+## Step 7: Install Node.js (LTS) and confirm npm works
 
 A modern blog is built and previewed by **Node.js**, and Node ships with
 **npm**, the tool that installs the building blocks your site depends on.
@@ -207,9 +314,10 @@ node --version
 npm --version
 ```
 
-You should see version numbers (for example, `v22.x.x` and `10.x.x`). If instead
-you see something like `'npm' is not recognized` or `command not found`, your
-`PATH` isn't picking up Node yet.
+You should see version numbers (for example, `v24.x.x` and `11.x.x` — Node 24 is
+the current LTS line, and it ships npm 11). If instead you see something like
+`'npm' is not recognized` or `command not found`, your `PATH` isn't picking up
+Node yet.
 
 <Explain title="What is PATH, and why would npm 'not be found'?">
   `PATH` is the list of folders your terminal searches when you type a command.
@@ -221,7 +329,7 @@ you see something like `'npm' is not recognized` or `command not found`, your
 
 1. Fully quit and reopen your terminal (and VS Code) — the installer updates
    `PATH`, but only new terminal sessions see it.
-2. Restart your computer if step 1 doesn't do it.
+2. Restart your computer if reopening the terminal doesn't do it.
 3. If it *still* fails, don't hand-edit PATH. Instead, uninstall Node and
    reinstall it with a **version manager**, which handles PATH for you:
    [`fnm`](https://github.com/Schniz/fnm) or
@@ -234,15 +342,15 @@ you see something like `'npm' is not recognized` or `command not found`, your
   the entire class of "npm not found" problems instead of patching one instance.
 </Explain>
 
-## Step 6: Install Python (latest)
+## Step 8: Install Python (latest)
 
 You won't write Python to build the blog itself, but the rest of the vibe-coding
 world assumes you have it. Half the helper scripts, dev tools, and MCP servers
 you'll bump into over the next few months start with "just run this Python
 script." Install it now and you'll never think about it again.
 
-Grab the **latest** version — not an old 3.9 or 3.10 — from
-[python.org/downloads](https://www.python.org/downloads/).
+Grab the **latest** stable release — 3.14 as I write this, not an old 3.9 or
+3.10 — from [python.org/downloads](https://www.python.org/downloads/).
 
 - **Windows:** run the installer and **check the box that says "Add python.exe
   to PATH"** on the very first screen. That one checkbox saves you an hour of
@@ -250,7 +358,7 @@ Grab the **latest** version — not an old 3.9 or 3.10 — from
 - **macOS:** the installer from python.org is the most predictable route. You
   can also use [Homebrew](https://brew.sh): `brew install python`.
 - **Linux:** many distros already include Python 3, but don't assume the bundled
-  version is current. Confirm with `python3 --version`; if it's older than 3.11,
+  version is current. Confirm with `python3 --version`; if it's older than 3.12,
   install a newer one via your distro's package manager or
   [pyenv](https://github.com/pyenv/pyenv).
 
@@ -267,6 +375,14 @@ python3 -m pip --version
 ```
 
 You should see a supported Python 3 release and a matching `pip` version.
+
+<Explain title="What if a tool complains about my Python version?">
+  Packaging occasionally lags a brand-new Python release by a few months, so a
+  library can refuse to install on the newest minor version. If that happens,
+  install the previous minor release alongside it rather than fighting the tool.
+  Nothing in this series needs the bleeding edge — the point of installing Python
+  now is simply that it's there when something asks for it.
+</Explain>
 
 <Explain title="Why `python` on Windows but `python3` on macOS/Linux?">
   Command naming depends on the operating system, installer, and distribution.
@@ -289,24 +405,26 @@ Run this quick checklist in a **fresh** terminal. Each command should print a
 version or a success message — no errors:
 
 ```bash
-git --version          # e.g. git version 2.4x.x
+git --version          # e.g. git version 2.53.x
+gh --version           # e.g. gh version 2.9x.x
+gh auth status         # should name your GitHub account
 node --version         # e.g. v24.x.x
-npm --version          # e.g. 10.x.x
-python --version       # e.g. Python 3.13.x  (try 'python3' on macOS/Linux)
-code --version         # VS Code version (use 'code-insiders' if 'code' isn't found)
-gh --version           # e.g. gh version 2.x.x (see below)
+npm --version          # e.g. 11.x.x
+python --version       # e.g. Python 3.14.x  (try 'python3' on macOS/Linux)
+```
+
+And if you installed a local editor in Step 5:
+
+```bash
+code-insiders --version   # or 'code --version' for regular VS Code
 ```
 
 If any line errors out, fix that tool before moving on — every later step assumes
 these all work.
 
-<Explain title="What's 'gh' and do I need it?">
-  `gh` is GitHub's official command-line tool, and this series relies on it. It's
-  the easiest way to log in to GitHub from the terminal (`gh auth login`) and
-  later to create your repository without leaving VS Code. Install it now from
-  [cli.github.com](https://cli.github.com) and confirm `gh --version` prints a
-  version before you continue — Part 2 assumes it's set up.
-</Explain>
+> **On the version numbers:** these were current as of August 2026. Yours will
+> almost certainly be higher, and that's fine. What matters is that each command
+> returns *a* version instead of "not recognized," not that it matches mine.
 
 ## Keeping your local disk tidy
 
@@ -611,11 +729,12 @@ or ask for a security review — no re-explaining required.
 Before moving on, make sure all of this is true — Part 2 assumes every one of
 them:
 
-- ✅ A GitHub account with 2FA enabled, and you're signed in to the Copilot surface you chose.
-- ✅ Git installed and configured with your name and email.
+- ✅ A GitHub account with a verified email and 2FA enabled, and your recovery codes saved somewhere safe.
+- ✅ Git installed and configured with your name, email, and `init.defaultBranch` set to `main`.
+- ✅ `gh auth status` reports you're logged in, and Git is set to reuse those credentials.
 - ✅ The **GitHub Copilot app** installed and responding, or Copilot cloud agent working on GitHub.com.
-- ✅ *(Optional)* VS Code **Insiders** open, with the Copilot extension active and responding, if you chose to install a local editor.
-- ✅ `node`, `npm`, `git`, and `python` (Windows) or `python3` (macOS/Linux) all return versions in a fresh terminal.
+- ✅ *(Optional)* VS Code **Insiders** open and signed in, with Copilot Chat answering a test question, if you chose to install a local editor.
+- ✅ `node`, `npm`, `git`, `gh`, and `python` (Windows) or `python3` (macOS/Linux) all return versions in a fresh terminal.
 - ✅ A `~/.agents/skills` folder ready for your portable skills.
 - ✅ You understand the safety basics: commit often, branch for risk, no secrets.
 - ✅ You know how to make security the AI's default — ground it in the Azure and
