@@ -2,9 +2,9 @@
 title: "Ready, Set, Vibe! (Using AI)"
 heroImage: ../../assets/blog/vibe-code-your-blog-part-1-setup.webp
 heroAlt: "Cinematic enterprise hero image representing Vibe Coding — an AI innovation lab bathed in soft volumetric light."
-description: "A beginner-friendly setup guide for building your first project with AI: GitHub, Git, Node.js, Python, Copilot, agents, and reusable skills."
+description: "A beginner-friendly setup guide for building your first project with AI: a GitHub account, Git, Node.js, Python, GitHub Copilot, agents, and reusable skills."
 pubDate: 2026-07-15
-updatedDate: 2026-07-31
+updatedDate: 2026-08-01
 tags:
   ["Vibe Coding", "Vibe Coding Blog Series", "AI", "Getting Started", "Copilot"]
 featured: false
@@ -29,11 +29,12 @@ exactly who vibe coding is for.
 
 One thing worth saying up front: there are *many* tools you can use to vibe code,
 and no single one is "correct." Whichever tool you're most comfortable with that
-gets the job done is the best one to use. This series leans on VS Code and
-Copilot, but I'd also recommend installing and trying out the [GitHub Copilot
-CLI](https://docs.github.com/en/copilot/how-tos/copilot-cli/cli-getting-started)
-and the [GitHub Copilot app](https://github.com/features/ai/github-app) to find
-what fits the way you work.
+gets the job done is the best one to use. This series leans on the
+[GitHub Copilot app](https://github.com/features/ai/github-app), because it
+handles the whole loop — agent, files, branches, diffs, terminal, pull requests —
+without a separate editor in the mix. The
+[GitHub Copilot CLI](https://docs.github.com/en/copilot/how-tos/copilot-cli/cli-getting-started)
+is worth a look too if you'd rather live in a terminal.
 
 <Explain title="Do I need to read this if I already have a blog?">
   No. If you already have a working project and dev environment, skip straight to
@@ -56,17 +57,16 @@ Real Apps](/blog/vibe-coding-lessons/). Read that for the *why*. This post is th
 
 ## Before you install anything: the plan
 
-You're going to set up seven things, in this order, because each one builds on the
+You're going to set up six things, in this order, because each one builds on the
 last:
 
 1. **A GitHub account** — your home base for code, history, and hosting.
 2. **Git** — the tool that actually tracks your changes locally.
-3. **A Copilot agent surface** — use the native GitHub Copilot desktop app,
-   Copilot cloud agent on GitHub.com, or both.
-4. **VS Code Insiders** *(optional)* — the editor where the deeper vibe coding happens, if you want a local editor alongside the app.
+3. **The GitHub CLI (`gh`)** — the tool that introduces your local Git to your
+   GitHub account, so pushing your work just works.
+4. **The GitHub Copilot app** — where you'll do the actual vibe coding.
 5. **Node LTS + npm** — the engine that runs a modern website.
 6. **Python (latest)** — not strictly required to run the blog, but so much of the vibe-coding ecosystem (scripts, tools, MCP servers, AI helpers) assumes it's there that you'll save yourself pain by installing it now.
-7. **GitHub Copilot** — the AI you'll be steering inside the app (and inside the editor, if you install one).
 
 Then you'll scaffold a home for your agents and skills so the AI works *with*
 you instead of guessing. Let's go.
@@ -78,36 +78,42 @@ you instead of guessing. Let's go.
 ## Step 1: Create a GitHub account
 
 Head to [github.com](https://github.com) and sign up. Pick a username you won't
-be embarrassed by later — it shows up in your project URLs.
+be embarrassed by later — it shows up in your project URLs. Verify the
+confirmation email before you close the tab; an unverified account can't push
+code or use GitHub Copilot.
 
 <Explain title="Why do I need GitHub for a blog?">
   Three reasons. First, it's a **backup** — your writing and code live safely in
   the cloud, not just on one laptop. Second, it's a **time machine** — every
   change is versioned, so you can undo anything, even a week later. Third, it's
-  **free hosting and the front door for AI tools** — Copilot and the agents you'll
-  use authenticate through your GitHub identity. One account unlocks all of it.
+  **free hosting and the front door for AI tools** — GitHub Copilot and the agents
+  you'll use authenticate through your GitHub identity. One account unlocks all of
+  it.
 </Explain>
 
 While you're there, [enable **two-factor authentication** in your account](https://docs.github.com/en/authentication/securing-your-account-with-two-factor-authentication-2fa/configuring-two-factor-authentication)
 settings. GitHub requires it for most contributors now, and you don't want to hit
-that wall mid-project.
+that wall mid-project. When GitHub shows you the **recovery codes**, save them
+somewhere you'll still have access to if you lose your phone. People skip this
+step constantly and then get locked out of the account holding all their work.
 
 <Explain title="Free, Pro, Enterprise, or Education — which one do I need?">
   A free GitHub account is enough for the repositories and Actions work in this
-  series. **Copilot Free** is more limited, though, and doesn't include Copilot
-  cloud agent. If you want the asynchronous branch-and-PR workflow described
-  here, you'll need a paid Copilot plan or an eligible Education plan.
+  series. **GitHub Copilot Free** is more limited, though, and doesn't include
+  GitHub Copilot cloud agent. If you want the asynchronous branch-and-PR workflow
+  described here, you'll need a paid GitHub Copilot plan or an eligible Education
+  plan.
 
   As of July 2026, [**GitHub Copilot Pro is $10 USD per month**](https://docs.github.com/en/copilot/get-started/plans).
-  It includes unlimited completions, access to a selection of models, Copilot
-  cloud agent, and a monthly allowance of AI credits. Check the plan table before
-  buying because prices, model access, and usage allowances change.
+  It includes unlimited completions, access to a selection of models, GitHub
+  Copilot cloud agent, and a monthly allowance of AI credits. Check the plan table
+  before buying because prices, model access, and usage allowances change.
 
   And if you're a **student or teacher**, don't pay a cent yet — apply for
   [**GitHub Education**](https://github.com/education) first. Verified students
-  get the free **Copilot Student** plan, which has unlimited completions but more
-  limited chat, agent, and model access than Pro. Verified teachers are eligible
-  for **Copilot Pro at no charge**.
+  get the free **GitHub Copilot Student** plan, which has unlimited completions
+  but more limited chat, agent, and model access than Pro. Verified teachers are
+  eligible for **GitHub Copilot Pro at no charge**.
 </Explain>
 
 ## Step 2: Install Git (this is not the same as a GitHub account)
@@ -117,18 +123,22 @@ This trips people up constantly: your GitHub *account* lives on the web, but
 of tracking changes.
 
 - **Windows:** download and run the installer from
-  [git-scm.com](https://git-scm.com). Accept the defaults — they're sensible.
+  [git-scm.com](https://git-scm.com). Accept the defaults — with one exception.
+  On the screen titled *Choosing the default editor used by Git*, the default is
+  **Vim**, which is famously hard to get out of if you've never used it. Pick
+  Notepad unless you already have a favorite.
 - **macOS:** run `git --version` in Terminal; if Git isn't installed, macOS
   offers to install it for you. Or use [Homebrew](https://brew.sh):
   `brew install git`.
 - **Linux:** `sudo apt install git` (Debian/Ubuntu) or your distro's equivalent.
 
 Once installed, tell Git who you are — this stamps your name on every change you
-save:
+save — and set the default branch name to match GitHub's:
 
 ```bash
 git config --global user.name "Your Name"
 git config --global user.email "you@example.com"
+git config --global init.defaultBranch main
 ```
 
 <Explain title="Why does Git need my name and email?">
@@ -137,52 +147,111 @@ git config --global user.email "you@example.com"
   label on your history.
 </Explain>
 
-## Step 3: Choose your Copilot agent surface
-
-Before you install a full editor, choose the agent surface you'll use. The
-[GitHub Copilot app](https://github.com/features/ai/github-app) is GitHub's native
-desktop experience for agent-driven development on macOS, Windows, and Linux.
-For asynchronous work that runs on a branch and comes back as a pull request,
-[Copilot cloud agent on GitHub.com](https://docs.github.com/en/copilot/concepts/agents/cloud-agent/about-cloud-agent)
-is the browser-based surface. You can use either one or both.
-
-- **Desktop app (Windows / macOS / Linux):** install it from
-  [github.com/features/ai/github-app](https://github.com/features/ai/github-app)
-  and sign in with the GitHub account you just created.
-- **Cloud agent (GitHub.com):** no install required. Sign in, open a repository,
-  and confirm Copilot cloud agent is available for your plan.
-
-<Explain title="Why choose this before the editor?">
-  Because a dedicated agent surface reduces how much you need the editor. I use
-  the desktop app for native agent-driven work and Copilot cloud agent on
-  GitHub.com for "describe it, let the agent build it, review the PR." VS Code is
-  still where I go for hands-on, line-by-line work.
+<Explain title="What's that third line about?">
+  Git has historically named the first branch in a new repository `master`, while
+  GitHub names it `main`. Leave them mismatched and your first push lands in a
+  branch GitHub doesn't consider the default, which quietly breaks deployment
+  workflows in Part 2 and produces a repository with two half-empty branches.
+  Setting `init.defaultBranch` to `main` once, now, avoids the whole mess. It only
+  affects repositories you create *after* running it.
 </Explain>
 
-## Step 4: Install VS Code Insiders *(optional)*
+## Step 3: Connect Git to GitHub with the GitHub CLI
 
-**You can skip this step entirely.** The GitHub Copilot app covers native
-agent-driven work, while Copilot cloud agent handles asynchronous branch-and-PR
-work on GitHub.com. Come back to this step if you want hands-on editing in a
-local workspace.
+You now have an account in the cloud and Git on your machine, and the two have
+never met. Nothing you commit locally reaches GitHub until you can prove to
+GitHub that you're you.
 
-If you'd still like an editor on your machine — for hand-editing files,
-side-by-side terminal work, or extensions you already love — install **VS Code
-Insiders**. Insiders is the daily-updated version of VS Code that gets the
-newest Copilot and AI-agent features before anyone else. Download it from
-[code.visualstudio.com/insiders](https://code.visualstudio.com/insiders).
+The old answer to that was SSH keys, or a personal access token you pasted into a
+prompt once and then lost. The current answer is the **GitHub CLI** (`gh`), which
+handles the login and then configures Git to reuse those credentials from that
+point on. This series leans on `gh` in Part 2 as well, so install it now.
 
-<Explain title="Why Insiders instead of regular VS Code?">
-  The AI agent features move fast, and Insiders gets them first — often weeks
-  ahead of the stable release. The tradeoff: it updates every day and can
-  occasionally be a little rough. For vibe coding, being on the newest features is
-  worth it. If you ever hit a bad build, regular VS Code is always there as a
-  fallback — your projects work in both.
+- **Windows:** `winget install --id GitHub.cli` in a terminal, or grab the
+  installer from [cli.github.com](https://cli.github.com).
+- **macOS:** `brew install gh`.
+- **Linux:** follow the package instructions for your distro at
+  [cli.github.com](https://cli.github.com).
+
+Close and reopen your terminal, confirm `gh` is on your PATH, then log in:
+
+```bash
+gh --version
+gh auth login
+```
+
+`gh auth login` asks a short series of questions. The answers that matter:
+
+1. **What account do you want to log into?** → `GitHub.com`
+2. **What is your preferred protocol for Git operations?** → `HTTPS`
+3. **Authenticate Git with your GitHub credentials?** → `Yes`
+4. **How would you like to authenticate GitHub CLI?** → `Login with a web browser`
+
+It prints a one-time code, opens your browser, and you paste the code and
+approve. Then confirm it stuck:
+
+```bash
+gh auth status
+```
+
+You should see your GitHub username and the scopes you're authenticated with. If
+you do, your machine and your account are connected.
+
+<Explain title="What did answering 'Yes' to question 3 actually do?">
+  It pointed Git's **credential helper** at your GitHub CLI login. From then on,
+  `git push` quietly borrows that token instead of stopping to ask you for a
+  password. This is the single step that makes "I committed something" and "it's
+  safely on GitHub" feel like one action instead of two.
+
+  Skip it and your first push throws a confusing authentication prompt — and your
+  GitHub *password* won't work there, because GitHub stopped accepting passwords
+  for Git operations years ago.
 </Explain>
 
-If you install it, when you first open it, sign in with the same GitHub account
-(bottom-left account icon). This connects the editor to your identity and, in a
-moment, to Copilot.
+<Explain title="HTTPS or SSH?">
+  Both work. **HTTPS is the easier first answer**: no keys to generate, no agent
+  to configure, and it gets through corporate networks that block SSH. SSH is
+  worth learning later, especially if you juggle personal and work accounts on one
+  machine. Start with HTTPS. You can switch any time with `gh auth login` again.
+</Explain>
+
+## Step 4: Install the GitHub Copilot app
+
+This is the one you'll actually spend your time in. The
+[GitHub Copilot app](https://github.com/features/ai/github-app) is GitHub's
+native desktop experience for agent-driven development, and it runs on macOS,
+Windows, and Linux. Download it, then sign in with the GitHub account from
+Step 1.
+
+The reason it's worth making this your home base: it covers the whole loop
+without a second tool. Each session gets its own workspace with its own branch
+and files, so two experiments can't step on each other. You inspect diffs, run
+terminal commands, preview the site in a built-in browser, and open or merge pull
+requests without leaving the session you're in. That's the entire cycle you'd
+otherwise be stitching together across an editor, a terminal, and a browser.
+
+<Explain title="Do I need a paid plan for the app?">
+  No. The GitHub Copilot app is included on **every** GitHub Copilot plan,
+  including Free — and you can bring your own model key instead. Where the paid
+  plans matter is elsewhere: **GitHub Copilot cloud agent** and GitHub Copilot
+  code review start at Pro. So the app itself isn't the paywall; the asynchronous
+  "assign it and walk away" workflow is.
+</Explain>
+
+There's a second surface worth knowing about, and it needs no install:
+[**GitHub Copilot cloud agent** on GitHub.com](https://docs.github.com/en/copilot/concepts/agents/cloud-agent/about-cloud-agent).
+You describe work in the browser, the agent runs it on a branch, and it comes
+back as a pull request for you to review. It's the asynchronous counterpart to
+the GitHub Copilot app, and it's on a Pro plan or better.
+
+<Explain title="App or cloud agent — which do I reach for?">
+  I use both, for different shapes of work. The **GitHub Copilot app** is for
+  anything I want to watch and steer: building a feature, debugging, poking at
+  output as it appears. **GitHub Copilot cloud agent** is for "describe it, let it
+  run, review the PR when I get back" — the tasks I can hand off and stop thinking
+  about. Start with the app. Cloud agent makes more sense once you have a
+  repository and a rhythm, which is Part 2.
+</Explain>
 
 ## Step 5: Install Node.js (LTS) and confirm npm works
 
@@ -207,9 +276,10 @@ node --version
 npm --version
 ```
 
-You should see version numbers (for example, `v22.x.x` and `10.x.x`). If instead
-you see something like `'npm' is not recognized` or `command not found`, your
-`PATH` isn't picking up Node yet.
+You should see version numbers (for example, `v24.x.x` and `11.x.x` — Node 24 is
+the current LTS line, and it ships npm 11). If instead you see something like
+`'npm' is not recognized` or `command not found`, your `PATH` isn't picking up
+Node yet.
 
 <Explain title="What is PATH, and why would npm 'not be found'?">
   `PATH` is the list of folders your terminal searches when you type a command.
@@ -219,9 +289,9 @@ you see something like `'npm' is not recognized` or `command not found`, your
 
 **The reliable fix** for a "not found" error:
 
-1. Fully quit and reopen your terminal (and VS Code) — the installer updates
-   `PATH`, but only new terminal sessions see it.
-2. Restart your computer if step 1 doesn't do it.
+1. Fully quit and reopen your terminal (and the GitHub Copilot app) — the
+   installer updates `PATH`, but only new terminal sessions see it.
+2. Restart your computer if reopening the terminal doesn't do it.
 3. If it *still* fails, don't hand-edit PATH. Instead, uninstall Node and
    reinstall it with a **version manager**, which handles PATH for you:
    [`fnm`](https://github.com/Schniz/fnm) or
@@ -241,8 +311,8 @@ world assumes you have it. Half the helper scripts, dev tools, and MCP servers
 you'll bump into over the next few months start with "just run this Python
 script." Install it now and you'll never think about it again.
 
-Grab the **latest** version — not an old 3.9 or 3.10 — from
-[python.org/downloads](https://www.python.org/downloads/).
+Grab the **latest** stable release — 3.14 as I write this, not an old 3.9 or
+3.10 — from [python.org/downloads](https://www.python.org/downloads/).
 
 - **Windows:** run the installer and **check the box that says "Add python.exe
   to PATH"** on the very first screen. That one checkbox saves you an hour of
@@ -250,7 +320,7 @@ Grab the **latest** version — not an old 3.9 or 3.10 — from
 - **macOS:** the installer from python.org is the most predictable route. You
   can also use [Homebrew](https://brew.sh): `brew install python`.
 - **Linux:** many distros already include Python 3, but don't assume the bundled
-  version is current. Confirm with `python3 --version`; if it's older than 3.11,
+  version is current. Confirm with `python3 --version`; if it's older than 3.12,
   install a newer one via your distro's package manager or
   [pyenv](https://github.com/pyenv/pyenv).
 
@@ -267,6 +337,14 @@ python3 -m pip --version
 ```
 
 You should see a supported Python 3 release and a matching `pip` version.
+
+<Explain title="What if a tool complains about my Python version?">
+  Packaging occasionally lags a brand-new Python release by a few months, so a
+  library can refuse to install on the newest minor version. If that happens,
+  install the previous minor release alongside it rather than fighting the tool.
+  Nothing in this series needs the bleeding edge — the point of installing Python
+  now is simply that it's there when something asks for it.
+</Explain>
 
 <Explain title="Why `python` on Windows but `python3` on macOS/Linux?">
   Command naming depends on the operating system, installer, and distribution.
@@ -289,24 +367,20 @@ Run this quick checklist in a **fresh** terminal. Each command should print a
 version or a success message — no errors:
 
 ```bash
-git --version          # e.g. git version 2.4x.x
+git --version          # e.g. git version 2.53.x
+gh --version           # e.g. gh version 2.9x.x
+gh auth status         # should name your GitHub account
 node --version         # e.g. v24.x.x
-npm --version          # e.g. 10.x.x
-python --version       # e.g. Python 3.13.x  (try 'python3' on macOS/Linux)
-code --version         # VS Code version (use 'code-insiders' if 'code' isn't found)
-gh --version           # e.g. gh version 2.x.x (see below)
+npm --version          # e.g. 11.x.x
+python --version       # e.g. Python 3.14.x  (try 'python3' on macOS/Linux)
 ```
 
 If any line errors out, fix that tool before moving on — every later step assumes
 these all work.
 
-<Explain title="What's 'gh' and do I need it?">
-  `gh` is GitHub's official command-line tool, and this series relies on it. It's
-  the easiest way to log in to GitHub from the terminal (`gh auth login`) and
-  later to create your repository without leaving VS Code. Install it now from
-  [cli.github.com](https://cli.github.com) and confirm `gh --version` prints a
-  version before you continue — Part 2 assumes it's set up.
-</Explain>
+> **On the version numbers:** these were current as of August 2026. Yours will
+> almost certainly be higher, and that's fine. What matters is that each command
+> returns *a* version instead of "not recognized," not that it matches mine.
 
 ## Keeping your local disk tidy
 
@@ -320,79 +394,80 @@ repo *is* the source of truth. When you're done working on a project for a while
 and you're tight on disk, delete the local folder — you can always clone it back
 down the moment you want to pick it up again.
 
-## Using source control in VS Code
+## Using source control through GitHub Copilot
 
-Git is the safety net under everything you vibe code, and the best part is you
-rarely need to touch the command line to use it. VS Code has a built-in
-**Source Control** view that turns commits, branches, and syncing into a few
-clicks. This is worth learning early — it's your undo button, your backup, and
-your history all in one. The
-[official Source Control docs](https://code.visualstudio.com/docs/sourcecontrol/overview)
-and the
-[quickstart](https://code.visualstudio.com/docs/sourcecontrol/quickstart) go
-deeper; here are the parts you'll actually use every day.
+Git is the safety net under everything you vibe code, and the good news is you
+barely have to operate it by hand anymore. The GitHub Copilot app gives every
+session its own workspace with its own branch and files, so two pieces of work in
+flight can't tangle with each other. You review diffs in the session, run
+terminal checks there, and open or merge the pull request from the same window.
 
-**Open the Source Control view** from the Activity Bar on the left (the icon that
-looks like a branching graph) or with `Ctrl+Shift+G` (`Cmd+Shift+G` on macOS).
-Everything below lives here.
+Which means most source control now happens by asking:
 
-**The core loop is stage → commit → sync:**
+```text
+Commit what we just changed with a clear message, then push it.
+```
 
-1. **See what changed.** Every file you've edited shows up under *Changes*. Click
-   one to open a side-by-side **diff** — old version on the left, your new version
-   on the right — so you can review exactly what you (or the AI) changed before
-   saving it.
+The agent proposes the commands, you read them, you approve. That's the loop.
 
-2. **Stage the changes you want to keep.** Hover a file and click the **+** to
-   stage it, or stage everything at once. Staging lets you commit some changes now
-   and leave others for later.
-3. **Write a commit message and commit.** Type a short description in the message
-   box at the top, then click the **✓ Commit** button (or press `Ctrl+Enter`). A
-   commit is a labeled snapshot you can always come back to.
-4. **Sync to GitHub.** Click **Sync Changes** (or Push) to send your commits to
-   your repo in the cloud. Now it's backed up and safe.
+You should still understand what's happening underneath, though, because the day
+something goes sideways you'll want the vocabulary. Four ideas cover almost all
+of it.
+
+**A commit is a labeled snapshot.** It records what changed, who changed it, and
+when. Commit every time something works — that's your undo button for the whole
+project. Ask for it in plain language, or run it yourself:
+
+```bash
+git add .
+git commit -m "Add the about page"
+git push
+```
+
+**A branch is a parallel copy** of your project where you can experiment without
+touching your known-good version. Sessions in the app already come with their
+own branch, so you get this without thinking about it. If the experiment works,
+you merge it. If it doesn't, you abandon the branch and `main` never knew.
+
+**A diff shows exactly what changed**, old version against new. Read the diff
+before you accept the AI's work. This is the highest-value habit in this entire
+post, and it's why the app puts diff review in the same window as the agent that
+wrote the code.
+
+**A pull request is a diff with a conversation attached.** It's how you review a
+batch of work before it lands on `main`, and it's where GitHub Copilot code
+review can weigh in if you're on a paid plan.
 
 <Explain title="What's the difference between staging and committing?">
   **Staging** is choosing *which* changes go into the next snapshot; **committing**
   actually takes the snapshot. The two-step exists so you can commit a focused set
-  of related changes — say, just the changes to one post — while leaving unrelated
-  edits for a separate commit. If that feels like overkill at first, VS Code lets
-  you commit everything at once: with nothing staged, hitting Commit offers to
-  stage all changes for you.
-</Explain>
-
-**Work on branches for anything risky.** A branch is a parallel copy of your
-project where you can experiment without touching your known-good version. Click
-the **branch name in the bottom-left status bar** to create a new branch or
-switch between existing ones. If the experiment works, you merge it back; if it
-doesn't, you just switch away and delete it — your main version was never touched.
-
-**Read your history two ways.** The **Source Control Graph** (in the Source
-Control view) shows the timeline of commits and branches so you can see how the
-project evolved. The **Timeline view** (in the Explorer, at the bottom) shows the
-history of a *single file* — handy for seeing every change to one blog post and
-restoring an earlier version if you need to.
-
-<Explain title="What are those colored bars in the editor margin?">
-  As you edit, VS Code shows **gutter indicators** — small colored marks next to
-  the line numbers. A green bar means a new line, blue means a modified line, and a
-  little triangle means deleted lines. Click one to preview the change inline,
-  revert just that block, or stage it. It's a live, at-a-glance view of everything
-  that's different since your last commit.
+  of related changes — say, just the edits to one post — while leaving unrelated
+  work for a separate commit. `git add .` stages everything, which is fine most of
+  the time. Reach for selective staging when you've changed two unrelated things
+  at once and want history that still makes sense in six months.
 </Explain>
 
 <Explain title="What happens if I hit a merge conflict?">
   A conflict happens when two changes touch the same lines and Git can't decide
-  which to keep — common when you edit on two machines or branches. VS Code flags
-  the file and opens a **merge editor** that shows both versions side by side with
-  buttons to accept one, the other, or both. Pick what's right, save, and commit
-  the resolution. It sounds scary the first time; the visual editor makes it far
-  less so.
+  which to keep — common when you work across two branches or two machines. Git
+  marks the disputed section in the file with `<<<<<<<` and `>>>>>>>` markers and
+  waits for you.
+
+  This is a great thing to hand straight to the agent: point it at the file and
+  ask it to explain both sides before you choose. It sounds alarming the first
+  time and it really isn't.
 </Explain>
 
-Between the AI writing code and VS Code making commits a two-click habit, source
-control stops being a chore and becomes what it should be: a constant, low-effort
-safety net you'll be glad exists the first time something breaks.
+<Explain title="Can I see the history of one specific file?">
+  Yes, and it's genuinely useful for a blog. `git log --follow -p path/to/post.mdx`
+  walks every change ever made to that one file, newest first, with the diffs
+  inline. Or skip the flags and ask: *"show me every change to this post and
+  summarize what moved."*
+</Explain>
+
+Between the agent writing the code and Git recording every step, source control
+stops being a chore and becomes what it should be: a constant, low-effort safety
+net you'll be glad exists the first time something breaks.
 
 ## Scaffold a home for your agents and skills
 
@@ -437,15 +512,14 @@ across every project:
   The `.github` folder is **team- and project-scoped** — it ships with the repo so
   the customization is guaranteed to be there. Your `~/.agents/skills` folder is
   **personal and portable** — reusable skills you want on hand no matter what
-  you're building. VS Code Copilot reads both, so you get project-specific rules
+  you're building. GitHub Copilot reads both, so you get project-specific rules
   and your own toolkit at the same time.
 </Explain>
 
 You don't need to author anything elaborate yet — and you don't need to create
 the folders by hand either. This is a perfect first taste of vibe coding: **let
-the AI scaffold it for you.** Open Copilot Chat in VS Code (the chat panel), make
-sure it's in **Agent mode** so it's allowed to run commands, and paste a prompt
-like this:
+the AI scaffold it for you.** Start a session in the GitHub Copilot app and paste
+a prompt like this:
 
 ```text
 Create my portable skills library at ~/.agents/skills. Just create the
@@ -458,11 +532,12 @@ The AI will propose a command (it'll be something like `mkdir -p
 Reading and approving that command *before* it runs is exactly the safe habit
 you'll rely on for the rest of this series.
 
-<Explain title="What's 'Agent mode'?">
-  Copilot Chat has a few modes. **Agent mode** lets the AI take actions on your
-  behalf — running terminal commands, creating files, editing code — pausing to
-  ask for your approval along the way. It's the mode that turns chat into actual
-  vibe coding. Look for the mode picker at the bottom of the chat panel.
+<Explain title="Why did I have to ask it to show me the command first?">
+  Because I wanted you to see the approval step at least once. Agents can be
+  configured to run some commands without stopping to ask, which is a reasonable
+  trade once you trust a workflow — but it's a terrible default while you're
+  learning what the tool will do. Asking to see commands before they run costs you
+  a few seconds and teaches you to read what's about to happen to your machine.
 </Explain>
 
 That's the portable library ready. The project-scoped `.github` files come to
@@ -611,11 +686,11 @@ or ask for a security review — no re-explaining required.
 Before moving on, make sure all of this is true — Part 2 assumes every one of
 them:
 
-- ✅ A GitHub account with 2FA enabled, and you're signed in to the Copilot surface you chose.
-- ✅ Git installed and configured with your name and email.
-- ✅ The **GitHub Copilot app** installed and responding, or Copilot cloud agent working on GitHub.com.
-- ✅ *(Optional)* VS Code **Insiders** open, with the Copilot extension active and responding, if you chose to install a local editor.
-- ✅ `node`, `npm`, `git`, and `python` (Windows) or `python3` (macOS/Linux) all return versions in a fresh terminal.
+- ✅ A GitHub account with a verified email and 2FA enabled, and your recovery codes saved somewhere safe.
+- ✅ Git installed and configured with your name, email, and `init.defaultBranch` set to `main`.
+- ✅ `gh auth status` reports you're logged in, and Git is set to reuse those credentials.
+- ✅ The **GitHub Copilot app** installed, signed in, and responding.
+- ✅ `node`, `npm`, `git`, `gh`, and `python` (Windows) or `python3` (macOS/Linux) all return versions in a fresh terminal.
 - ✅ A `~/.agents/skills` folder ready for your portable skills.
 - ✅ You understand the safety basics: commit often, branch for risk, no secrets.
 - ✅ You know how to make security the AI's default — ground it in the Azure and

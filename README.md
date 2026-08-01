@@ -56,7 +56,7 @@ npm run dev      # start the dev server at http://localhost:4321
 | `npm run preview`   | Preview the production build locally.                                                                |
 | `npm run astro`     | Passthrough to the Astro CLI (`npm run astro -- <cmd>`).                                             |
 | `npm run hero`      | Generate topic-aware AI hero images for posts (see [Auto-generating blog hero images](#auto-generating-blog-hero-images)). |
-| `npm run format`    | Format the maintained source and configuration paths listed in `package.json`; editorial content and Squad/skill files outside those paths are intentionally excluded. |
+| `npm run format`    | Format the maintained source and configuration paths listed in `package.json`; editorial content and skill files outside those paths are intentionally excluded. |
 
 ## Writing a blog post
 
