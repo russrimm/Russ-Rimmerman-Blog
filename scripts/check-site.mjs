@@ -4,6 +4,7 @@ import path from "node:path";
 const root = process.cwd();
 const dist = path.join(root, "dist");
 const contentRoot = path.join(root, "src", "content");
+const sourceRoot = path.join(root, "src");
 const siteOrigin = "https://www.russrimmerman.com";
 const failures = [];
 const utcDateFormatter = new Intl.DateTimeFormat("en-US", {
@@ -48,6 +49,10 @@ function canonicalFor(route) {
     return `${siteOrigin}/${route.slice(0, -"index.html".length)}`;
   }
   return `${siteOrigin}/${route.replace(/\.html$/, "/")}`;
+}
+
+function pathnameFor(route) {
+  return new URL(canonicalFor(route)).pathname;
 }
 
 async function resolveSiteFile(pathname) {
@@ -101,6 +106,39 @@ function hasAccessibleName(
   return text.length > 0 || /<img\b[^>]*\balt="[^"]+"/i.test(contents);
 }
 
+function extractCalls(source, pattern) {
+  const calls = [];
+  for (const match of source.matchAll(pattern)) {
+    const openParen = source.indexOf("(", match.index);
+    let depth = 0;
+    let quote = "";
+    let escaped = false;
+
+    for (let index = openParen; index < source.length; index += 1) {
+      const character = source[index];
+      if (quote) {
+        if (escaped) {
+          escaped = false;
+        } else if (character === "\\") {
+          escaped = true;
+        } else if (character === quote) {
+          quote = "";
+        }
+        continue;
+      }
+      if (character === '"' || character === "'" || character === "`") {
+        quote = character;
+      } else if (character === "(") {
+        depth += 1;
+      } else if (character === ")" && --depth === 0) {
+        calls.push(source.slice(match.index, index + 1));
+        break;
+      }
+    }
+  }
+  return calls;
+}
+
 for (const required of [
   "index.html",
   "404.html",
@@ -128,6 +166,45 @@ async function readHtml(file) {
     htmlCache.set(file, await readFile(file, "utf8"));
   }
   return htmlCache.get(file);
+}
+
+async function validateInternalTarget(context, target, baseUrl) {
+  if (
+    target.startsWith("//") ||
+    target.startsWith("/api/") ||
+    target.includes("${")
+  ) {
+    return;
+  }
+
+  const url = new URL(target, baseUrl);
+  if (
+    url.pathname !== "/" &&
+    !url.pathname.endsWith("/") &&
+    !path.extname(url.pathname) &&
+    (await exists(
+      path.join(dist, url.pathname.replace(/^\/+/, ""), "index.html")
+    ))
+  ) {
+    fail(`${context}: non-canonical internal target ${url.pathname}`);
+  }
+
+  const targetFile = await resolveSiteFile(url.pathname);
+  if (!targetFile) {
+    fail(`${context}: broken internal target ${url.pathname}`);
+    return;
+  }
+
+  if (url.hash) {
+    const targetHtml = await readHtml(targetFile);
+    const targetId = decodeURIComponent(url.hash.slice(1));
+    const targetIds = new Set(
+      [...targetHtml.matchAll(/\bid="([^"]+)"/gi)].map(match => match[1])
+    );
+    if (!targetIds.has(targetId)) {
+      fail(`${context}: broken internal anchor ${url.pathname}${url.hash}`);
+    }
+  }
 }
 
 for (const file of htmlFiles) {
@@ -169,6 +246,9 @@ for (const file of htmlFiles) {
   if (!/href="#main-content"/i.test(html)) {
     fail(`${route}: missing skip link`);
   }
+  if (!/<main\b[^>]*\bid="main-content"[^>]*\btabindex="-1"/i.test(markup)) {
+    fail(`${route}: skip link target is not programmatically focusable`);
+  }
   if (h1Count !== 1) {
     fail(`${route}: expected exactly 1 h1, found ${h1Count}`);
   }
@@ -203,6 +283,66 @@ for (const file of htmlFiles) {
   const duplicateIds = ids.filter((id, index) => ids.indexOf(id) !== index);
   for (const id of new Set(duplicateIds)) {
     fail(`${route}: duplicate id "${id}"`);
+  }
+
+  for (const match of markup.matchAll(/\btabindex="([^"]+)"/gi)) {
+    const tabIndex = Number(match[1]);
+    if (Number.isFinite(tabIndex) && tabIndex > 0) {
+      fail(`${route}: positive tabindex ${tabIndex} disrupts document order`);
+    }
+  }
+
+  for (const match of markup.matchAll(
+    /<(a|button|input|select|textarea)\b([^>]*)>/gi
+  )) {
+    const [, element, attributes] = match;
+    if (
+      /\baria-hidden="true"/i.test(attributes) &&
+      !/\btabindex="-1"/i.test(attributes)
+    ) {
+      fail(`${route}: focusable ${element.toLowerCase()} is aria-hidden`);
+    }
+
+    const className = attributes.match(/\bclass="([^"]*)"/i)?.[1] ?? "";
+    if (
+      className.includes("focus-visible:outline-none") &&
+      !/focus-visible:(?:ring|decoration|border)|focus-visible:after:ring/.test(
+        className
+      )
+    ) {
+      fail(
+        `${route}: ${element.toLowerCase()} removes its focus outline without a replacement`
+      );
+    }
+  }
+
+  const currentPath = pathnameFor(route);
+  const expectedCurrent =
+    currentPath === "/"
+      ? "/"
+      : [
+          "/blog/",
+          "/topics/",
+          "/projects/",
+          "/about/",
+          "/contact/",
+          "/search/",
+        ].find(href => currentPath.startsWith(href));
+  if (expectedCurrent) {
+    const hasExpectedCurrent = [...markup.matchAll(/<a\b([^>]*)>/gi)].some(
+      match => {
+        const attributes = match[1];
+        return (
+          /\baria-current="page"/i.test(attributes) &&
+          attributes.match(/\bhref="([^"]+)"/i)?.[1] === expectedCurrent
+        );
+      }
+    );
+    if (!hasExpectedCurrent) {
+      fail(
+        `${route}: active navigation link ${expectedCurrent} is missing aria-current`
+      );
+    }
   }
 
   const jsonLdMatch = html.match(
@@ -296,6 +436,21 @@ for (const file of htmlFiles) {
   }
 
   for (const match of markup.matchAll(
+    /<button\b([^>]*)\bdata-term-trigger\b([^>]*)>/gi
+  )) {
+    const attributes = `${match[1]} ${match[2]}`;
+    const tooltipId = attributes.match(/\baria-describedby="([^"]+)"/i)?.[1];
+    if (
+      !tooltipId ||
+      !new RegExp(`<[^>]+\\bid="${tooltipId}"[^>]+\\brole="tooltip"`, "i").test(
+        markup
+      )
+    ) {
+      fail(`${route}: term trigger is not linked to its tooltip`);
+    }
+  }
+
+  for (const match of markup.matchAll(
     /<time\b[^>]*\bdatetime="([^"]+)"[^>]*>([^<]+)<\/time>/gi
   )) {
     const date = new Date(match[1]);
@@ -324,39 +479,7 @@ for (const file of htmlFiles) {
     );
 
   for (const target of internalTargets) {
-    if (
-      target.startsWith("//") ||
-      target.startsWith("/api/") ||
-      target.includes("${")
-    ) {
-      continue;
-    }
-    const url = new URL(target, canonicalFor(route));
-    if (
-      url.pathname !== "/" &&
-      !url.pathname.endsWith("/") &&
-      !path.extname(url.pathname) &&
-      (await exists(
-        path.join(dist, url.pathname.replace(/^\/+/, ""), "index.html")
-      ))
-    ) {
-      fail(`${route}: non-canonical internal target ${url.pathname}`);
-    }
-    const targetFile = await resolveSiteFile(url.pathname);
-    if (!targetFile) {
-      fail(`${route}: broken internal target ${url.pathname}`);
-      continue;
-    }
-    if (url.hash) {
-      const targetHtml = await readHtml(targetFile);
-      const targetId = decodeURIComponent(url.hash.slice(1));
-      const targetIds = new Set(
-        [...targetHtml.matchAll(/\bid="([^"]+)"/gi)].map(match => match[1])
-      );
-      if (!targetIds.has(targetId)) {
-        fail(`${route}: broken internal anchor ${url.pathname}${url.hash}`);
-      }
-    }
+    await validateInternalTarget(route, target, canonicalFor(route));
   }
 }
 
@@ -379,6 +502,11 @@ for (const sourceFile of (await walk(contentRoot)).filter(file =>
         `${path.relative(root, sourceFile)}: non-canonical content link ${url.pathname}`
       );
     }
+    await validateInternalTarget(
+      path.relative(root, sourceFile),
+      target,
+      siteOrigin
+    );
   }
 }
 
@@ -411,6 +539,60 @@ const searchHtml = await readFile(
 if (!/timeZone:[`'"]UTC[`'"]/.test(searchHtml)) {
   fail("Search date formatter is not pinned to UTC");
 }
+const searchEntries = JSON.parse(
+  await readFile(path.join(dist, "search.json"), "utf8")
+);
+for (const entry of searchEntries) {
+  if (typeof entry.url !== "string") {
+    fail("Search index entry is missing its URL");
+  } else {
+    await validateInternalTarget("search.json", entry.url, siteOrigin);
+  }
+}
+
+const sourceFiles = (await walk(sourceRoot)).filter(file =>
+  /\.(?:astro|js|mjs|ts|tsx)$/i.test(file)
+);
+const dateFormatterFiles = [];
+for (const sourceFile of sourceFiles) {
+  const source = await readFile(sourceFile, "utf8");
+  const dateFormatterCalls = extractCalls(
+    source,
+    /(?:toLocaleDateString|Intl\.DateTimeFormat)\s*\(/g
+  );
+  if (dateFormatterCalls.length > 0) {
+    dateFormatterFiles.push(
+      path.relative(root, sourceFile).replaceAll("\\", "/")
+    );
+    for (const call of dateFormatterCalls) {
+      if (!/timeZone:\s*["']UTC["']/.test(call)) {
+        fail(
+          `${path.relative(root, sourceFile)}: date formatter is not pinned to UTC`
+        );
+      }
+    }
+  }
+}
+const expectedDateFormatterFiles = [
+  "src/components/FormattedDate.astro",
+  "src/pages/search.astro",
+];
+if (
+  dateFormatterFiles.length !== expectedDateFormatterFiles.length ||
+  expectedDateFormatterFiles.some(file => !dateFormatterFiles.includes(file))
+) {
+  fail(
+    `Unexpected date formatter inventory: ${dateFormatterFiles.join(", ") || "none"}`
+  );
+}
+for (const [input, expected] of [
+  ["2026-08-01T00:00:00.000Z", "August 1, 2026"],
+  ["2026-03-08T00:00:00.000Z", "March 8, 2026"],
+]) {
+  if (utcDateFormatter.format(new Date(input)) !== expected) {
+    fail(`UTC date boundary case ${input} did not render as ${expected}`);
+  }
+}
 
 const manifest = JSON.parse(
   await readFile(path.join(dist, "site.webmanifest"), "utf8")
@@ -438,6 +620,19 @@ const css = (
       .map(file => readFile(file, "utf8"))
   )
 ).join("\n");
+const focusVisibleRules = [...css.matchAll(/:focus-visible\{([^}]*)\}/gi)].map(
+  match => match[1]
+);
+if (
+  !focusVisibleRules.some(
+    rule =>
+      /\boutline-width:\s*(?!0)/i.test(rule) &&
+      /\boutline-color:/i.test(rule) &&
+      !/\boutline(?:-style)?:\s*(?:none|0)/i.test(rule)
+  )
+) {
+  fail("Generated CSS is missing a visible default focus indicator");
+}
 if (
   !/@media\s*\(prefers-reduced-motion:\s*reduce\)/i.test(css) ||
   !/transition-duration:\s*0?\.0+1ms\s*!important/i.test(css) ||
@@ -445,6 +640,23 @@ if (
   !/animation-iteration-count:\s*1\s*!important/i.test(css)
 ) {
   fail("Generated CSS is missing the reduced-motion override");
+}
+
+const termSource = await readFile(
+  path.join(sourceRoot, "components", "Term.astro"),
+  "utf8"
+);
+for (const [pattern, behavior] of [
+  [/:hover\s+\.term-tooltip/, "hover display"],
+  [/:focus-within\s+\.term-tooltip/, "focus display"],
+  [/pointer-events:\s*auto/, "hoverable content"],
+  [/event\.key\s*!==\s*["']Escape["']/, "Escape dismissal"],
+  [/dataset\.dismissed\s*=\s*["']true["']/, "dismissed state"],
+  [/event\.stopPropagation\(\)/, "Escape event isolation"],
+]) {
+  if (!pattern.test(termSource)) {
+    fail(`Term tooltip is missing ${behavior} behavior`);
+  }
 }
 
 if (failures.length > 0) {
