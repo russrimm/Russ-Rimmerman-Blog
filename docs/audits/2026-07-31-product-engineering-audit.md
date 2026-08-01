@@ -740,6 +740,11 @@ Verified with the production build at desktop and 375-pixel mobile widths:
    site's privacy and consent posture.
 6. Consider a nonce/hash-based CSP migration if removing `unsafe-inline`
    becomes a priority.
+7. Generated-site integrity checks currently run on pushes to `main` and pull
+   requests targeting `main`, but not direct feature-branch pushes. If validation
+   is broadened to all branch pushes, first add an explicit
+   `github.ref == 'refs/heads/main'` condition to `build_and_deploy`; otherwise
+   every branch push admitted by the workflow would deploy to production.
 
 ## Known limits and blockers
 
@@ -827,4 +832,3 @@ Verified with the production build at desktop and 375-pixel mobile widths:
 - 97 deletions
 - First-party-source-based corrections to published Azure, GitHub, Python, and
   ServiceNow guidance
-
