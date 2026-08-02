@@ -737,6 +737,21 @@ for (const [pattern, behavior] of [
   }
 }
 
+const headerSource = await readFile(
+  path.join(sourceRoot, "components", "Header.astro"),
+  "utf8"
+);
+for (const [pattern, behavior] of [
+  [/document\.addEventListener\(["']keydown["']/, "document Escape dismissal"],
+  [/document\.addEventListener\(\s*["']pointerdown["']/, "outside dismissal"],
+  [/matchMedia\(["']\(min-width: 1024px\)["']\)/, "desktop breakpoint reset"],
+  [/new AbortController\(\)/, "navigation-safe listener cleanup"],
+]) {
+  if (!pattern.test(headerSource)) {
+    fail(`Mobile menu is missing ${behavior}`);
+  }
+}
+
 if (failures.length > 0) {
   console.error(`Site checks failed (${failures.length}):`);
   for (const failure of failures) console.error(`- ${failure}`);
