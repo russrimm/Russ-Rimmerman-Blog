@@ -573,14 +573,21 @@ if (
   fail("RSS feed is missing its Atom self-reference");
 }
 
-const searchEntries = JSON.parse(
-  await readFile(path.join(dist, "search.json"), "utf8")
-);
+const searchIndex = await readFile(path.join(dist, "search.json"), "utf8");
+const searchEntries = JSON.parse(searchIndex);
+if (Buffer.byteLength(searchIndex, "utf8") > 250 * 1_024) {
+  fail("Search index exceeds the 250 KiB payload budget");
+}
 for (const entry of searchEntries) {
   if (typeof entry.url !== "string") {
     fail("Search index entry is missing its URL");
   } else {
     await validateInternalTarget("search.json", entry.url, siteOrigin);
+  }
+  if (typeof entry.content !== "string" || entry.content.length === 0) {
+    fail(
+      `Search index entry ${entry.url ?? "(unknown)"} has no article content`
+    );
   }
 }
 const searchSource = await readFile(
@@ -589,6 +596,9 @@ const searchSource = await readFile(
 );
 if (/\.innerHTML\s*=/.test(searchSource)) {
   fail("Search results must not render index data through innerHTML");
+}
+if (!searchSource.includes("entry.content")) {
+  fail("Search does not match against indexed article content");
 }
 if (!/timeZone:\s*[`'"]UTC[`'"]/.test(searchSource)) {
   fail("Search date formatter is not pinned to UTC");

@@ -15,7 +15,7 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
         Search
       </h1>
       <p class="text-ink-600 dark:text-ink-300 mt-3 text-lg">
-        Find articles by title, summary, or topic.
+        Find articles by title, summary, topic, or text within the article.
       </p>
     </header>
 
@@ -79,6 +79,7 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
     url: string;
     pubDate: string;
     readingTime: string;
+    content: string;
   }
 
   const dateFmt = new Intl.DateTimeFormat("en-US", {
@@ -139,7 +140,12 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
         return;
       }
       const matches = entries.filter(entry => {
-        const haystack = [entry.title, entry.description, entry.tags.join(" ")]
+        const haystack = [
+          entry.title,
+          entry.description,
+          entry.tags.join(" "),
+          entry.content,
+        ]
           .join(" ")
           .toLowerCase();
         return q.split(/\s+/).every(term => haystack.includes(term));
