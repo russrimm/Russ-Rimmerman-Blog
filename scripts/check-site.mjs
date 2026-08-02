@@ -549,6 +549,13 @@ for (const entry of searchEntries) {
     await validateInternalTarget("search.json", entry.url, siteOrigin);
   }
 }
+const searchSource = await readFile(
+  path.join(sourceRoot, "pages", "search.astro"),
+  "utf8"
+);
+if (/\.innerHTML\s*=/.test(searchSource)) {
+  fail("Search results must not render index data through innerHTML");
+}
 
 const sourceFiles = (await walk(sourceRoot)).filter(file =>
   /\.(?:astro|js|mjs|ts|tsx)$/i.test(file)

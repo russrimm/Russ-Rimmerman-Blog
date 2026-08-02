@@ -88,18 +88,22 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
     timeZone: "UTC",
   });
 
-  const escapeHtml = (value: string) =>
-    value.replace(
-      /[&<>"']/g,
-      c =>
-        ({
-          "&": "&amp;",
-          "<": "&lt;",
-          ">": "&gt;",
-          '"': "&quot;",
-          "'": "&#39;",
-        })[c] as string
-    );
+  const createElement = <K extends keyof HTMLElementTagNameMap>(
+    tagName: K,
+    className?: string
+  ) => {
+    const element = document.createElement(tagName);
+    if (className) element.className = className;
+    return element;
+  };
+
+  const articleUrl = (value: string) => {
+    const url = new URL(value, window.location.origin);
+    return url.origin === window.location.origin &&
+      url.pathname.startsWith("/blog/")
+      ? `${url.pathname}${url.search}${url.hash}`
+      : "/blog/";
+  };
 
   function initSearch() {
     const form = document.querySelector<HTMLFormElement>("[data-search-form]");
@@ -130,7 +134,7 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
     const render = (query: string) => {
       const q = query.trim().toLowerCase();
       if (!q) {
-        results.innerHTML = "";
+        results.replaceChildren();
         status.textContent = `Start typing to search ${entries.length} articles.`;
         return;
       }
@@ -145,27 +149,50 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
         ? `${matches.length} ${matches.length === 1 ? "result" : "results"} for “${query.trim()}”`
         : `No results for “${query.trim()}”. Try a different term.`;
 
-      results.innerHTML = matches
-        .map(entry => {
-          const date = dateFmt.format(new Date(entry.pubDate));
-          const tag = entry.tags[0]
-            ? `<span aria-hidden="true">·</span><span class="text-azure-600 dark:text-azure-400">${escapeHtml(entry.tags[0])}</span>`
-            : "";
-          return `
-            <article class="group relative py-5">
-              <div class="flex flex-wrap items-center gap-2 text-xs font-medium text-ink-500 dark:text-ink-400">
-                <span>${date}</span>
-                <span aria-hidden="true">·</span>
-                <span>${escapeHtml(entry.readingTime)}</span>
-                ${tag}
-              </div>
-              <h2 class="mt-1.5 text-lg font-semibold text-ink-900 transition group-hover:text-azure-600 dark:text-white dark:group-hover:text-azure-400">
-                <a href="${escapeHtml(entry.url)}" class="after:absolute after:inset-0">${escapeHtml(entry.title)}</a>
-              </h2>
-              <p class="mt-1 line-clamp-2 text-sm text-ink-600 dark:text-ink-300">${escapeHtml(entry.description)}</p>
-            </article>`;
-        })
-        .join("");
+      const fragment = document.createDocumentFragment();
+      for (const entry of matches) {
+        const article = createElement("article", "group relative py-5");
+        const metadata = createElement(
+          "div",
+          "flex flex-wrap items-center gap-2 text-xs font-medium text-ink-500 dark:text-ink-400"
+        );
+        const date = createElement("span");
+        date.textContent = dateFmt.format(new Date(entry.pubDate));
+        const separator = createElement("span");
+        separator.setAttribute("aria-hidden", "true");
+        separator.textContent = "·";
+        const readingTime = createElement("span");
+        readingTime.textContent = entry.readingTime;
+        metadata.append(date, separator, readingTime);
+
+        if (entry.tags[0]) {
+          const tagSeparator = separator.cloneNode(true);
+          const tag = createElement(
+            "span",
+            "text-azure-600 dark:text-azure-400"
+          );
+          tag.textContent = entry.tags[0];
+          metadata.append(tagSeparator, tag);
+        }
+
+        const heading = createElement(
+          "h2",
+          "mt-1.5 text-lg font-semibold text-ink-900 transition group-hover:text-azure-600 dark:text-white dark:group-hover:text-azure-400"
+        );
+        const link = createElement("a", "after:absolute after:inset-0");
+        link.href = articleUrl(entry.url);
+        link.textContent = entry.title;
+        heading.append(link);
+
+        const description = createElement(
+          "p",
+          "mt-1 line-clamp-2 text-sm text-ink-600 dark:text-ink-300"
+        );
+        description.textContent = entry.description;
+        article.append(metadata, heading, description);
+        fragment.append(article);
+      }
+      results.replaceChildren(fragment);
     };
 
     fetch("/search.json")
