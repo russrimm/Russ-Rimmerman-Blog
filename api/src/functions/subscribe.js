@@ -4,6 +4,46 @@ const { app } = require("@azure/functions");
 // validation; this just avoids obviously bad input reaching the API.
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PROVIDER_TIMEOUT_MS = 10_000;
+const MAX_BODY_BYTES = 1_024;
+const RATE_LIMIT_MAX = 5;
+const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1_000;
+const RATE_LIMIT_MAX_CLIENTS = 1_000;
+const rateLimits = new Map();
+
+function clientAddress(request) {
+  const forwardedFor = request.headers.get("x-forwarded-for");
+  return forwardedFor?.split(",").at(-1)?.trim().slice(0, 128) || "unknown";
+}
+
+function consumeRateLimit(request, now = Date.now()) {
+  const key = clientAddress(request);
+  const existing = rateLimits.get(key);
+  const current =
+    !existing || now - existing.startedAt >= RATE_LIMIT_WINDOW_MS
+      ? { startedAt: now, count: 0 }
+      : existing;
+
+  current.count += 1;
+  rateLimits.delete(key);
+  rateLimits.set(key, current);
+
+  for (const [client, limit] of rateLimits) {
+    if (now - limit.startedAt >= RATE_LIMIT_WINDOW_MS) {
+      rateLimits.delete(client);
+    }
+  }
+  while (rateLimits.size > RATE_LIMIT_MAX_CLIENTS) {
+    rateLimits.delete(rateLimits.keys().next().value);
+  }
+
+  return {
+    allowed: current.count <= RATE_LIMIT_MAX,
+    retryAfterSeconds: Math.max(
+      1,
+      Math.ceil((current.startedAt + RATE_LIMIT_WINDOW_MS - now) / 1_000)
+    ),
+  };
+}
 
 /**
  * Subscribe an email address to the configured newsletter provider.
@@ -119,93 +159,133 @@ async function subscribeMailchimp(email) {
   };
 }
 
+async function handler(request, context) {
+  const json = (status, payload, additionalHeaders = {}) => ({
+    status,
+    headers: {
+      "Cache-Control": "no-store",
+      "Content-Type": "application/json",
+      ...additionalHeaders,
+    },
+    jsonBody: payload,
+  });
+
+  const provider = (process.env.NEWSLETTER_PROVIDER || "").toLowerCase();
+  const available =
+    (provider === "buttondown" && Boolean(process.env.BUTTONDOWN_API_KEY)) ||
+    (provider === "mailchimp" &&
+      Boolean(
+        process.env.MAILCHIMP_API_KEY?.includes("-") &&
+        process.env.MAILCHIMP_LIST_ID
+      ));
+
+  if (request.method === "GET") {
+    return json(200, {
+      available,
+      message: available
+        ? "Newsletter sign-up is available."
+        : "Newsletter sign-up isn't available yet — check back soon.",
+    });
+  }
+
+  const origin = request.headers.get("origin");
+  if (origin && origin !== new URL(request.url).origin) {
+    return json(403, { ok: false, message: "Request origin is not allowed." });
+  }
+
+  const contentType = request.headers.get("content-type")?.toLowerCase() ?? "";
+  if (!contentType.startsWith("application/json")) {
+    return json(415, { ok: false, message: "Request must be JSON." });
+  }
+
+  const contentLength = Number(request.headers.get("content-length"));
+  if (Number.isFinite(contentLength) && contentLength > MAX_BODY_BYTES) {
+    return json(413, { ok: false, message: "Request is too large." });
+  }
+
+  const body = await request.text();
+  if (Buffer.byteLength(body, "utf8") > MAX_BODY_BYTES) {
+    return json(413, { ok: false, message: "Request is too large." });
+  }
+
+  let data;
+  try {
+    data = JSON.parse(body);
+  } catch {
+    return json(400, { ok: false, message: "Invalid request." });
+  }
+  if (!data || typeof data !== "object" || Array.isArray(data)) {
+    return json(400, { ok: false, message: "Invalid request." });
+  }
+
+  const rateLimit = consumeRateLimit(request);
+  if (!rateLimit.allowed) {
+    return json(
+      429,
+      {
+        ok: false,
+        message: "Too many subscription attempts. Please try again later.",
+      },
+      { "Retry-After": String(rateLimit.retryAfterSeconds) }
+    );
+  }
+
+  // Honeypot: real users leave this empty. Bots fill it in.
+  if (data && typeof data.website === "string" && data.website.trim() !== "") {
+    // Pretend success so bots don't learn they were caught.
+    return json(200, {
+      ok: true,
+      message: "You're subscribed. Thanks for joining!",
+    });
+  }
+
+  const email =
+    typeof data.email === "string" ? data.email.trim().toLowerCase() : "";
+  if (!email || email.length > 254 || !EMAIL_RE.test(email)) {
+    return json(400, {
+      ok: false,
+      message: "Please enter a valid email address.",
+    });
+  }
+
+  let result;
+  try {
+    if (provider === "buttondown") {
+      result = await subscribeButtondown(email);
+    } else if (provider === "mailchimp") {
+      result = await subscribeMailchimp(email);
+    } else {
+      result = {
+        ok: false,
+        status: 501,
+        message: "Newsletter sign-up isn't available yet — check back soon.",
+      };
+    }
+  } catch (err) {
+    context.error("Newsletter subscription error", err);
+    return json(502, {
+      ok: false,
+      message: "Subscription failed. Please try again later.",
+    });
+  }
+
+  if (!result.ok && result.upstreamStatus) {
+    context.warn(
+      `Newsletter provider rejected signup with status ${result.upstreamStatus}.`
+    );
+  }
+
+  return json(result.status, { ok: result.ok, message: result.message });
+}
+
 app.http("subscribe", {
   methods: ["GET", "POST"],
   authLevel: "anonymous",
   route: "subscribe",
-  handler: async (request, context) => {
-    const json = (status, payload) => ({
-      status,
-      headers: {
-        "Cache-Control": "no-store",
-        "Content-Type": "application/json",
-      },
-      jsonBody: payload,
-    });
-
-    const provider = (process.env.NEWSLETTER_PROVIDER || "").toLowerCase();
-    const available =
-      (provider === "buttondown" && Boolean(process.env.BUTTONDOWN_API_KEY)) ||
-      (provider === "mailchimp" &&
-        Boolean(
-          process.env.MAILCHIMP_API_KEY?.includes("-") &&
-          process.env.MAILCHIMP_LIST_ID
-        ));
-
-    if (request.method === "GET") {
-      return json(200, {
-        available,
-        message: available
-          ? "Newsletter sign-up is available."
-          : "Newsletter sign-up isn't available yet — check back soon.",
-      });
-    }
-
-    let data;
-    try {
-      data = await request.json();
-    } catch {
-      return json(400, { ok: false, message: "Invalid request." });
-    }
-
-    // Honeypot: real users leave this empty. Bots fill it in.
-    if (
-      data &&
-      typeof data.website === "string" &&
-      data.website.trim() !== ""
-    ) {
-      // Pretend success so bots don't learn they were caught.
-      return json(200, {
-        ok: true,
-        message: "You're subscribed. Thanks for joining!",
-      });
-    }
-
-    const email = typeof data?.email === "string" ? data.email.trim() : "";
-    if (!email || email.length > 254 || !EMAIL_RE.test(email)) {
-      return json(400, {
-        ok: false,
-        message: "Please enter a valid email address.",
-      });
-    }
-
-    let result;
-    try {
-      if (provider === "buttondown") {
-        result = await subscribeButtondown(email);
-      } else if (provider === "mailchimp") {
-        result = await subscribeMailchimp(email);
-      } else {
-        result = {
-          ok: false,
-          status: 501,
-          message: "Newsletter sign-up isn't available yet — check back soon.",
-        };
-      }
-    } catch (err) {
-      context.error("Newsletter subscription error", err);
-      return json(502, {
-        ok: false,
-        message: "Subscription failed. Please try again later.",
-      });
-    }
-
-    if (!result.ok && result.upstreamStatus) {
-      context.warn(
-        `Newsletter provider rejected signup with status ${result.upstreamStatus}.`
-      );
-    }
-
-    return json(result.status, { ok: result.ok, message: result.message });
-  },
+  handler,
 });
+
+module.exports = {
+  handler,
+  resetRateLimitsForTests: () => rateLimits.clear(),
+};
