@@ -188,6 +188,15 @@ for (const directive of [
     fail(`Content Security Policy is missing ${directive}`);
   }
 }
+const astroAssetRoute = staticWebAppConfig.routes?.find(
+  route => route.route === "/_astro/*"
+);
+if (
+  astroAssetRoute?.headers?.["Cache-Control"] !==
+  "public, max-age=31536000, immutable"
+) {
+  fail("Hashed Astro assets are missing immutable cache headers");
+}
 
 const files = await walk(dist);
 const htmlFiles = files.filter(file => file.endsWith(".html"));
