@@ -9,7 +9,8 @@
     "node": ">=20"
   },
   "scripts": {
-    "start": "func start"
+    "start": "func start",
+    "test": "node --test"
   },
   "dependencies": {
     "@azure/functions": "^4.16.2"

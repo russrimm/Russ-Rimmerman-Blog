@@ -157,6 +157,47 @@ for (const required of [
   }
 }
 
+const staticWebAppConfig = JSON.parse(
+  await readFile(path.join(dist, "staticwebapp.config.json"), "utf8")
+);
+const globalHeaders = staticWebAppConfig.globalHeaders ?? {};
+for (const header of [
+  "Content-Security-Policy",
+  "Cross-Origin-Opener-Policy",
+  "Cross-Origin-Resource-Policy",
+  "Permissions-Policy",
+  "Referrer-Policy",
+  "Strict-Transport-Security",
+  "X-Content-Type-Options",
+  "X-Frame-Options",
+  "X-Permitted-Cross-Domain-Policies",
+]) {
+  if (!globalHeaders[header]) {
+    fail(`Static Web Apps config is missing ${header}`);
+  }
+}
+for (const directive of [
+  "base-uri 'self'",
+  "frame-ancestors 'none'",
+  "object-src 'none'",
+  "script-src-attr 'none'",
+  "style-src-attr 'none'",
+  "worker-src 'none'",
+]) {
+  if (!globalHeaders["Content-Security-Policy"]?.includes(directive)) {
+    fail(`Content Security Policy is missing ${directive}`);
+  }
+}
+const astroAssetRoute = staticWebAppConfig.routes?.find(
+  route => route.route === "/_astro/*"
+);
+if (
+  astroAssetRoute?.headers?.["Cache-Control"] !==
+  "public, max-age=31536000, immutable"
+) {
+  fail("Hashed Astro assets are missing immutable cache headers");
+}
+
 const files = await walk(dist);
 const htmlFiles = files.filter(file => file.endsWith(".html"));
 const htmlCache = new Map();
@@ -375,6 +416,21 @@ for (const file of htmlFiles) {
   ) {
     fail(`${route}: expected noindex robots metadata`);
   }
+  if (
+    route === "blog/portal-of-portals-deep-dive/index.html" &&
+    !/<nav\b[^>]*\baria-label="On this page"[^>]*\bdata-table-of-contents/i.test(
+      markup
+    )
+  ) {
+    fail(`${route}: long article is missing its table of contents`);
+  }
+  if (
+    route.startsWith("blog/") &&
+    route !== "blog/index.html" &&
+    !/<nav\b[^>]*\baria-label="More articles"/i.test(markup)
+  ) {
+    fail(`${route}: article is missing chronological navigation`);
+  }
 
   for (const match of markup.matchAll(/<img\b([^>]*)>/gi)) {
     const attributes = match[1];
@@ -532,22 +588,39 @@ if (
   fail("RSS feed is missing its Atom self-reference");
 }
 
-const searchHtml = await readFile(
-  path.join(dist, "search", "index.html"),
-  "utf8"
-);
-if (!/timeZone:[`'"]UTC[`'"]/.test(searchHtml)) {
-  fail("Search date formatter is not pinned to UTC");
+const searchIndex = await readFile(path.join(dist, "search.json"), "utf8");
+const searchEntries = JSON.parse(searchIndex);
+if (Buffer.byteLength(searchIndex, "utf8") > 250 * 1_024) {
+  fail("Search index exceeds the 250 KiB payload budget");
 }
-const searchEntries = JSON.parse(
-  await readFile(path.join(dist, "search.json"), "utf8")
-);
 for (const entry of searchEntries) {
   if (typeof entry.url !== "string") {
     fail("Search index entry is missing its URL");
   } else {
     await validateInternalTarget("search.json", entry.url, siteOrigin);
   }
+  if (typeof entry.content !== "string" || entry.content.length === 0) {
+    fail(
+      `Search index entry ${entry.url ?? "(unknown)"} has no article content`
+    );
+  }
+}
+const searchSource = await readFile(
+  path.join(sourceRoot, "pages", "search.astro"),
+  "utf8"
+);
+if (/\.innerHTML\s*=/.test(searchSource)) {
+  fail("Search results must not render index data through innerHTML");
+}
+if (!searchSource.includes("entry.content")) {
+  fail("Search does not match against indexed article content");
+}
+if (!/timeZone:\s*[`'"]UTC[`'"]/.test(searchSource)) {
+  fail("Search date formatter is not pinned to UTC");
+}
+const homeHtml = await readFile(path.join(dist, "index.html"), "utf8");
+if (/<script\b[^>]*\btype="module"[^>]*>\s*[^<\s]/i.test(homeHtml)) {
+  fail("Bundled component scripts must remain external and cacheable");
 }
 
 const sourceFiles = (await walk(sourceRoot)).filter(file =>
@@ -556,6 +629,11 @@ const sourceFiles = (await walk(sourceRoot)).filter(file =>
 const dateFormatterFiles = [];
 for (const sourceFile of sourceFiles) {
   const source = await readFile(sourceFile, "utf8");
+  if (/(?:^|\s)placeholder:text-ink-400/.test(source)) {
+    fail(
+      `${path.relative(root, sourceFile)}: light-theme placeholder uses low-contrast ink-400`
+    );
+  }
   const dateFormatterCalls = extractCalls(
     source,
     /(?:toLocaleDateString|Intl\.DateTimeFormat)\s*\(/g
@@ -641,6 +719,14 @@ if (
 ) {
   fail("Generated CSS is missing the reduced-motion override");
 }
+if (
+  !/@media\s+print/i.test(css) ||
+  !/\[data-blog-article\]/i.test(css) ||
+  !/\[data-comments\]/i.test(css) ||
+  !/break-inside:\s*avoid/i.test(css)
+) {
+  fail("Generated CSS is missing article print safeguards");
+}
 
 const termSource = await readFile(
   path.join(sourceRoot, "components", "Term.astro"),
@@ -656,6 +742,21 @@ for (const [pattern, behavior] of [
 ]) {
   if (!pattern.test(termSource)) {
     fail(`Term tooltip is missing ${behavior} behavior`);
+  }
+}
+
+const headerSource = await readFile(
+  path.join(sourceRoot, "components", "Header.astro"),
+  "utf8"
+);
+for (const [pattern, behavior] of [
+  [/document\.addEventListener\(["']keydown["']/, "document Escape dismissal"],
+  [/document\.addEventListener\(\s*["']pointerdown["']/, "outside dismissal"],
+  [/matchMedia\(["']\(min-width: 1024px\)["']\)/, "desktop breakpoint reset"],
+  [/new AbortController\(\)/, "navigation-safe listener cleanup"],
+]) {
+  if (!pattern.test(headerSource)) {
+    fail(`Mobile menu is missing ${behavior}`);
   }
 }
 

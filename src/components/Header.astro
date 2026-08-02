@@ -163,14 +163,19 @@ const isActive = (href: string) =>
   </div>
 </header>
 
-<script is:inline>
+<script>
+  let mobileMenuController: AbortController | undefined;
+
   function initMobileMenu() {
     const btn = document.getElementById("mobile-menu-btn");
     const menu = document.getElementById("mobile-menu");
     if (!btn || !menu || btn.dataset.bound === "true") return;
+    mobileMenuController?.abort();
+    mobileMenuController = new AbortController();
+    const { signal } = mobileMenuController;
     btn.dataset.bound = "true";
 
-    const setOpen = open => {
+    const setOpen = (open: boolean) => {
       menu.classList.toggle("hidden", !open);
       btn.setAttribute("aria-expanded", String(open));
       btn.setAttribute(
@@ -179,17 +184,50 @@ const isActive = (href: string) =>
       );
     };
 
-    btn.addEventListener("click", () => {
-      setOpen(btn.getAttribute("aria-expanded") !== "true");
-    });
+    btn.addEventListener(
+      "click",
+      () => {
+        setOpen(btn.getAttribute("aria-expanded") !== "true");
+      },
+      { signal }
+    );
 
-    const closeOnEscape = event => {
-      if (event.key !== "Escape") return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (
+        event.key !== "Escape" ||
+        btn.getAttribute("aria-expanded") !== "true"
+      ) {
+        return;
+      }
       setOpen(false);
       btn.focus();
     };
-    btn.addEventListener("keydown", closeOnEscape);
-    menu.addEventListener("keydown", closeOnEscape);
+
+    document.addEventListener("keydown", closeOnEscape, { signal });
+    document.addEventListener(
+      "pointerdown",
+      event => {
+        if (
+          btn.getAttribute("aria-expanded") !== "true" ||
+          !(event.target instanceof Node) ||
+          btn.contains(event.target) ||
+          menu.contains(event.target)
+        ) {
+          return;
+        }
+        setOpen(false);
+      },
+      { signal }
+    );
+
+    const desktopQuery = window.matchMedia("(min-width: 1024px)");
+    desktopQuery.addEventListener(
+      "change",
+      event => {
+        if (event.matches) setOpen(false);
+      },
+      { signal }
+    );
   }
 
   initMobileMenu();

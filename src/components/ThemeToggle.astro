@@ -1,6 +1,5 @@
 ---
-// Theme toggle button. Logic lives in an inline script so it works with
-// Astro view transitions (re-bound on every page load).
+// Theme toggle button. The bundled script rebinds after Astro view transitions.
 ---
 
 <button
@@ -40,7 +39,7 @@
   </svg>
 </button>
 
-<script is:inline>
+<script>
   function initThemeToggle() {
     const btn = document.getElementById("theme-toggle");
     if (!btn || btn.dataset.bound === "true") return;

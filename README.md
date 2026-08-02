@@ -46,17 +46,17 @@ npm run dev      # start the dev server at http://localhost:4321
 
 ## Scripts
 
-| Command             | Description                                                                                          |
-| ------------------- | ---------------------------------------------------------------------------------------------------- |
-| `npm run dev`       | Start the local dev server on `http://localhost:4321` (host-exposed).                                |
-| `npm run start`     | Alias for `npm run dev` — same host-exposed dev server.                                              |
-| `npm run build`     | Type-check with `astro check` and build the production site to `dist/`.                              |
-| `npm run check:site` | Check generated metadata, structured data, headings, links, images, sitemap exclusions, and required files. |
-| `npm test`          | Build the production site and run all generated-site checks.                                         |
-| `npm run preview`   | Preview the production build locally.                                                                |
-| `npm run astro`     | Passthrough to the Astro CLI (`npm run astro -- <cmd>`).                                             |
-| `npm run hero`      | Generate topic-aware AI hero images for posts (see [Auto-generating blog hero images](#auto-generating-blog-hero-images)). |
-| `npm run format`    | Format the maintained source and configuration paths listed in `package.json`; editorial content and skill files outside those paths are intentionally excluded. |
+| Command              | Description                                                                                                                                                      |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run dev`        | Start the local dev server on `http://localhost:4321` (host-exposed).                                                                                            |
+| `npm run start`      | Alias for `npm run dev` — same host-exposed dev server.                                                                                                          |
+| `npm run build`      | Type-check with `astro check` and build the production site to `dist/`.                                                                                          |
+| `npm run check:site` | Check generated metadata, structured data, headings, links, images, sitemap exclusions, and required files.                                                      |
+| `npm test`           | Build the production site and run all generated-site checks.                                                                                                     |
+| `npm run preview`    | Preview the production build locally.                                                                                                                            |
+| `npm run astro`      | Passthrough to the Astro CLI (`npm run astro -- <cmd>`).                                                                                                         |
+| `npm run hero`       | Generate topic-aware AI hero images for posts (see [Auto-generating blog hero images](#auto-generating-blog-hero-images)).                                       |
+| `npm run format`     | Format the maintained source and configuration paths listed in `package.json`; editorial content and skill files outside those paths are intentionally excluded. |
 
 ## Writing a blog post
 
@@ -67,7 +67,27 @@ Create a Markdown file in `src/content/blog/`:
 title: "My Post Title"
 description: "A short summary used for cards, SEO, and RSS."
 pubDate: 2026-07-08
-tags: ["Azure", "AI", "AI Foundry", "Agents", "MCP", "Copilot", "Copilot Studio", "Microsoft Graph", "Intune", "Power Platform", "Identity", "Security", "Vibe Coding", "Tools", "Design", "Microsoft", "Getting Started", "Projects"]
+tags:
+  [
+    "Azure",
+    "AI",
+    "AI Foundry",
+    "Agents",
+    "MCP",
+    "Copilot",
+    "Copilot Studio",
+    "Microsoft Graph",
+    "Intune",
+    "Power Platform",
+    "Identity",
+    "Security",
+    "Vibe Coding",
+    "Tools",
+    "Design",
+    "Microsoft",
+    "Getting Started",
+    "Projects",
+  ]
 featured: false # set true to surface on the home page
 draft: false # set true to hide from the site
 ---
@@ -78,6 +98,8 @@ Your content here…
 A post can carry its own `heroImage` (used on cards and the article header). You
 can supply one yourself, or **auto-generate a topic-aware photorealistic
 enterprise image** — see [Auto-generating blog hero images](#auto-generating-blog-hero-images).
+When you set `heroImage`, the content schema also requires a concise `heroAlt`
+description of what the image communicates.
 Posts without an image fall back to a branded placeholder, so nothing looks
 broken in the meantime.
 
@@ -124,7 +146,6 @@ states, and only reports success when the provider confirms it.
 To test the function locally, run the SWA CLI (`swa start dist --api-location
 api`) after `npm run build`; the plain `astro dev` server does not serve `/api`.
 
-
 ## Auto-generating blog hero images
 
 Each blog post can have a `heroImage`. Instead of designing one by hand, the
@@ -159,7 +180,7 @@ the static WebP, and every site build just serves the file.
    ```
 
 2. **Grant access.** Assign the identity you sign in as the **`Cognitive
-   Services OpenAI User`** role on the Azure OpenAI resource. No key required.
+Services OpenAI User`** role on the Azure OpenAI resource. No key required.
 3. **Sign in:** `az login` (device code in headless environments:
    `az login --use-device-code`).
 
@@ -211,7 +232,6 @@ To enable it:
 > commit. Re-run the deploy manually, or push any follow-up change, to publish
 > the new images.
 
-
 ## Deploying to Azure Static Web Apps
 
 A GitHub Actions workflow is included at
@@ -251,14 +271,14 @@ Then push to `main` — the workflow builds and deploys automatically. That's it
 
 ### What the script sets up (and why)
 
-| # | Resource | Why it exists |
-|---|----------|---------------|
-| 1 | Resource group | A container so every resource is managed and deleted together. |
-| 2 | Static Web App (Free) | Hosts the built site and the `/api` functions. |
-| 3 | Entra app registration + service principal | The identity GitHub Actions "becomes" — scoped, auditable, revocable. |
-| 4 | Two federated credentials | Let GitHub prove its identity to Azure with a short-lived OIDC token instead of a secret. One trusts the `main` branch, one trusts pull requests. |
-| 5 | Custom least-privilege role | Grants the identity exactly one permission — read this one SWA's deployment token — and nothing else. |
-| 6 | 3 secrets + 2 variables | Non-sensitive identifiers telling the workflow which identity to use and which SWA to deploy to. |
+| #   | Resource                                   | Why it exists                                                                                                                                     |
+| --- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Resource group                             | A container so every resource is managed and deleted together.                                                                                    |
+| 2   | Static Web App (Free)                      | Hosts the built site and the `/api` functions.                                                                                                    |
+| 3   | Entra app registration + service principal | The identity GitHub Actions "becomes" — scoped, auditable, revocable.                                                                             |
+| 4   | Two federated credentials                  | Let GitHub prove its identity to Azure with a short-lived OIDC token instead of a secret. One trusts the `main` branch, one trusts pull requests. |
+| 5   | Custom least-privilege role                | Grants the identity exactly one permission — read this one SWA's deployment token — and nothing else.                                             |
+| 6   | 3 secrets + 2 variables                    | Non-sensitive identifiers telling the workflow which identity to use and which SWA to deploy to.                                                  |
 
 #### One-time identity setup — let your coding agent do it
 
@@ -384,6 +404,7 @@ secrets is **missing or empty**. Fix it:
    If the app registration doesn't exist yet, run the full
    [one-time identity setup](#one-time-identity-setup--let-your-coding-agent-do-it)
    above first.
+
 3. If `gh secret set` fails with a permission error, run
    `gh auth refresh -h github.com -s repo` (needs repo admin) or add the secrets
    manually in the Actions secrets UI, then re-run.
