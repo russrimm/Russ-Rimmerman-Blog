@@ -629,6 +629,11 @@ const sourceFiles = (await walk(sourceRoot)).filter(file =>
 const dateFormatterFiles = [];
 for (const sourceFile of sourceFiles) {
   const source = await readFile(sourceFile, "utf8");
+  if (/(?:^|\s)placeholder:text-ink-400/.test(source)) {
+    fail(
+      `${path.relative(root, sourceFile)}: light-theme placeholder uses low-contrast ink-400`
+    );
+  }
   const dateFormatterCalls = extractCalls(
     source,
     /(?:toLocaleDateString|Intl\.DateTimeFormat)\s*\(/g
