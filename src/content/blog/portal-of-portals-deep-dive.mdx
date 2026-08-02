@@ -2,9 +2,9 @@
 title: "Portal of Portals: One Console for Every Admin Portal"
 heroImage: ../../assets/blog/portal-of-portals-deep-dive.webp
 heroAlt: "Editorial illustration representing Microsoft."
-description: "A look inside Portal 360°: the BFF-secured Next.js architecture, authentication, scopes, and APIs behind one Microsoft cloud admin console."
+description: "A tour of Portal 360°: multi-tenant admin, config drift, CVE tracking, and the BFF-secured Next.js architecture behind one Microsoft cloud console."
 pubDate: 2026-07-15
-updatedDate: 2026-07-29
+updatedDate: 2026-08-01
 tags: ["Microsoft", "Azure", "Intune", "Power Platform", "Microsoft Graph", "Security", "Projects"]
 featured: false
 draft: false
@@ -13,8 +13,16 @@ draft: false
 import Explain from "@/components/Explain.astro";
 import Screenshot from "@/components/Screenshot.astro";
 import dashboard from "@/assets/projects/portal-of-portals/dashboard.png";
+import appInsightsAi from "@/assets/projects/portal-of-portals/app-insights-ai-analysis.png";
 import entraUsers from "@/assets/projects/portal-of-portals/entra-users.png";
+import riskySps from "@/assets/projects/portal-of-portals/risky-service-principals.png";
+import azureResources from "@/assets/projects/portal-of-portals/azure-resources.png";
+import vmAiDiagnostics from "@/assets/projects/portal-of-portals/vm-ai-diagnostics.png";
+import devices from "@/assets/projects/portal-of-portals/devices.png";
+import windowsUpdates from "@/assets/projects/portal-of-portals/windows-updates-catalog.png";
+import powerPlatform from "@/assets/projects/portal-of-portals/power-platform-environments.png";
 import cveDatabase from "@/assets/projects/portal-of-portals/cve-database.png";
+import serviceHealth from "@/assets/projects/portal-of-portals/service-health.png";
 
 Count the admin portals you touched this week. Entra for a user's sign-in logs.
 Intune for a device that fell out of compliance. The Azure portal for a runaway
@@ -53,12 +61,12 @@ identity, security, device, collaboration, and platform operations into one
 experience so IT and MSP teams can run their common workflows without the
 context-switch tax.
 
-The scope is genuinely broad. Today it covers:
+The scope is genuinely broad — about 800 API routes at last count. Today it covers:
 
-- **Microsoft 365** — licensing, Copilot usage, and agent identity/registry pages
-- **Identity & Security** — users (including a "User 360" view), groups, apps and
-  service principals, PIM, entitlement management, sign-ins, Conditional Access,
-  risky users, Secure Score, and audit logs
+- **Microsoft 365** — licensing, Copilot usage, and Entra Agent Registry pages
+- **Identity & Security** — users (including a consolidated "User 360" view), groups,
+  apps and service principals, PIM, entitlement management, sign-ins, Conditional
+  Access, risky users, risky workload identities, Secure Score, and audit logs
 - **Azure infrastructure** — org hierarchy, resources, networking, VMs, deployment
   stacks, policy and compliance, Advisor, cost, budgets, forecasts, reservations,
   and monitoring
@@ -69,9 +77,13 @@ The scope is genuinely broad. Today it covers:
   and the Windows update catalog
 - **Collaboration & health** — Exchange mailboxes and folders, Teams, SharePoint,
   and service health
+- **Threat and vulnerability data** — a live CVE feed, a Windows CVE report, NVD
+  search, and tenant configuration drift monitoring
+- **Multi-tenant operations** — cross-tenant user lookup, Conditional Access
+  coverage comparison, a tenant registry, and per-tenant portal roles
 - **Operations & integrations** — ServiceNow, a human-review queue for Copilot
-  Studio workflows, Azure DevOps, Microsoft Fabric, a reporting hub, AI Foundry,
-  a Graph Explorer, and a DOCX editor
+  Studio workflows, Azure DevOps, Microsoft Fabric, a reporting hub, Microsoft
+  Foundry, a Graph Explorer, and a DOCX editor
 
 That's a lot of surface area, which is exactly why the boring parts — auth,
 scopes, rate limits — had to be right from the start.
@@ -80,6 +92,21 @@ scopes, rate limits — had to be right from the start.
   src={dashboard}
   alt="Portal 360 home dashboard with service health banner and platform tiles for Microsoft 365, Exchange, Azure, Power Platform, and device management"
   caption="The Portal 360° home after signing in with Entra ID — live service health up top, then every major service area a click away."
+/>
+
+## Making 800 routes navigable
+
+A console this wide fails on navigation before it fails on anything else. The
+left rail carries a tenant switcher, a favorites list you pin yourself, and a
+"narrow this menu" filter for when you know the page name but not the category.
+A Ctrl/Cmd+K command palette searches users, groups, devices, alerts, roles, and
+Foundry resources from anywhere, so the fastest path to a record is usually
+typing its name rather than clicking through a hierarchy.
+
+<Screenshot
+  src={appInsightsAi}
+  alt="Portal 360 App Insights AI analysis page with the left navigation rail showing a tenant switcher, favorites, menu filter, and command palette"
+  caption="The navigation rail does the heavy lifting: tenant switcher up top, pinned favorites, a menu filter, and Ctrl/Cmd+K search. The page behind it scans Application Insights instances for exceptions and failed requests."
 />
 
 ## Why I built it
@@ -103,10 +130,10 @@ real software development late, through AI-assisted coding. A project this broad
 is not something I'd have attempted the old way. What changed wasn't that I got
 better at TypeScript — it's that the models got good enough to work inside a
 harness. I describe what success looks like for a page, hand the model the skills
-and the reference docs it has to abide by, and review what comes back. Frontier
-models like Opus 5, Sonnet 5, and GPT-5.6 Sol turned "wire this page to the right
-API with the right scope" into a review problem instead of a research project.
-Portal 360° is the biggest thing I've built that way.
+and reference docs it has to abide by, and review what comes back. That turned
+"wire this page to the right API with the right scope" into a review problem
+instead of a research project. Portal 360° is the biggest thing I've built that
+way.
 
 ## The goals
 
@@ -196,6 +223,153 @@ prompts. A sampling of what's registered:
 Keeping the scope map in one place makes over-permissioning a review problem
 instead of an accident scattered across hundreds of files.
 
+## The pages I'd actually demo
+
+Most of Portal 360° is table stakes: a list, a filter, an export. These are the
+parts that earn the project its existence.
+
+### One console, many tenants
+
+If you run more than one tenant, this is the section that matters. The
+multi-tenant console does a cross-tenant UPN lookup — search one user across
+every registered tenant in a single query — and renders Conditional Access
+coverage for all tenants in one matrix, which is how you find the customer who
+never got the policy you thought you'd rolled out everywhere.
+
+The auth model splits deliberately. Your home tenant stays delegated, the same
+on-behalf-of flow the rest of the portal uses. Secondary tenants are app-only,
+through a single multi-tenant Entra app that each customer admin-consents once.
+The tenant registry is a file on the server that stores the Key Vault *secret
+name*, never the secret itself; the plaintext is fetched server-side with
+`DefaultAzureCredential`. Per-tenant portal roles override the global ones, and
+every role change appends to an audit log.
+
+<Explain title="Why app-only for secondary tenants is the risky part">
+  Application permissions are tenant-wide and identical in every tenant that
+  consents. There's no user context to narrow them, so `User.Read.All` in one
+  customer means `User.Read.All` in all of them. Grant the smallest set your
+  features genuinely use, and treat the multi-tenant app's client secret as the
+  single highest-value credential in the whole system.
+</Explain>
+
+### Workload identity risk, not just user risk
+
+The identity surface covers the usual suspects — users, groups, PIM, entitlement
+management, Conditional Access, Secure Score. The one that earns its keep is
+**risky service principals**, because compromised app registrations are the thing
+that gets missed. Identity Protection flags them; almost nobody goes looking.
+
+<Screenshot
+  src={riskySps}
+  alt="Portal 360 risky service principals page showing high-risk application identities with risk level, risk state, and last updated columns"
+  caption="Identity Protection's risky workload identities, surfaced as a first-class page. App registrations get compromised too, and they rarely have a human watching them."
+/>
+
+### Insights that name the fix
+
+There's a small set of pages that don't just list data — they answer a specific
+question and hand you the remediation list. **MFA gap** reports registration
+coverage, passwordless capability, SSPR registration, and, critically, admins
+who haven't registered. **Legacy authentication** breaks recent sign-ins down by
+protocol and user. **Stale users** lists accounts with no sign-in in 30, 60, or
+90 days alongside their assigned license count, which is usually the fastest way
+to find money on the floor.
+
+### Configuration drift monitoring
+
+Portal 360° wraps the Microsoft Graph beta `admin/configurationManagement`
+endpoints: take a snapshot of tenant configuration, register a monitor, and get
+a list of drifts when something moves. It covers Conditional Access policies, the
+authentication methods policy, security defaults, domains, Exchange transport
+rules and org config, SharePoint settings, and Teams settings. It's a beta Graph
+surface, so treat the API shape and its availability as subject to change, and
+don't build a compliance process on it yet.
+
+### Azure, with AI that stays modest
+
+The Azure surface spans the org hierarchy, resources, networking, VMs, policy,
+Advisor, and cost. The resource explorer runs Azure Resource Graph queries across
+every subscription with custom KQL, type filtering, and CSV export.
+
+<Screenshot
+  src={azureResources}
+  alt="Portal 360 Azure Resource Graph query interface showing tenant-wide resource inventory across subscriptions"
+  caption="Tenant-wide resource inventory via Azure Resource Graph — custom KQL, type filtering, and CSV export across every subscription."
+/>
+
+Individual resources get a diagnostics tab that pulls Azure Resource Health and
+Advisor into a single scored view with the detected issues and the specific fix
+for each. It isn't magic, and it isn't a new data source — it's Microsoft's own
+signal, collapsed into one screen instead of four blades.
+
+<Screenshot
+  src={vmAiDiagnostics}
+  alt="Portal 360 virtual machine AI diagnostics tab showing a health score, detected issues with severity, impact, and recommended fixes"
+  caption="A VM's diagnostics tab: health score, detected issues with severity and impact, and the recommended fix for each — assembled from Azure Resource Health and Advisor."
+/>
+
+### Devices and the update story
+
+Intune backs the device surface: inventory, compliance and configuration state,
+policy assignments, and reporting.
+
+<Screenshot
+  src={devices}
+  alt="Portal 360 Intune managed devices inventory listing enrolled devices with OS, ownership, and compliance status"
+  caption="Intune managed device inventory — every enrolled device with OS, ownership, and compliance status in one list."
+/>
+
+The Windows updates catalog is the piece that pays for itself. It joins each
+Windows quality update to the CVEs it fixes, with CVSS scores and an
+**exploited** badge on the ones already being used in the wild. "Which update do
+I need to chase this week" stops being a research project.
+
+<Screenshot
+  src={windowsUpdates}
+  alt="Portal 360 Windows updates catalog listing quality updates with release date, max severity, CVSS score, and linked CVEs flagged as exploited"
+  caption="Windows quality updates joined to the CVEs they fix, with CVSS scores and exploited-in-the-wild badges."
+/>
+
+### Power Platform governance, including a human in the loop
+
+Environments, DLP, capacity, Dataverse analytics, and a tenant-settings reference
+that stays in sync with Microsoft's docs. The environment view splits into
+Summary, Details, and Analytics tabs with managed-environment controls, and there
+is a self-service request form so environment creation can be a request instead
+of a ticket.
+
+<Screenshot
+  src={powerPlatform}
+  alt="Portal 360 Power Platform environment management showing environment counts by type and capacity consumption"
+  caption="Power Platform environments — capacity, state, and resource inventory, with managed-environment controls and a self-service request path."
+/>
+
+The governance area also has a **human review queue** for Copilot Studio. A
+Copilot Studio topic or a Power Automate flow can pause itself by calling a
+custom connector webhook action; Portal 360° stores the Power Platform callback
+URL server-side, shows the request with its connector context, and resumes the
+workflow only after an authenticated reviewer submits a decision. It's a small
+feature with a big implication: agentic workflows get a real approval gate that
+lives outside the agent.
+
+### Purview audit data at volume
+
+Unified Audit Log queries fall over at scale. Portal 360° reads audit records,
+Copilot usage, and Microsoft 365 usage from a Fabric lakehouse populated by
+[Microsoft PAX](https://github.com/microsoft/PAX), over the lakehouse's SQL
+analytics endpoint. The portal is a read-only consumer — no PAX runtime inside
+it — every query runs under the signed-in admin's identity via on-behalf-of, and
+only `SELECT`/`WITH` statements against a server-side table allowlist are
+permitted. That last part matters when you're handing a UI a SQL connection.
+
+### A briefer that reads the console for you
+
+There's an in-portal chat agent, the **Tenant Health Briefer**, that answers
+questions like "what should I fix first" and "which pages are failing health
+checks" by reading the portal's own drift, health, and KPI data. Its replies link
+straight to the relevant page. It's a router, not an oracle — but for a console
+with 800 routes, a router is worth a lot.
+
 ## The APIs it talks to
 
 Portal 360° is, fundamentally, a careful aggregator of a lot of APIs. The main
@@ -210,11 +384,19 @@ ones:
   Graph doesn't expose.
 - **Power Platform APIs** — the BAP service, Power Apps service, and Fabric — for
   environments, governance, and analytics.
-- **The public MSRC CVRF v3 feed** for Windows CVE data (no auth required).
+- **Public vulnerability feeds** — the MSRC CVRF v3 feed, the NIST NVD API, and
+  the CISA Known Exploited Vulnerabilities catalog. None require auth.
 - **Microsoft Defender for Endpoint TVM** (`securitycenter.microsoft.com`) as an
   optional, higher-fidelity data source.
+- **The Fabric SQL analytics endpoint** (`database.windows.net`, delegated) for
+  PAX-exported audit and usage tables.
 - Plus integrations like **ServiceNow**, **Azure DevOps**, **Application
-  Insights**, and **AI Foundry**.
+  Insights**, and **Microsoft Foundry**.
+
+Those three public feeds power a page called **Security Pulse**: CVEs disclosed
+in the last 24 hours, the top critical ones, and vendor advisories, with the CISA
+KEV catalog marking what's actually being exploited. No licensing, no tenant
+data, and it answers "does anything today need my attention" in one screen.
 
 A concrete example shows how much thought the aggregation takes. The **Windows CVE
 Report** reproduces Intune's Autopatch CVE report — which Microsoft doesn't expose
@@ -231,6 +413,17 @@ you which one you're looking at.
   src={cveDatabase}
   alt="Portal 360 NIST NVD vulnerability search with keyword, CVE ID, CVSS severity, and date-range filters"
   caption="The vulnerability tooling leans on public feeds like the NIST NVD API — zero extra licensing, and the UI is honest that it isn't endorsed or certified by the NVD."
+/>
+
+Service health rounds out the aggregation. Issue counts, degraded and
+extended-recovery services, and clickable incident detail sit on the home page
+and on their own page, which is usually where a "is it us or is it Microsoft"
+morning ends.
+
+<Screenshot
+  src={serviceHealth}
+  alt="Portal 360 real-time Microsoft service health monitoring with issue counts and degraded service tracking"
+  caption="Microsoft service health with issue counts, degraded and extended-recovery tracking, and clickable incident detail."
 />
 
 ## Keeping it secure past the front door
@@ -275,8 +468,9 @@ BFF design.
 ## Where it stands, honestly
 
 Portal 360° is still private while I harden it, and I'm deliberate about that.
-This much reach across this many privileged APIs is a big attack surface, and
-I'd rather ship it when the security story is airtight than rush a public repo.
+Eight hundred routes across this many privileged APIs is a big attack surface,
+and I'd rather ship it when the security story is airtight than rush a public
+repo.
 
 It's also worth repeating the disclaimer, because I mean it: this is an
 independent tool, provided as-is, with no warranty and no Microsoft affiliation.

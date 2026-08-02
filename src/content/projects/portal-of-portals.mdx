@@ -25,7 +25,7 @@ centralized visibility, cross-service actions, and audit-ready operations. It
 runs on a **Backend-for-Frontend** architecture, so every privileged call stays
 server-side, behind per-route authentication and least-privilege scopes.
 
-It's a Next.js 16 / React 19 / TypeScript app with **700+ API routes**, secured
+It's a Next.js 16 / React 19 / TypeScript app with **800+ API routes**, secured
 with NextAuth (Auth.js) v5. Every route verifies the session before it does
 anything, prefers delegated on-behalf-of tokens over app-only credentials, and
 draws its scopes from a single centralized map so over-permissioning stays a
@@ -145,7 +145,7 @@ diffs the Power Platform tenant-settings registry and inventory API version
 against their upstream Microsoft sources and opens a PR when they drift — so the
 schema mirrors stay current without manual babysitting.
 
-Portal 360° is still private while I harden it — 700+ routes across this many
+Portal 360° is still private while I harden it — 800+ routes across this many
 privileged APIs is a big attack surface, and I'd rather ship it when the security
 story is airtight. It's provided as-is, with no warranty and no Microsoft
 affiliation; the official admin portals remain the system of record.
