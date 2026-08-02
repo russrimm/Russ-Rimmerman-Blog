@@ -10,10 +10,13 @@
   "globalHeaders": {
     "X-Content-Type-Options": "nosniff",
     "X-Frame-Options": "DENY",
-    "Content-Security-Policy": "default-src 'self'; base-uri 'self'; connect-src 'self' https://giscus.app; font-src 'self'; form-action 'self'; frame-ancestors 'none'; frame-src https://giscus.app; img-src 'self' data: https:; object-src 'none'; script-src 'self' 'unsafe-inline' https://giscus.app; style-src 'self' 'unsafe-inline'; upgrade-insecure-requests",
+    "Content-Security-Policy": "default-src 'self'; base-uri 'self'; connect-src 'self' https://giscus.app; font-src 'self'; form-action 'self'; frame-ancestors 'none'; frame-src https://giscus.app; img-src 'self' data: https:; manifest-src 'self'; media-src 'self'; object-src 'none'; script-src 'self' 'unsafe-inline' https://giscus.app; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; style-src-attr 'none'; worker-src 'none'; upgrade-insecure-requests",
+    "Cross-Origin-Opener-Policy": "same-origin-allow-popups",
+    "Cross-Origin-Resource-Policy": "same-origin",
     "Referrer-Policy": "strict-origin-when-cross-origin",
     "Permissions-Policy": "geolocation=(), microphone=(), camera=()",
-    "Strict-Transport-Security": "max-age=63072000; includeSubDomains; preload"
+    "Strict-Transport-Security": "max-age=63072000; includeSubDomains; preload",
+    "X-Permitted-Cross-Domain-Policies": "none"
   },
   "mimeTypes": {
     ".json": "application/json",

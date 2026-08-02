@@ -157,6 +157,38 @@ for (const required of [
   }
 }
 
+const staticWebAppConfig = JSON.parse(
+  await readFile(path.join(dist, "staticwebapp.config.json"), "utf8")
+);
+const globalHeaders = staticWebAppConfig.globalHeaders ?? {};
+for (const header of [
+  "Content-Security-Policy",
+  "Cross-Origin-Opener-Policy",
+  "Cross-Origin-Resource-Policy",
+  "Permissions-Policy",
+  "Referrer-Policy",
+  "Strict-Transport-Security",
+  "X-Content-Type-Options",
+  "X-Frame-Options",
+  "X-Permitted-Cross-Domain-Policies",
+]) {
+  if (!globalHeaders[header]) {
+    fail(`Static Web Apps config is missing ${header}`);
+  }
+}
+for (const directive of [
+  "base-uri 'self'",
+  "frame-ancestors 'none'",
+  "object-src 'none'",
+  "script-src-attr 'none'",
+  "style-src-attr 'none'",
+  "worker-src 'none'",
+]) {
+  if (!globalHeaders["Content-Security-Policy"]?.includes(directive)) {
+    fail(`Content Security Policy is missing ${directive}`);
+  }
+}
+
 const files = await walk(dist);
 const htmlFiles = files.filter(file => file.endsWith(".html"));
 const htmlCache = new Map();
