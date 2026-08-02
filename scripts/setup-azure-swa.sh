@@ -155,25 +155,36 @@ ensure_fic "github-pull-requests" "repo:${REPO}:pull_request"
 # ---------------------------------------------------------------------------
 # 5. Least-privilege RBAC. WHY: the deploy action needs a deployment token,
 #    which we fetch at runtime instead of storing it. To fetch it the identity
-#    needs exactly ONE permission — listSecrets on THIS Static Web App. We use a
-#    custom role scoped to the single resource so the identity can do nothing
-#    else in the subscription. (Built-in Contributor would work but grants far
-#    more than needed.)
+#    needs listSecrets on THIS Static Web App. It also deletes the PR staging
+#    environment when a pull request closes, which needs read + delete on this
+#    app's builds. We use a custom role scoped to the single resource so the
+#    identity can do nothing else in the subscription. (Built-in Contributor
+#    would work but grants far more than needed.)
 # ---------------------------------------------------------------------------
-say "5/6 Least-privilege role (deployment-token read only)"
+say "5/6 Least-privilege role (deployment token + staging cleanup)"
 ROLE_NAME="SWA Deployment Token Reader (${SWA_NAME})"
-if az role definition list --name "$ROLE_NAME" --query '[0].roleName' -o tsv 2>/dev/null | grep -q .; then
-  ok "Custom role already exists"
+ROLE_DESCRIPTION="Read the deployment token of a single Static Web App for CI/CD and clean up its PR staging environments. Least privilege: scoped to this one resource."
+ROLE_ACTIONS='"Microsoft.Web/staticSites/read",
+    "Microsoft.Web/staticSites/listSecrets/action",
+    "Microsoft.Web/staticSites/builds/read",
+    "Microsoft.Web/staticSites/builds/delete"'
+EXISTING_ROLE_ID="$(az role definition list --name "$ROLE_NAME" --query '[0].name' -o tsv 2>/dev/null || true)"
+# az identifies a custom role by its GUID on update and by its display name on
+# create, so "Name" carries whichever one applies.
+if [ -n "$EXISTING_ROLE_ID" ]; then
+  ROLE_ID_FIELDS="\"Name\": \"$EXISTING_ROLE_ID\",
+  \"RoleName\": \"$ROLE_NAME\","
 else
-  ROLE_DEF="$(mktemp)"
-  cat > "$ROLE_DEF" <<JSON
+  ROLE_ID_FIELDS="\"Name\": \"$ROLE_NAME\","
+fi
+ROLE_DEF="$(mktemp)"
+cat > "$ROLE_DEF" <<JSON
 {
-  "Name": "$ROLE_NAME",
+  $ROLE_ID_FIELDS
   "IsCustom": true,
-  "Description": "Read the deployment token of a single Static Web App for CI/CD. Least privilege: listSecrets + read on this one resource only.",
+  "Description": "$ROLE_DESCRIPTION",
   "Actions": [
-    "Microsoft.Web/staticSites/read",
-    "Microsoft.Web/staticSites/listSecrets/action"
+    $ROLE_ACTIONS
   ],
   "NotActions": [],
   "DataActions": [],
@@ -181,6 +192,13 @@ else
   "AssignableScopes": ["$SWA_ID"]
 }
 JSON
+if [ -n "$EXISTING_ROLE_ID" ]; then
+  # Update in place so installs created before staging cleanup existed pick up
+  # the builds permissions instead of silently failing on PR close.
+  az role definition update --role-definition "$ROLE_DEF" -o none
+  rm -f "$ROLE_DEF"
+  ok "Custom role '$ROLE_NAME' is up to date"
+else
   az role definition create --role-definition "$ROLE_DEF" -o none
   rm -f "$ROLE_DEF"
   ok "Created custom role '$ROLE_NAME'"

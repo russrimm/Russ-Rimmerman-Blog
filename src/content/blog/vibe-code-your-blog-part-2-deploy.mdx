@@ -4,7 +4,7 @@ heroImage: ../../assets/blog/vibe-code-your-blog-part-2-deploy.webp
 heroAlt: "Editorial illustration representing Vibe Coding."
 description: "Deploy an Astro blog to Azure Static Web Apps with OIDC, least-privilege access, and a walkthrough of the resources and trade-offs."
 pubDate: 2026-07-20
-updatedDate: 2026-07-31
+updatedDate: 2026-08-01
 tags:
   [
     "Vibe Coding",
@@ -212,21 +212,24 @@ and one for pull requests (preview builds).
 The deploy action still needs the Static Web App's deployment token to publish
 files — but instead of *storing* that token, the pipeline **reads it fresh at
 runtime** using the identity we just created. To do that, the identity needs
-exactly **one** permission: read this one app's deployment secret.
+permission to read this one app's deployment secret. It also tears down the
+preview environment when a pull request closes, which needs permission to read
+and delete that app's builds.
 
 Rather than hand it a broad built-in role, the script creates a **custom role**
-that allows only `Microsoft.Web/staticSites/listSecrets` (and read) on **this one
-Static Web App**.
+scoped to **this one Static Web App** with four actions and nothing else:
+`staticSites/read`, `staticSites/listSecrets/action`, `staticSites/builds/read`,
+and `staticSites/builds/delete`.
 
-**Why it's required:** fetching the token at runtime needs *a* permission — so we
-grant the smallest one that works.
+**Why it's required:** fetching the token and cleaning up preview environments
+each need *a* permission — so we grant the smallest set that works.
 
 **Security angle — least privilege in action:**
 
 - The obvious shortcut is the built-in **Contributor** role. It works, but it
   lets the identity create, modify, and delete resources — far more than "read
   one token." If that identity were ever misused, Contributor is a bad day.
-- The custom role can do **literally one thing on one resource**. Even fully
+- The custom role can do **four things on one resource**. Even fully
   compromised, it can't spin up crypto-mining VMs, read other resources, or touch
   anything outside this blog.
 - Scoping to the **single Static Web App** (not the resource group or

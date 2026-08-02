@@ -307,13 +307,13 @@ az ad app federated-credential create --id "$APP_ID" --parameters '{
 }'
 
 # 3. Custom least-privilege role — the identity can ONLY read this one SWA's
-#    deployment token, nothing else. The workflow reads that token at runtime.
+#    deployment token and delete its PR staging environments, nothing else.
 SWA_ID=$(az staticwebapp show --name "$SWA_NAME" --resource-group "$RESOURCE_GROUP" --query id -o tsv)
 az role definition create --role-definition "{
   \"Name\": \"SWA Deployment Token Reader ($SWA_NAME)\",
   \"IsCustom\": true,
-  \"Description\": \"Read one Static Web App's deployment token for CI/CD.\",
-  \"Actions\": [\"Microsoft.Web/staticSites/read\", \"Microsoft.Web/staticSites/listSecrets/action\"],
+  \"Description\": \"Read one Static Web App's deployment token for CI/CD and clean up its PR staging environments.\",
+  \"Actions\": [\"Microsoft.Web/staticSites/read\", \"Microsoft.Web/staticSites/listSecrets/action\", \"Microsoft.Web/staticSites/builds/read\", \"Microsoft.Web/staticSites/builds/delete\"],
   \"AssignableScopes\": [\"$SWA_ID\"]
 }"
 az role assignment create --assignee "$APP_ID" --role "SWA Deployment Token Reader ($SWA_NAME)" --scope "$SWA_ID"
