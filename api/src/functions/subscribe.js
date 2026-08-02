@@ -8,7 +8,9 @@ const MAX_BODY_BYTES = 1_024;
 const RATE_LIMIT_MAX = 5;
 const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1_000;
 const RATE_LIMIT_MAX_CLIENTS = 1_000;
-const rateLimits = new Map();
+// This is a worker-local abuse brake. Distributed enforcement belongs at the
+// Azure edge because Functions instances do not share process memory.
+const instanceRateLimits = new Map();
 
 function clientAddress(request) {
   const forwardedFor = request.headers.get("x-forwarded-for");
@@ -17,23 +19,23 @@ function clientAddress(request) {
 
 function consumeRateLimit(request, now = Date.now()) {
   const key = clientAddress(request);
-  const existing = rateLimits.get(key);
+  const existing = instanceRateLimits.get(key);
   const current =
     !existing || now - existing.startedAt >= RATE_LIMIT_WINDOW_MS
       ? { startedAt: now, count: 0 }
       : existing;
 
   current.count += 1;
-  rateLimits.delete(key);
-  rateLimits.set(key, current);
+  instanceRateLimits.delete(key);
+  instanceRateLimits.set(key, current);
 
-  for (const [client, limit] of rateLimits) {
+  for (const [client, limit] of instanceRateLimits) {
     if (now - limit.startedAt >= RATE_LIMIT_WINDOW_MS) {
-      rateLimits.delete(client);
+      instanceRateLimits.delete(client);
     }
   }
-  while (rateLimits.size > RATE_LIMIT_MAX_CLIENTS) {
-    rateLimits.delete(rateLimits.keys().next().value);
+  while (instanceRateLimits.size > RATE_LIMIT_MAX_CLIENTS) {
+    instanceRateLimits.delete(instanceRateLimits.keys().next().value);
   }
 
   return {
@@ -42,6 +44,35 @@ function consumeRateLimit(request, now = Date.now()) {
       1,
       Math.ceil((current.startedAt + RATE_LIMIT_WINDOW_MS - now) / 1_000)
     ),
+  };
+}
+
+async function readBoundedBody(request) {
+  if (request.body && typeof request.body.getReader === "function") {
+    const reader = request.body.getReader();
+    const decoder = new TextDecoder();
+    let byteLength = 0;
+    let text = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      byteLength += value.byteLength;
+      if (byteLength > MAX_BODY_BYTES) {
+        await reader.cancel();
+        return { tooLarge: true, text: "" };
+      }
+      text += decoder.decode(value, { stream: true });
+    }
+
+    text += decoder.decode();
+    return { tooLarge: false, text };
+  }
+
+  const text = await request.text();
+  return {
+    tooLarge: Buffer.byteLength(text, "utf8") > MAX_BODY_BYTES,
+    text,
   };
 }
 
@@ -203,14 +234,14 @@ async function handler(request, context) {
     return json(413, { ok: false, message: "Request is too large." });
   }
 
-  const body = await request.text();
-  if (Buffer.byteLength(body, "utf8") > MAX_BODY_BYTES) {
+  const body = await readBoundedBody(request);
+  if (body.tooLarge) {
     return json(413, { ok: false, message: "Request is too large." });
   }
 
   let data;
   try {
-    data = JSON.parse(body);
+    data = JSON.parse(body.text);
   } catch {
     return json(400, { ok: false, message: "Invalid request." });
   }
@@ -287,5 +318,5 @@ app.http("subscribe", {
 
 module.exports = {
   handler,
-  resetRateLimitsForTests: () => rateLimits.clear(),
+  resetRateLimitsForTests: () => instanceRateLimits.clear(),
 };

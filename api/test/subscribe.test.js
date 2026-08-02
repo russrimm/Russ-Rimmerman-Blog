@@ -14,10 +14,17 @@ function request({
   method = "POST",
   url = "https://www.russrimmerman.com/api/subscribe",
 } = {}) {
+  const encodedBody = new TextEncoder().encode(body);
   return {
     method,
     url,
     headers: new Headers(headers),
+    body: new ReadableStream({
+      start(controller) {
+        controller.enqueue(encodedBody);
+        controller.close();
+      },
+    }),
     text: async () => body,
   };
 }
