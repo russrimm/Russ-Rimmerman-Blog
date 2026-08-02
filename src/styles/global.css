@@ -134,3 +134,57 @@ body {
     animation-iteration-count: 1 !important;
   }
 }
+
+@media print {
+  @page {
+    margin: 1.5cm;
+  }
+
+  html,
+  body {
+    background: #ffffff !important;
+    color: #172231 !important;
+  }
+
+  body > header,
+  body > footer,
+  [data-article-hero],
+  [data-comments],
+  [data-newsletter-container],
+  [data-table-of-contents],
+  nav[aria-label="More articles"] {
+    display: none !important;
+  }
+
+  [data-blog-article] {
+    max-width: none;
+    padding: 0;
+  }
+
+  [data-blog-article] .prose {
+    color: #172231 !important;
+    font-size: 10.5pt;
+  }
+
+  [data-blog-article] :where(h1, h2, h3, h4, pre, figure, blockquote, table) {
+    break-inside: avoid;
+  }
+
+  [data-blog-article] :where(h1, h2, h3, h4) {
+    break-after: avoid;
+    color: #0d1622 !important;
+  }
+
+  [data-blog-article] pre {
+    overflow: visible;
+    border: 1px solid #9fb0c3 !important;
+    white-space: pre-wrap;
+  }
+
+  [data-blog-article] .prose a[href^="http"]::after {
+    content: " (" attr(href) ")";
+    overflow-wrap: anywhere;
+    color: #4a5f76;
+    font-size: 0.85em;
+  }
+}

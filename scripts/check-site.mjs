@@ -719,6 +719,14 @@ if (
 ) {
   fail("Generated CSS is missing the reduced-motion override");
 }
+if (
+  !/@media\s+print/i.test(css) ||
+  !/\[data-blog-article\]/i.test(css) ||
+  !/\[data-comments\]/i.test(css) ||
+  !/break-inside:\s*avoid/i.test(css)
+) {
+  fail("Generated CSS is missing article print safeguards");
+}
 
 const termSource = await readFile(
   path.join(sourceRoot, "components", "Term.astro"),
