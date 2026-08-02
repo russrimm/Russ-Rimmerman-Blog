@@ -573,13 +573,6 @@ if (
   fail("RSS feed is missing its Atom self-reference");
 }
 
-const searchHtml = await readFile(
-  path.join(dist, "search", "index.html"),
-  "utf8"
-);
-if (!/timeZone:[`'"]UTC[`'"]/.test(searchHtml)) {
-  fail("Search date formatter is not pinned to UTC");
-}
 const searchEntries = JSON.parse(
   await readFile(path.join(dist, "search.json"), "utf8")
 );
@@ -596,6 +589,13 @@ const searchSource = await readFile(
 );
 if (/\.innerHTML\s*=/.test(searchSource)) {
   fail("Search results must not render index data through innerHTML");
+}
+if (!/timeZone:\s*[`'"]UTC[`'"]/.test(searchSource)) {
+  fail("Search date formatter is not pinned to UTC");
+}
+const homeHtml = await readFile(path.join(dist, "index.html"), "utf8");
+if (/<script\b[^>]*\btype="module"[^>]*>\s*[^<\s]/i.test(homeHtml)) {
+  fail("Bundled component scripts must remain external and cacheable");
 }
 
 const sourceFiles = (await walk(sourceRoot)).filter(file =>
