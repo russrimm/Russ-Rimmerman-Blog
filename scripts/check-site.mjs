@@ -416,6 +416,21 @@ for (const file of htmlFiles) {
   ) {
     fail(`${route}: expected noindex robots metadata`);
   }
+  if (
+    route === "blog/portal-of-portals-deep-dive/index.html" &&
+    !/<nav\b[^>]*\baria-label="On this page"[^>]*\bdata-table-of-contents/i.test(
+      markup
+    )
+  ) {
+    fail(`${route}: long article is missing its table of contents`);
+  }
+  if (
+    route.startsWith("blog/") &&
+    route !== "blog/index.html" &&
+    !/<nav\b[^>]*\baria-label="More articles"/i.test(markup)
+  ) {
+    fail(`${route}: article is missing chronological navigation`);
+  }
 
   for (const match of markup.matchAll(/<img\b([^>]*)>/gi)) {
     const attributes = match[1];

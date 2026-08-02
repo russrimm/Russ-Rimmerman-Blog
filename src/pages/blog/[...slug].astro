@@ -13,10 +13,22 @@ export const getStaticPaths = (async () => {
 }) satisfies GetStaticPaths;
 
 const { post } = Astro.props;
-const { Content } = await render(post);
+const { Content, headings } = await render(post);
 const readingTime = readingTimeFn(post.body ?? "").text;
 const postTags = new Set(post.data.tags.map(tag => tag.toLowerCase()));
-const relatedPosts = (await getCollection("blog", ({ data }) => !data.draft))
+const publishedPosts = (
+  await getCollection("blog", ({ data }) => !data.draft)
+).sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+const currentIndex = publishedPosts.findIndex(
+  candidate => candidate.id === post.id
+);
+const newerPost =
+  currentIndex > 0 ? publishedPosts[currentIndex - 1] : undefined;
+const olderPost =
+  currentIndex >= 0 && currentIndex < publishedPosts.length - 1
+    ? publishedPosts[currentIndex + 1]
+    : undefined;
+const relatedPosts = publishedPosts
   .filter(candidate => candidate.id !== post.id)
   .map(candidate => ({
     post: candidate,
@@ -34,6 +46,13 @@ const relatedPosts = (await getCollection("blog", ({ data }) => !data.draft))
   .map(candidate => candidate.post);
 ---
 
-<BlogPost post={post} readingTime={readingTime} relatedPosts={relatedPosts}>
+<BlogPost
+  post={post}
+  readingTime={readingTime}
+  headings={headings}
+  relatedPosts={relatedPosts}
+  olderPost={olderPost}
+  newerPost={newerPost}
+>
   <Content />
 </BlogPost>
