@@ -2,8 +2,6 @@ import type { APIRoute } from "astro";
 import { getCollection } from "astro:content";
 import { readingTimeLabel } from "@/utils/readingTime";
 
-const MAX_SEARCHABLE_BODY_LENGTH = 20_000;
-
 function searchableBody(body: string | undefined) {
   return (body ?? "")
     .replace(/^(?:import|export)\s.+$/gm, " ")
@@ -13,8 +11,7 @@ function searchableBody(body: string | undefined) {
     .replace(/<[^>]+>/g, " ")
     .replace(/[#>*_~`]+/g, " ")
     .replace(/\s+/g, " ")
-    .trim()
-    .slice(0, MAX_SEARCHABLE_BODY_LENGTH);
+    .trim();
 }
 
 // Build-time JSON index consumed by the client-side search on /search.
