@@ -53,6 +53,11 @@ jobs:
     if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && github.event.action != 'closed' && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.user.login != 'dependabot[bot]')
     runs-on: ubuntu-latest
     name: Deploy
+    # Shared with close_pull_request so a merge cannot race an in-flight deploy
+    # and leave an orphaned staging environment behind.
+    concurrency:
+      group: swa-${{ github.event.pull_request.number || github.ref }}
+      cancel-in-progress: false
     permissions:
       contents: read
       id-token: write
@@ -101,6 +106,9 @@ jobs:
     if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.user.login != 'dependabot[bot]'
     runs-on: ubuntu-latest
     name: Close Pull Request
+    concurrency:
+      group: swa-${{ github.event.pull_request.number || github.ref }}
+      cancel-in-progress: false
     permissions:
       contents: read
       id-token: write
@@ -130,3 +138,35 @@ jobs:
         with:
           azure_static_web_apps_api_token: ${{ steps.swa_token.outputs.token }}
           action: close
+
+      # The close action exits 0 even when it finds nothing to delete, so verify
+      # the environment is actually gone and remove it by PR number if not.
+      - name: Verify staging environment removal
+        run: |
+          set -euo pipefail
+          if [ -z "$PR_NUMBER" ]; then
+            echo "::error::PR number is empty; refusing to run environment delete."
+            exit 1
+          fi
+          if show_error=$(az staticwebapp environment show \
+              --name "$SWA_NAME" \
+              --resource-group "$SWA_RESOURCE_GROUP" \
+              --environment-name "$PR_NUMBER" -o none 2>&1); then
+            echo "Staging environment '$PR_NUMBER' still exists. Deleting it."
+            az staticwebapp environment delete \
+              --name "$SWA_NAME" \
+              --resource-group "$SWA_RESOURCE_GROUP" \
+              --environment-name "$PR_NUMBER" \
+              --yes
+            echo "Deleted staging environment '$PR_NUMBER'."
+          elif grep -qi 'NotFound' <<<"$show_error"; then
+            echo "No staging environment named '$PR_NUMBER' remains. Nothing to clean up."
+          else
+            echo "::error::Could not determine the state of staging environment '$PR_NUMBER'."
+            echo "$show_error"
+            exit 1
+          fi
+        env:
+          SWA_NAME: ${{ vars.SWA_NAME || 'russrimmerman-blog' }}
+          SWA_RESOURCE_GROUP: ${{ vars.SWA_RESOURCE_GROUP || 'russrimmerman-blog-rg' }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
