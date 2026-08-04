@@ -1,6 +1,4 @@
 ---
-import { SITE_TAGLINE } from "@/consts";
-
 interface Props {
   /** Curated topic chips linking into real tag pages. */
   topics?: { label: string; href: string }[];
@@ -19,15 +17,8 @@ const displayTopics = topics.slice(0, 4);
   </div>
 
   <div class="mx-auto max-w-5xl px-4 py-16 sm:px-6 sm:py-24 lg:py-28">
-    <span
-      class="border-azure-200 bg-azure-50 text-azure-700 dark:border-ink-700 dark:bg-ink-800 dark:text-azure-300 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium"
-    >
-      <span class="h-1.5 w-1.5 rounded-full bg-teal-500"></span>
-      {SITE_TAGLINE}
-    </span>
-
     <h1
-      class="text-ink-900 mt-6 max-w-3xl text-5xl font-bold tracking-tight text-balance sm:text-6xl dark:text-white"
+      class="text-ink-900 max-w-3xl text-5xl font-bold tracking-tight text-balance sm:text-6xl dark:text-white"
     >
       Where I share what I learn, to{" "}
       <span class="text-azure-600 dark:text-azure-400">help you</span>
@@ -36,9 +27,9 @@ const displayTopics = topics.slice(0, 4);
     <p
       class="text-ink-600 dark:text-ink-300 mt-6 max-w-2xl text-lg text-pretty sm:text-xl sm:leading-relaxed"
     >
-      Field-tested guidance on Azure, identity, Copilot, agents, and modern
-      development — written by Russ Rimmerman, Principal Cloud Solution
-      Architect at Microsoft.
+      Field-tested guidance on Azure, Power Platform, Copilot Studio, and
+      modern agentic development in Microsoft Foundry — written by Russ
+      Rimmerman, Principal Cloud Solution Architect at Microsoft.
     </p>
 
     <div class="mt-8 flex flex-wrap items-center gap-4">
