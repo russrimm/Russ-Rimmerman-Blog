@@ -1,5 +1,5 @@
 ---
-import { NAV_LINKS, SITE_TITLE, SOCIALS } from "@/consts";
+import { NAV_LINKS, SITE_TAGLINE, SITE_TITLE, SOCIALS } from "@/consts";
 import ThemeToggle from "./ThemeToggle.astro";
 
 const pathname = Astro.url.pathname;
@@ -25,7 +25,14 @@ const isActive = (href: string) =>
       >
         RR
       </span>
-      <span class="hidden truncate sm:inline">{SITE_TITLE}</span>
+      <span class="hidden min-w-0 flex-col sm:flex">
+        <span class="truncate leading-tight">{SITE_TITLE}</span>
+        <span
+          class="text-ink-500 dark:text-ink-400 truncate text-xs leading-tight font-normal"
+        >
+          {SITE_TAGLINE}
+        </span>
+      </span>
     </a>
 
     <div class="flex shrink-0 items-center gap-1 sm:gap-2">
