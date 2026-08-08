@@ -51,51 +51,15 @@ jobs:
   build_and_deploy:
     needs: validate
     if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && github.event.action != 'closed' && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.user.login != 'dependabot[bot]')
-    runs-on: ubuntu-latest
     name: Deploy
     permissions:
       contents: read
       id-token: write
       pull-requests: write
-    steps:
-      - uses: actions/checkout@v5
-
-      - name: Download site artifact
-        uses: actions/download-artifact@v5
-        with:
-          name: site-dist
-          path: dist
-
-      - name: Azure login (OIDC)
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
-      - name: Get deployment token
-        id: swa_token
-        run: |
-          TOKEN=$(az staticwebapp secrets list \
-            --name "$SWA_NAME" \
-            --resource-group "$SWA_RESOURCE_GROUP" \
-            --query "properties.apiKey" -o tsv)
-          echo "::add-mask::$TOKEN"
-          echo "token=$TOKEN" >> "$GITHUB_OUTPUT"
-        env:
-          SWA_NAME: ${{ vars.SWA_NAME || 'russrimmerman-blog' }}
-          SWA_RESOURCE_GROUP: ${{ vars.SWA_RESOURCE_GROUP || 'russrimmerman-blog-rg' }}
-
-      - name: Deploy
-        uses: Azure/static-web-apps-deploy@v1
-        with:
-          azure_static_web_apps_api_token: ${{ steps.swa_token.outputs.token }}
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          action: upload
-          app_location: "dist"
-          api_location: "api"
-          output_location: ""
-          skip_app_build: true
+    uses: ./.github/workflows/deploy-swa.yml
+    with:
+      ref: ${{ github.sha }}
+    secrets: inherit
 
   close_pull_request:
     if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.user.login != 'dependabot[bot]'
