@@ -17,6 +17,61 @@ function clientAddress(request) {
   return forwardedFor?.split(",").at(-1)?.trim().slice(0, 128) || "unknown";
 }
 
+function hostOf(value) {
+  if (!value) return "";
+  try {
+    return new URL(value).host.toLowerCase();
+  } catch {
+    return "";
+  }
+}
+
+function splitHeaderList(value) {
+  return (value ?? "")
+    .split(",")
+    .map(entry => entry.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+/**
+ * Hosts this function is willing to accept browser form posts from.
+ *
+ * Static Web Apps proxies `/api/*` to a managed Functions host, so `request.url`
+ * carries that internal hostname rather than the one the browser typed. Deriving
+ * the expected origin from `request.url` therefore rejects every real browser
+ * request. The public hostname is only available from the forwarded headers, so
+ * those are the source of truth, with ALLOWED_ORIGINS as an explicit override
+ * for custom domains.
+ *
+ * Neither source is attacker-controlled from a browser: the platform sets the
+ * forwarded headers, and a cross-site page cannot add its own without tripping a
+ * CORS preflight that this function never answers.
+ */
+function allowedHosts(request) {
+  const configured = splitHeaderList(process.env.ALLOWED_ORIGINS).map(
+    entry => hostOf(entry) || entry
+  );
+
+  const forwarded = [
+    ...splitHeaderList(request.headers.get("x-forwarded-host")),
+    ...splitHeaderList(request.headers.get("host")),
+  ];
+
+  return new Set([...configured, ...forwarded].filter(Boolean));
+}
+
+function isAllowedOrigin(request) {
+  const origin = request.headers.get("origin");
+  // Non-browser clients omit Origin, and there is no cross-site risk to defend
+  // against when no browser is involved.
+  if (!origin) return true;
+
+  const originHost = hostOf(origin);
+  if (!originHost) return false;
+
+  return allowedHosts(request).has(originHost);
+}
+
 function consumeRateLimit(request, now = Date.now()) {
   const key = clientAddress(request);
   const existing = instanceRateLimits.get(key);
@@ -219,8 +274,7 @@ async function handler(request, context) {
     });
   }
 
-  const origin = request.headers.get("origin");
-  if (origin && origin !== new URL(request.url).origin) {
+  if (!isAllowedOrigin(request)) {
     return json(403, { ok: false, message: "Request origin is not allowed." });
   }
 

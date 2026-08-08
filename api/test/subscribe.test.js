@@ -12,7 +12,9 @@ function request({
   body = "",
   headers = {},
   method = "POST",
-  url = "https://www.russrimmerman.com/api/subscribe",
+  // Static Web Apps proxies /api to a managed Functions host, so the handler
+  // sees an internal URL rather than the public one the browser requested.
+  url = "http://127.0.0.1:7071/api/subscribe",
 } = {}) {
   const encodedBody = new TextEncoder().encode(body);
   return {
@@ -40,6 +42,7 @@ beforeEach(() => {
   delete process.env.BUTTONDOWN_API_KEY;
   delete process.env.MAILCHIMP_API_KEY;
   delete process.env.MAILCHIMP_LIST_ID;
+  delete process.env.ALLOWED_ORIGINS;
 });
 
 afterEach(() => {
@@ -54,12 +57,70 @@ test("rejects cross-origin subscription requests", async () => {
       headers: {
         "content-type": "application/json",
         origin: "https://attacker.example",
+        "x-forwarded-host": "www.russrimmerman.com",
       },
     }),
     context
   );
 
   assert.equal(response.status, 403);
+});
+
+test("accepts same-origin requests proxied through Static Web Apps", async () => {
+  process.env.NEWSLETTER_PROVIDER = "buttondown";
+  process.env.BUTTONDOWN_API_KEY = "test-key";
+  global.fetch = async () => new Response(null, { status: 201 });
+
+  const response = await handler(
+    request({
+      body: JSON.stringify({ email: "reader@example.com" }),
+      headers: {
+        "content-type": "application/json",
+        // A browser always sends Origin on POST, even same-origin.
+        origin: "https://www.russrimmerman.com",
+        "x-forwarded-host": "www.russrimmerman.com",
+        host: "russrimmerman-blog.azurewebsites.net",
+      },
+    }),
+    context
+  );
+
+  assert.equal(response.status, 200);
+  assert.equal(response.jsonBody.ok, true);
+});
+
+test("honors an explicit ALLOWED_ORIGINS allowlist", async () => {
+  process.env.NEWSLETTER_PROVIDER = "buttondown";
+  process.env.BUTTONDOWN_API_KEY = "test-key";
+  process.env.ALLOWED_ORIGINS =
+    "https://www.russrimmerman.com, russrimmerman.com";
+  global.fetch = async () => new Response(null, { status: 201 });
+
+  const allowed = await handler(
+    request({
+      body: JSON.stringify({ email: "reader@example.com" }),
+      headers: {
+        "content-type": "application/json",
+        origin: "https://russrimmerman.com",
+        host: "russrimmerman-blog.azurewebsites.net",
+      },
+    }),
+    context
+  );
+  assert.equal(allowed.status, 200);
+
+  const blocked = await handler(
+    request({
+      body: JSON.stringify({ email: "reader@example.com" }),
+      headers: {
+        "content-type": "application/json",
+        origin: "https://not-my-site.example",
+        host: "russrimmerman-blog.azurewebsites.net",
+      },
+    }),
+    context
+  );
+  assert.equal(blocked.status, 403);
 });
 
 test("requires JSON and bounds the request body", async () => {
