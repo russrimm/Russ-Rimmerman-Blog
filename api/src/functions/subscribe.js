@@ -177,15 +177,18 @@ async function subscribeButtondown(email) {
     };
   }
 
-  let detail = "";
+  // Buttondown flags a duplicate with an explicit error code, so match on that
+  // rather than on the text of the response. A loose text match also catches
+  // genuine failures such as `subscriber_blocked`, which would report a signup
+  // as successful while silently dropping it.
+  let payload = null;
   try {
-    detail = JSON.stringify(await res.json());
+    payload = JSON.parse(await res.text());
   } catch {
-    detail = await res.text().catch(() => "");
+    /* non-JSON error body */
   }
 
-  // Buttondown returns 400 with a "already subscribed" style message.
-  if (res.status === 400 && /already|exists|subscrib/i.test(detail)) {
+  if (res.status === 400 && payload?.code === "email_already_exists") {
     return { ok: true, status: 200, message: "You're already on the list." };
   }
 
@@ -194,6 +197,9 @@ async function subscribeButtondown(email) {
     status: 502,
     message: "Subscription failed. Please try again later.",
     upstreamStatus: res.status,
+    // The detail string embeds the subscriber's address, so only the code is
+    // safe to carry into logs.
+    upstreamCode: typeof payload?.code === "string" ? payload.code : undefined,
   };
 }
 
@@ -360,7 +366,9 @@ async function handler(request, context) {
 
   if (!result.ok && result.upstreamStatus) {
     context.warn(
-      `Newsletter provider rejected signup with status ${result.upstreamStatus}.`
+      `Newsletter provider rejected signup with status ${result.upstreamStatus}${
+        result.upstreamCode ? ` (${result.upstreamCode})` : ""
+      }.`
     );
   }
 

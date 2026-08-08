@@ -164,6 +164,59 @@ test("rate limits repeated subscription attempts by forwarded client", async () 
   assert.match(limited.headers["Retry-After"], /^\d+$/);
 });
 
+test("treats a Buttondown duplicate as success", async () => {
+  process.env.NEWSLETTER_PROVIDER = "buttondown";
+  process.env.BUTTONDOWN_API_KEY = "test-key";
+  global.fetch = async () =>
+    new Response(
+      JSON.stringify({
+        code: "email_already_exists",
+        detail:
+          "That email address (reader@example.com) is already subscribed (id=abc).",
+      }),
+      { status: 400 }
+    );
+
+  const response = await handler(
+    request({
+      body: JSON.stringify({ email: "reader@example.com" }),
+      headers: { "content-type": "application/json" },
+    }),
+    context
+  );
+
+  assert.equal(response.status, 200);
+  assert.equal(response.jsonBody.ok, true);
+});
+
+test("does not report a blocked Buttondown signup as success", async () => {
+  process.env.NEWSLETTER_PROVIDER = "buttondown";
+  process.env.BUTTONDOWN_API_KEY = "test-key";
+  // The literal body Buttondown returns for a firewall block. The word
+  // "subscriber_blocked" contains "subscrib", which a loose text match would
+  // wrongly read as "already subscribed".
+  global.fetch = async () =>
+    new Response(
+      JSON.stringify({
+        code: "subscriber_blocked",
+        detail: "This subscriber was blocked by your firewall.",
+        metadata: {},
+      }),
+      { status: 400 }
+    );
+
+  const response = await handler(
+    request({
+      body: JSON.stringify({ email: "reader@example.com" }),
+      headers: { "content-type": "application/json" },
+    }),
+    context
+  );
+
+  assert.equal(response.status, 502);
+  assert.equal(response.jsonBody.ok, false);
+});
+
 test("normalizes email before forwarding it to the provider", async () => {
   process.env.NEWSLETTER_PROVIDER = "buttondown";
   process.env.BUTTONDOWN_API_KEY = "test-key";
