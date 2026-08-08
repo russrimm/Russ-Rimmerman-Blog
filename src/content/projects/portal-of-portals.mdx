@@ -1,6 +1,6 @@
 ---
 title: "Portal 360"
-summary: "A security-first console that folds a dozen Microsoft admin portals — Entra, Intune, Azure, Power Platform, and collaboration — into one authenticated, audit-friendly workspace. Branded Portal 360°."
+summary: "A security-first console that folds the sprawl of Microsoft admin portals — Entra, Intune, Azure, Microsoft Foundry, Defender, Purview, Power Platform, Fabric, and collaboration — into one authenticated, audit-friendly workspace. Branded Portal 360°."
 tech: ["Next.js", "TypeScript", "Microsoft Graph", "Azure", "Power Platform", "NextAuth"]
 order: 3
 featured: true
@@ -20,10 +20,12 @@ import cveDatabase from "@/assets/projects/portal-of-portals/cve-database.png";
 
 Portal of Portals (branded **Portal 360°**) is a unified Microsoft cloud
 administration workspace. Instead of bouncing between the Entra, Intune, Azure,
-Power Platform, and Exchange admin centers, IT and MSP teams get one console with
-centralized visibility, cross-service actions, and audit-ready operations. It
-runs on a **Backend-for-Frontend** architecture, so every privileged call stays
-server-side, behind per-route authentication and least-privilege scopes.
+Microsoft Foundry, Defender, Purview, Power Platform, Copilot Studio, Fabric,
+Exchange, Teams, SharePoint, and Microsoft 365 admin centers, IT and MSP teams
+get one console with centralized visibility, cross-service actions, and
+audit-ready operations. It runs on a **Backend-for-Frontend** architecture, so
+every privileged call stays server-side, behind per-route authentication and
+least-privilege scopes.
 
 It's a Next.js 16 / React 19 / TypeScript app with **800+ API routes**, secured
 with NextAuth (Auth.js) v5. Every route verifies the session before it does
@@ -106,11 +108,21 @@ tabs with managed-environment controls.
   caption="Power Platform environment management — capacity, state, and resource inventory with managed-environment controls."
 />
 
+## Foundry, Purview, and Fabric
+
+Three more surfaces cover the AI, compliance, and analytics corners of the
+tenant. **Microsoft Foundry** handles the AI work: models and agents.
+**Microsoft Purview** handles compliance posture and data loss prevention.
+**Microsoft Fabric** covers the analytics estate. All three go through the same
+auth path and the same centralized scope map as every other surface, so they
+inherit the audit trail instead of bolting one on.
+
 ## Collaboration & health
 
-Exchange mailboxes and folders, Teams, SharePoint, and real-time service health
-round out the console. Service health tracks total issue counts, degraded and
-extended-recovery services, and opens clickable incident detail dialogs.
+Exchange mailboxes and folders, Teams, SharePoint, the Microsoft 365 admin
+center, and real-time service health round out the console. Service health tracks
+total issue counts, degraded and extended-recovery services, and opens clickable
+incident detail dialogs.
 
 <Screenshot
   src={serviceHealth}

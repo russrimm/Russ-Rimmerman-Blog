@@ -4,7 +4,7 @@ heroImage: ../../assets/blog/starting-a-new-blog.webp
 heroAlt: "Editorial illustration representing Microsoft."
 description: "Why I finally started this blog, plus a tour of Pulse 360°, Portal 360°, and the Microsoft Communications Portal."
 pubDate: 2026-07-10
-updatedDate: 2026-07-29
+updatedDate: 2026-08-08
 tags: ["Microsoft", "Azure", "Power Platform", "Vibe Coding", "Projects"]
 featured: true
 draft: false
@@ -56,11 +56,12 @@ You can find the source on GitHub:
 ## Portal 360° — one console for every Microsoft admin portal
 
 This one's still cooking, so I'll keep it brief. [**Portal 360°**](/projects/portal-of-portals/)
-folds a dozen Microsoft admin portals — Entra, Intune, Azure, Power Platform,
-Fabric, Teams, and SharePoint — into a single authenticated, audit-friendly workspace. Instead of
-bouncing between the Entra, Intune, Azure, Power Platform, and Exchange admin
-centers, IT and MSP teams get one console with centralized visibility,
-cross-service actions, and audit-ready operations.
+folds the whole sprawl of Microsoft admin portals — Entra, Intune, Azure,
+Microsoft Foundry, Defender, Purview, Power Platform, Copilot Studio, Fabric,
+Exchange, Teams, SharePoint, and the Microsoft 365 admin center — into a single
+authenticated, audit-friendly workspace. Instead of keeping a dozen tabs open and
+signing in to each one separately, IT and MSP teams get one console with
+centralized visibility, cross-service actions, and audit-ready operations.
 
 It's a Next.js 16 / React 19 / TypeScript app secured with NextAuth (Auth.js) v5,
 built on a **Backend-for-Frontend** architecture. Every privileged call stays
@@ -119,6 +120,8 @@ A handful of other surfaces round out the console:
 
 - **Secure Score monitoring** — current posture, improvement actions, and
   category breakdown, optionally enriched by Defender for Endpoint.
+- **AI and compliance** — Microsoft Foundry for model and agent work, Microsoft
+  Purview for compliance posture and data loss prevention.
 - **Collaboration** — Exchange mailboxes and folders, Teams, and SharePoint.
 - **Vulnerability data** — CVE search over the NIST NVD API, joined against
   Intune `managedDevices` to estimate exposure, with an optional Defender for
