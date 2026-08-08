@@ -137,6 +137,18 @@ Configure Buttondown by adding these values in the Static Web App under
 | --------------------- | ------------------------- |
 | `NEWSLETTER_PROVIDER` | `buttondown`              |
 | `BUTTONDOWN_API_KEY`  | your Buttondown API token |
+| `ALLOWED_ORIGINS`     | every origin the site is served from, comma-separated |
+
+`ALLOWED_ORIGINS` is required, not optional. Static Web Apps proxies `/api/*` to
+a managed Functions host and does not pass the public hostname through, so the
+function cannot work out which origin the browser actually used. Without this
+setting every browser submission is rejected as cross-origin and the form shows
+a generic error. Include the `*.azurestaticapps.net` default hostname alongside
+the custom domain, for example:
+
+```
+https://www.russrimmerman.com,https://russrimmerman.com,https://<name>.azurestaticapps.net
+```
 
 Until the provider is configured the endpoint returns a friendly "not available
 yet" message rather than silently discarding the signup. The form validates the
