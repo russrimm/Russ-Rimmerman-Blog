@@ -39,13 +39,17 @@ function splitHeaderList(value) {
  * Static Web Apps proxies `/api/*` to a managed Functions host, so `request.url`
  * carries that internal hostname rather than the one the browser typed. Deriving
  * the expected origin from `request.url` therefore rejects every real browser
- * request. The public hostname is only available from the forwarded headers, so
- * those are the source of truth, with ALLOWED_ORIGINS as an explicit override
- * for custom domains.
+ * request, because browsers send `Origin` on POST even when it is same-origin.
  *
- * Neither source is attacker-controlled from a browser: the platform sets the
- * forwarded headers, and a cross-site page cannot add its own without tripping a
- * CORS preflight that this function never answers.
+ * Testing against a deployed environment showed Static Web Apps does not pass
+ * the public hostname through in `x-forwarded-host` or `host` either, so
+ * ALLOWED_ORIGINS is the source of truth in production and must list every
+ * hostname the site is served from. The forwarded headers are kept as a
+ * fallback so local `swa start` development works without extra configuration.
+ *
+ * Neither source is attacker-controlled from a browser: a cross-site page cannot
+ * add its own forwarded headers without tripping a CORS preflight that this
+ * function never answers.
  */
 function allowedHosts(request) {
   const configured = splitHeaderList(process.env.ALLOWED_ORIGINS).map(
