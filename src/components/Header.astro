@@ -1,6 +1,8 @@
 ---
 import { NAV_LINKS, SITE_TAGLINE, SITE_TITLE, SOCIALS } from "@/consts";
 import ThemeToggle from "./ThemeToggle.astro";
+import { Image } from "astro:assets";
+import headshot from "@/assets/author/headshot.jpg";
 
 const pathname = Astro.url.pathname;
 const isActive = (href: string) =>
@@ -19,12 +21,14 @@ const isActive = (href: string) =>
       aria-label={`${SITE_TITLE} home`}
       class="group text-ink-900 inline-flex min-w-0 items-center gap-2 rounded-lg font-semibold dark:text-white"
     >
-      <span
-        class="text-gradient border-ink-200 group-hover:border-azure-300 dark:border-ink-700 dark:bg-ink-900 dark:group-hover:border-azure-600 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border bg-white text-base font-bold shadow-sm transition"
+      <Image
+        src={headshot}
+        alt=""
+        widths={[40, 80]}
+        sizes="40px"
         aria-hidden="true"
-      >
-        RR
-      </span>
+        class="border-ink-200 group-hover:border-azure-300 dark:border-ink-700 dark:group-hover:border-azure-600 h-10 w-10 shrink-0 rounded-xl border bg-white object-cover shadow-sm transition"
+      />
       <span class="hidden min-w-0 flex-col sm:flex">
         <span class="truncate leading-tight">{SITE_TITLE}</span>
         <span
