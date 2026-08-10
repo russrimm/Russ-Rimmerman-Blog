@@ -4,7 +4,8 @@ heroImage: ../../assets/blog/microsoft-foundry-canvas.webp
 heroAlt: "Editorial illustration representing Microsoft Foundry."
 description: "Foundry Canvas puts model selection, toolboxes, guardrails, local testing, and deployment in a Copilot side panel while leaving you the actual agent code. Here's how it works."
 pubDate: 2026-08-07
-tags: ["Microsoft Foundry", "Agents", "GitHub Copilot", "Azure", "AI", "Copilot"]
+updatedDate: 2026-08-10
+tags: ["Microsoft Foundry", "Agents", "GitHub Copilot", "Azure", "AI"]
 draft: false
 featured: false
 ---
@@ -27,7 +28,7 @@ actually in your Foundry project, and turns every choice you make into a prompt
 that Copilot runs against your workspace. You get the guided experience of the
 portal and the code stays yours.
 
-*Verified against Microsoft Learn on 2026-08-07. The canvas is in public preview,
+*Verified against Microsoft Learn on 2026-08-10. The canvas is in public preview,
 so check the docs before you build a process around it.*
 
 ## What it actually is
@@ -95,10 +96,8 @@ canvas remembers that selection between sessions, which matters more than it
 sounds like it does when you're switching between a dev project and a shared one.
 
 Then you scaffold. **Inspire me** generates an agent idea and scaffolds a working
-hosted agent from it. **Hello world** starts you from the basic sample. There's
-also a **Help me decide** option if you know roughly what you want but not what
-shape it should take. Either way, Copilot writes real files into your workspace,
-not a preview.
+hosted agent from it. **Hello world** starts you from the basic sample. Either
+way, Copilot writes real files into your workspace, not a preview.
 
 **Build.** Here's where knowing your project pays off. You wire a deployed
 model for the agent's reasoning, connect
@@ -115,11 +114,22 @@ configuration to match.
 The guardrails one deserves a specific callout, because guardrails are the piece
 teams skip when they're moving fast. Under the hood a hosted agent definition has
 an optional `rai_config` setting with a `rai_policy_name` field, and that field
-wants the **full ARM resource ID** of the RAI policy, not the bare policy name.
+wants the **full ARM resource ID** of the RAI policy, not the bare policy name:
+
+```text
+/subscriptions/<subscription-id>/resourceGroups/<resource-group>/providers/Microsoft.CognitiveServices/accounts/<account>/raiPolicies/<policy-name>
+```
+
 Omit `rai_config` entirely and the agent runs with no content safety guardrail at
-all. Include it without a policy name and you get the default, `Microsoft.DefaultV2`.
-Getting the canvas to fill in that resource ID for you removes a real class of
-mistake.
+all. Include it without a policy name and you get the default,
+`Microsoft.DefaultV2`. Getting the canvas to fill in that resource ID for you
+removes a real class of mistake.
+
+One wrinkle if you go looking for `rai_config` in your own files and can't find
+it: `azd` doesn't expose it in `azure.yaml`. It takes a `policies` list on the
+`azure.ai.agent` service instead, with `type: rai_policy` and `raiPolicyName` set
+to that same full ARM ID, and maps it to `rai_config` at deploy time. Since the
+canvas drives `azd`, that's the shape you'll actually see in the repo.
 
 **Deploy and test.** Two buttons, and both of them are `azd` underneath.
 
@@ -168,9 +178,12 @@ A few specifics worth knowing up front:
   `azd ai agent invoke`.
 - **Port `8088` has to be free.** A `Connection refused` on local run is almost
   always another process sitting on it.
-- **Egress guardrail header transforms only take static values during preview.**
-  Managed identity and secret reference sources show up in the dialog but aren't
-  enforced yet. Don't design around them.
+- **Egress guardrail header transforms only take static values during preview.** A
+  rule that uses a dynamic `valueRef` to inject a managed identity token or a
+  secret is accepted, but the header isn't injected at runtime. Don't design
+  around it yet. Worth knowing alongside that: Audit mode only softens `Deny`
+  actions, so header transforms and rewrites still take effect while you think
+  you're just observing.
 - **`azd down` is sharper than it looks.** If the current `azd` environment
   created the Foundry project, `azd down` permanently deletes the project's
   resource group and everything in it. If you selected an existing project during
