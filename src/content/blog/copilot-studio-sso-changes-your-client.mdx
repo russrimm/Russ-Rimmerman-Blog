@@ -2,8 +2,9 @@
 title: "The Copilot Studio Auth Trap: Turning On SSO Changes Your Client"
 heroImage: ../../assets/blog/copilot-studio-sso-changes-your-client.webp
 heroAlt: "Cinematic enterprise hero image representing Copilot Studio — an intelligent business operations center."
-description: "You wired a Copilot Studio agent into your app with the SDK, it worked, then you enabled authentication — and got EnvironmentSettingViolation. Here's why the SDK can't do token exchange, why Direct Line is the answer, and the server-side pattern I landed on while building Portal 360°."
+description: "You wired a Copilot Studio agent into your app with the SDK, it worked, then you enabled authentication — and got EnvironmentSettingViolation. Here's why the SDK doesn't do token exchange, why Direct Line is the answer, and the server-side pattern I landed on while building Portal 360°."
 pubDate: 2026-07-15
+updatedDate: 2026-08-10
 tags: ["Copilot Studio", "AI", "Agents", "Security"]
 featured: false
 draft: false
@@ -42,7 +43,7 @@ different costume:
 
 ## The SDK vs Direct Line decision is an auth decision
 
-Here's the part the quick-start doesn't emphasize: **the SDK cannot perform token
+Here's the part the quick-start doesn't emphasize: **the SDK doesn't do token
 exchange.** It's built for headless and "No authentication" scenarios —
 server-to-server automation, custom native apps that own their own auth flow. The
 moment your agent has *any* auth mode other than "No authentication," the SDK is
@@ -54,7 +55,8 @@ const client = new CopilotStudioClient(settings, accessToken)
 // The SDK can't intercept the OAuth card or send signin/tokenExchange.
 ```
 
-The fix isn't a different token — it's a different transport. **Direct Line**
+The fix isn't a different token — it's a different transport.
+[**Direct Line**](https://learn.microsoft.com/en-us/microsoft-copilot-studio/publication-connect-bot-to-custom-application)
 (the standard Bot Framework channel) supports the full token-exchange pattern
 that SSO-enabled agents require.
 

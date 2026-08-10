@@ -4,7 +4,7 @@ heroImage: ../../assets/blog/servicenow-copilot-studio-user-login-sso.webp
 heroAlt: "Cinematic enterprise hero image representing Copilot Studio — an intelligent business operations center."
 description: "Connect ServiceNow to Copilot Studio with Microsoft Entra ID User Login so requests honor each user's roles, ACLs, and audit trail."
 pubDate: 2026-07-22
-updatedDate: 2026-08-09
+updatedDate: 2026-08-10
 tags: ["Copilot Studio", "ServiceNow", "Microsoft Entra ID", "Identity", "Security"]
 featured: false
 draft: false
@@ -421,7 +421,13 @@ Verify by opening a test user in ServiceNow and confirming:
 <Explain title="Identity mapping tip">
   If the user's UPN differs from their email (common in federated tenants),
   either update the ServiceNow email to match the UPN, or configure a custom Entra
-  claim and map it in the OIDC Provider Configuration.
+  claim and map it in the OIDC Provider Configuration. If your ServiceNow user IDs
+  aren't email addresses or UPNs at all — a salary ID or an account name, say —
+  Microsoft documents that case separately under
+  [Match users when the ServiceNow user ID isn't an email or UPN](https://learn.microsoft.com/en-us/microsoft-365/copilot/employee-self-service/servicenow-hrsd-itsm).
+  The User Claim and User Field just have to name a token claim and a `sys_user`
+  column that hold the same value; `upn`/`email` is the common pairing, not the
+  only legal one.
 </Explain>
 
 ## Step 4: Maker creates the initial connection
@@ -518,6 +524,8 @@ either end users or makers click **Allow** on the consent card at runtime.
   — my two GitHub Copilot Agent Skills for Entra ID to ServiceNow identity:
   delegated Power Platform connector auth (this guide) and browser SSO
 - [ServiceNow connector reference (Power Platform / Copilot Studio)](https://learn.microsoft.com/connectors/service-now/)
+- [ServiceNow HRSD and ITSM integration for Microsoft 365 Copilot](https://learn.microsoft.com/microsoft-365/copilot/employee-self-service/servicenow-hrsd-itsm)
+  — the source for the connector app ID and the claim-to-user matching options
 - [Deploy the ServiceNow Knowledge Copilot connector](https://learn.microsoft.com/microsoftsearch/servicenow-connector)
 - [Deploy the ServiceNow Catalog Copilot connector](https://learn.microsoft.com/microsoftsearch/servicenow-catalog-connector)
 - [Add Copilot connectors as a knowledge source in Copilot Studio](https://learn.microsoft.com/microsoft-copilot-studio/knowledge-copilot-connectors)
@@ -543,4 +551,10 @@ either end users or makers click **Allow** on the consent card at runtime.
   `servicenow-entra-skill` repository — two GitHub Copilot Agent Skills covering
   the delegated Power Platform connector flow described here and the separate
   ServiceNow browser SSO scenario.
+
+  **v1.3 — 2026-08-10 — Russ Rimmerman.** Re-verified the connector app IDs, the
+  600-call-per-connection throttle, and the Federated Auth requirements against
+  Microsoft Learn. Added the ServiceNow HRSD/ITSM reference and expanded the
+  identity-mapping guidance for tenants whose ServiceNow user IDs aren't emails
+  or UPNs.
 </Explain>

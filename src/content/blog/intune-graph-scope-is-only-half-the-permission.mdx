@@ -4,6 +4,7 @@ heroImage: ../../assets/blog/intune-graph-scope-is-only-half-the-permission.webp
 heroAlt: "Diagram showing Microsoft Graph scope, an Intune RBAC role, and an active license as three gates between Microsoft Entra ID devices and granted Intune access."
 description: "A field report on diagnosing an Intune Graph 403 after granting DeviceManagementManagedDevices.Read.All, with instrumentation patterns for missing access."
 pubDate: 2026-07-15
+updatedDate: 2026-08-10
 tags: ["Intune", "Microsoft Graph", "Identity", "Security"]
 featured: false
 draft: false
@@ -155,8 +156,8 @@ app registration only clears the first one. The moment you build against a secon
 Microsoft surface, the same trap is waiting — the details just change. I ran into
 the exact same "the scope was only half of it" lesson wiring up a Copilot Studio
 agent, where the surprise wasn't a missing role but that **turning on SSO changed
-what my client was even allowed to do**. I'll publish that companion post soon —
-subscribe to the [RSS feed](/rss.xml) if you want to catch it.
+what my client was even allowed to do**. That's the companion post:
+[The Copilot Studio Auth Trap](/blog/copilot-studio-sso-changes-your-client/).
 
 More Intune field notes live in the [Intune & Endpoints topic](/topics/intune-and-endpoints/).
 
