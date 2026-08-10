@@ -125,6 +125,25 @@ Flow checks on every pass:
 - Is there exactly one `h1` (the title), with a sensible `h2`/`h3` hierarchy below it?
 - Does the intro promise match what the body delivers?
 
+## Vibe coding posts: assume the reader has never written code
+
+Any post about vibe coding, agentic coding, GitHub Copilot, Copilot CLI, the GitHub Copilot app, or "build this thing with AI" walkthroughs has a different audience from the rest of the blog. Write those for someone whose first exposure to code is this article. They are capable and curious; they are simply new to the vocabulary.
+
+For those posts:
+
+- Assume no prior knowledge of developer vocabulary. Words like repository, branch, commit, pull request, build, lint, package manager, lockfile, dependency, config, terminal, frontmatter, context window, scaffold, and boilerplate are jargon until you define them.
+- Define a term the first time it appears, in one of two ways:
+  - **Hover tooltip** with the `Term` component, for a word that would break the sentence if you stopped to explain it. Import it with `import Term from "@/components/Term.astro";` and use `<Term def="Plain-language definition.">the word</Term>`. The `def` text should be one or two plain sentences with no further jargon inside it.
+  - **Inline explanation** in the prose, for a term the reader needs to genuinely understand rather than just recognize. A short appositive or a following sentence is better than a tooltip when the concept carries the paragraph.
+- Use `Explain` blocks for a concept that needs a paragraph, not a phrase.
+- Define once per post, at first use. Do not tooltip the same word five times.
+- Never let a definition contain undefined jargon. "A package manager installs your dependencies" explains nothing to someone who does not know what a dependency is.
+- Prefer the plain word when one exists. Say "folder" unless "directory" is what the interface actually calls it.
+- Keep commands, file paths, and product names exact. Simplify the explanation, never the technical content.
+- Say what a step accomplishes before you say how to do it, so a new reader knows why they are typing something.
+
+Check this on every pass: read the post as someone who has never opened a code editor, and flag the first sentence where you would have to search for a word. That sentence needs a tooltip or a rewrite.
+
 ## Technical accuracy
 
 Credibility is the product. Do not let confident prose hide a wrong fact.
@@ -200,6 +219,7 @@ An edit or draft is complete when:
 - Structure is logical, headings are scannable, and there is one clear through-line.
 - The voice matches Russ's existing posts.
 - For new or substantially rewritten posts, the draft has passed the Humanizer pass: no AI-tell openers, empty transitions, marketing hype, or formulaic closes remain.
+- For vibe coding and agentic coding posts, every developer term is defined at first use with a `Term` tooltip or inline explanation, and no definition relies on other undefined jargon.
 - Product names, versions, preview status, and prerequisites are correct or clearly flagged for confirmation.
 - Frontmatter is valid, specific, and consistent with the content model.
 - You have reported changes made, notable cuts, and any accuracy items the author needs to verify.
