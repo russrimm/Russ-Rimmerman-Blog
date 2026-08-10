@@ -51,7 +51,9 @@ as a server-side proxy for the cross-origin and bot-protected feeds. If you
 want to poke at it, it's live at [mspulse360.app](https://www.mspulse360.app).
 
 You can find the source on GitHub:
-[github.com/russrimm/Pulse360](https://github.com/russrimm/Pulse360).
+[github.com/russrimm/Pulse360](https://github.com/russrimm/Pulse360). There's a
+longer write-up on the [Pulse 360° project page](/projects/pulse360/) if you want
+the full feature tour.
 
 ## Portal 360° — one console for every Microsoft admin portal
 
@@ -76,8 +78,8 @@ Microsoft cloud in one place:
 
 <Screenshot
   src={portalDashboard}
-  alt="Portal 360° home dashboard showing service health and platform tiles for Microsoft 365, Exchange, Azure, Power Platform, and device management"
-  caption="The Portal 360° home dashboard — service health and platform tiles for Microsoft 365, Exchange, Azure, Power Platform, and device management."
+  alt="Portal 360° home dashboard showing a service health strip and grouped tiles for overview, identity and security, Microsoft 365, cloud and data platforms, and monitoring"
+  caption="The Portal 360° home dashboard — service health across the top, then grouped tiles for identity, Microsoft 365, Azure, Power Platform, Fabric, and monitoring."
 />
 
 The identity surface covers users, groups, apps, PIM, Conditional Access, and
@@ -141,6 +143,10 @@ A handful of other surfaces round out the console:
   caption="Real-time Microsoft service health — issue counts, degraded and extended-recovery tracking, and clickable incident details."
 />
 
+That's the short version. I wrote a full deep dive on it —
+[Portal of Portals: One Console for Every Admin Portal](/blog/portal-of-portals-deep-dive/)
+— covering the architecture, the security model, and every surface it touches.
+
 ## Microsoft Communications Portal — a single pane of glass you can self-host
 
 The [**Microsoft Communications Portal**](/projects/microsoft-communications-portal/) grew out of a request I kept hearing from
@@ -192,7 +198,9 @@ language with an impact rating and an admin-action flag.
 It's MIT-licensed and not an official Microsoft product — just a reference
 implementation I put together to help customers keep up. Source and setup docs
 are here:
-[github.com/russrimm/MicrosoftCommunicationsPortal](https://github.com/russrimm/MicrosoftCommunicationsPortal).
+[github.com/russrimm/MicrosoftCommunicationsPortal](https://github.com/russrimm/MicrosoftCommunicationsPortal),
+and the [Microsoft Communications Portal project page](/projects/microsoft-communications-portal/)
+covers the architecture in more depth.
 
 ## Why I build these (and why I'm writing about them)
 
