@@ -4,7 +4,7 @@ heroImage: ../../assets/blog/servicenow-copilot-studio-user-login-sso.webp
 heroAlt: "Cinematic enterprise hero image representing Copilot Studio — an intelligent business operations center."
 description: "Connect ServiceNow to Copilot Studio with Microsoft Entra ID User Login so requests honor each user's roles, ACLs, and audit trail."
 pubDate: 2026-07-22
-updatedDate: 2026-07-31
+updatedDate: 2026-08-09
 tags: ["Copilot Studio", "ServiceNow", "Microsoft Entra ID", "Identity", "Security"]
 featured: false
 draft: false
@@ -209,6 +209,31 @@ genuinely unattended work, and treat **Basic Authentication** as a compatibility
 fallback rather than a design choice.
 
 The rest of this guide is the User Login path, start to finish.
+
+<Explain title="I packaged this walkthrough as a Copilot skill">
+  Everything below is also encoded as an [Agent
+  Skill](https://github.com/russrimm/servicenow-entra-skill) so GitHub Copilot can
+  do the setup with you instead of you translating a blog post into portal clicks.
+  The repo has two skills, deliberately kept apart because people conflate them
+  constantly:
+
+  - **`servicenow-power-platform-delegated-auth`** — the path this guide walks:
+    delegated Microsoft Entra ID User Login for the Power Platform ServiceNow
+    connector, so Copilot Studio tools, Power Automate flows, and Power Apps call
+    ServiceNow as the signed-in user. Covers the resource app registration, the
+    Microsoft first-party connector client, ServiceNow inbound OIDC token
+    validation, claim-to-user mapping, and per-user ACL enforcement.
+  - **`servicenow-entra-browser-sso`** — a different problem entirely: interactive
+    workforce sign-in to the ServiceNow *web UI* through Multi-Provider SSO, SAML
+    by default. Gallery app configuration, user matching, pilot cutover, rollback,
+    and how not to lock your admins out.
+
+  Copy the directories into `.github/skills/` for a repo, or your personal skills
+  directory (`~/.copilot/skills/` for Copilot CLI). Every consequential statement
+  in them is labeled as vendor-documented, standard platform behavior, field
+  observation, or needs-verification — so the agent tells you when it's repeating
+  something it couldn't check rather than inventing a navigation path.
+</Explain>
 
 ## Architectural overview
 
@@ -489,6 +514,9 @@ either end users or makers click **Allow** on the consent card at runtime.
 
 ## References
 
+- [russrimm/servicenow-entra-skill](https://github.com/russrimm/servicenow-entra-skill)
+  — my two GitHub Copilot Agent Skills for Entra ID to ServiceNow identity:
+  delegated Power Platform connector auth (this guide) and browser SSO
 - [ServiceNow connector reference (Power Platform / Copilot Studio)](https://learn.microsoft.com/connectors/service-now/)
 - [Deploy the ServiceNow Knowledge Copilot connector](https://learn.microsoft.com/microsoftsearch/servicenow-connector)
 - [Deploy the ServiceNow Catalog Copilot connector](https://learn.microsoft.com/microsoftsearch/servicenow-catalog-connector)
@@ -510,4 +538,9 @@ either end users or makers click **Allow** on the consent card at runtime.
   comparison tables for Copilot connector authentication (Federated Auth, Basic,
   OAuth 2.0, Entra ID OIDC) and ServiceNow connector authentication (User Login,
   Certificate, ServiceNow OAuth 2.0, Basic) with requirements and trade-offs.
+
+  **v1.2 — 2026-08-09 — Russ Rimmerman.** Added references to the
+  `servicenow-entra-skill` repository — two GitHub Copilot Agent Skills covering
+  the delegated Power Platform connector flow described here and the separate
+  ServiceNow browser SSO scenario.
 </Explain>
