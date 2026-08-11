@@ -2,7 +2,7 @@
 title: "Finding GitHub Copilot Harness Agents Before PPAC Shows Them"
 heroImage: ../../assets/blog/find-github-copilot-harness-agents-resource-graph.webp
 heroAlt: "Editorial illustration representing Copilot Studio."
-description: "The Power Platform admin center doesn't flag which Copilot Studio agents run on the GitHub Copilot harness. Here's the Azure Resource Graph query that finds them today."
+description: "The Power Platform admin center doesn't [YET] flag which Copilot Studio agents run on the GitHub Copilot harness. Here's the Azure Resource Graph query that finds them today."
 pubDate: 2026-08-10
 tags: ["Copilot Studio", "Power Platform", "GitHub Copilot", "Agents", "Azure", "Security"]
 featured: false
@@ -13,17 +13,16 @@ import Explain from "@/components/Explain.astro";
 import Screenshot from "@/components/Screenshot.astro";
 import argQuery from "@/assets/blog/ghcp-harness-agents/resource-graph-explorer-query.png";
 
-Copilot Studio picked up a new runtime in June, your users may be creating agents
-before you have a way to report on them. The Power Platform admin
-center inventory lists every agent you own, which is genuinely useful. It just
-doesn't tell you which harness each agent runs on, and that distinction changes
+Copilot Studio picked up a new runtime recently, and you may find your users 
+have created or are creating agents before you have a way to report on them. 
+The Power Platform admin center inventory lists every agent you own, which is genuinely useful. 
+It just doesn't tell you which harness each agent runs on, and that distinction changes
 how the agent is billed, which AI models it can reach, and what your users are
 actually talking to.
 
-I found mine with a single Azure Resource Graph query. It leans on a field
-Microsoft hasn't documented yet, so treat it as a stopgap rather than a
-permanent report. It works today, and today is when I needed it. You can also query
-it using the Power Platform API.
+I found mine with a single Azure Resource Graph query. It leans on a not-yet-documented
+field, so treat it as a stopgap rather than a permanent report. It works today, and today 
+is when I needed it. You can also query it using the Power Platform API.
 
 ## What the GitHub Copilot harness actually is
 

@@ -39,18 +39,18 @@ export const TOPICS: TopicDef[] = [
     ],
   },
   {
-    slug: "m365-copilot",
-    title: "M365 Copilot",
+    slug: "microsoft-foundry",
+    title: "Microsoft Foundry",
     description:
-      "Extending and rolling out Microsoft 365 Copilot across the enterprise.",
+      "Building, grounding, and publishing agents on Microsoft Foundry.",
     intro:
-      "Practical guidance on Microsoft 365 Copilot — from extending the experiences you already have to driving adoption and governance across the enterprise.",
+      "Working notes on Microsoft Foundry: picking models from the catalog, grounding agents on data you trust, locking them down with private networking, and publishing them where people already work.",
     icon: "chip",
-    tags: ["M365 Copilot", "Copilot"],
+    tags: ["Microsoft Foundry"],
     focus: [
-      "Extending Microsoft 365 Copilot",
-      "Adoption and change management",
-      "Governance and rollout in the enterprise",
+      "Model catalog and model selection",
+      "Grounding, tools, and agent design",
+      "Private networking and publishing to Teams",
     ],
   },
   {
