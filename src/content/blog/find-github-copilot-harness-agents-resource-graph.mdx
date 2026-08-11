@@ -2,8 +2,9 @@
 title: "Finding GitHub Copilot Harness Agents Before PPAC Shows Them"
 heroImage: ../../assets/blog/find-github-copilot-harness-agents-resource-graph.webp
 heroAlt: "Editorial illustration representing Copilot Studio."
-description: "The Power Platform admin center doesn't [YET] flag which Copilot Studio agents run on the GitHub Copilot harness. Here's the Azure Resource Graph query that finds them today."
+description: "The Power Platform admin center still doesn't flag which Copilot Studio agents run on the GitHub Copilot harness. The isCLIAgent property does, and Microsoft has now published governance guidance built on it."
 pubDate: 2026-08-10
+updatedDate: 2026-08-11
 tags: ["Copilot Studio", "Power Platform", "GitHub Copilot", "Agents", "Azure", "Security"]
 featured: false
 draft: false
@@ -20,9 +21,13 @@ It just doesn't tell you which harness each agent runs on, and that distinction 
 how the agent is billed, which AI models it can reach, and what your users are
 actually talking to.
 
-I found mine with a single Azure Resource Graph query. It leans on a not-yet-documented
-field, so treat it as a stopgap rather than a permanent report. It works today, and today 
-is when I needed it. You can also query it using the Power Platform API.
+I found mine with a single Azure Resource Graph query. When I first published this, the
+query leaned on a field I'd spotted in the response body rather than in any documentation,
+so it came with a stopgap warning attached. That warning has aged out. Microsoft's Copilot
+Studio customer advisory team has since published
+[governance guidance](https://microsoft.github.io/mcscatblog/posts/copilot-harness-cost-governance/)
+built on the same property, which turns it from a lucky find into something you can put a
+process behind. The query hasn't changed. Its footing has.
 
 ## What the GitHub Copilot harness actually is
 
@@ -69,17 +74,21 @@ page.
 What's missing is the harness. Walk the
 [Copilot Studio agent inventory schema](https://learn.microsoft.com/en-us/microsoft-copilot-studio/admin-agent-inventory)
 and you'll find `orchestration`, `model`, `authentication`, `channels`,
-`createdIn`, and a healthy set of Entra identity fields. There's no documented
-property that says "this agent runs on the GitHub Copilot harness," and no
-corresponding column or filter in the admin center grid. I checked the schema
-reference on 10 August 2026; if Microsoft has added one since, use that instead
-of what follows.
+`createdIn`, and a healthy set of Entra identity fields. There's still no property
+in that table that says "this agent runs on the GitHub Copilot harness," and no
+corresponding column or filter in the admin center grid. I last checked the schema
+reference on 11 August 2026.
 
 The data is in the payload anyway. Every one of my new-experience agents carries
-a boolean called `isCLIAgent`, set to `true`. It is not in the documented
-schema, which is exactly the caveat you'd expect: undocumented fields can be
-renamed or dropped without a deprecation notice. I'm using it because the
-alternative is not reporting at all.
+a boolean called `isCLIAgent`, set to `true`. When this post first went up, that
+was the whole story: a field in a response body with nothing behind it. Microsoft's
+Copilot Studio customer advisory team has since published
+[Adopting the GitHub Copilot Harness: Cost Control and Governance in Copilot Studio](https://microsoft.github.io/mcscatblog/posts/copilot-harness-cost-governance/),
+which says outright that `isCLIAgent` identifies agents using the GitHub Copilot
+harness, and uses it in a Power Platform Inventory API request as the first step
+of a credit governance process. That's the confirmation the field was missing.
+It's still not in the schema reference table, so I'd now expect the documentation
+to catch up rather than the property to vanish.
 
 ## The query
 
@@ -128,6 +137,51 @@ A few notes on the query itself:
   a signal to go audit those toggles.
 - `id` gives you the full resource ID. Keep it. It's the fastest way to hand a
   specific agent to a colleague without ambiguity.
+
+## The same question through the Inventory API
+
+Resource Graph Explorer is fine for answering this once. When you want it on a
+schedule, the
+[Power Platform Inventory API](https://learn.microsoft.com/en-us/power-platform/admin/inventory-api)
+takes the same filter and hands back JSON you can feed into whatever runs your
+governance reviews. This is the request shape the customer advisory team uses in
+their post:
+
+```http
+POST https://api.powerplatform.com/resourcequery/resources/query?api-version=2024-10-01
+Content-Type: application/json
+
+{
+  "TableName": "PowerPlatformResources",
+  "Clauses": [
+    {
+      "$type": "where",
+      "FieldName": "type",
+      "Operator": "==",
+      "Values": ["'microsoft.copilotstudio/agents'"]
+    },
+    {
+      "$type": "where",
+      "FieldName": "properties.isCLIAgent",
+      "Operator": "==",
+      "Values": ["true"]
+    },
+    {
+      "$type": "project",
+      "FieldList": [
+        "name",
+        "properties.displayName",
+        "properties.environmentId",
+        "properties.ownerId"
+      ]
+    }
+  ]
+}
+```
+
+Same filter, reachable from a script instead of a portal tab. Swap the resource
+type for `microsoft.powerplatform/environments` and you have the environment
+sweep that belongs next to it.
 
 ## What you need to run it
 
@@ -185,9 +239,17 @@ Unmanaged environments with GitHub Copilot harness agents are where I'd look
 first. That's the combination where credits get spent during authoring, DLP
 enforcement is thinnest, and nobody has agreed on which models are acceptable.
 
-The honest summary: there is no supported way to report on harness type yet, and
-`isCLIAgent` is a field I found rather than one Microsoft published. Pin the
-query somewhere you'll see it, check the
-[schema reference](https://learn.microsoft.com/en-us/microsoft-copilot-studio/admin-agent-inventory)
-every few weeks, and swap to the documented field the moment one shows up. In
-the meantime, knowing what's in your tenant beats waiting for the column.
+The honest summary is better than it was. `isCLIAgent` started out as a field I
+found in a response body and used because the alternative was not reporting at
+all. It's now the property Microsoft's own guidance points at for this exact
+question. It still isn't in the schema reference table, so keep half an eye on
+that page and move to whatever lands there. You no longer have to run this query
+with your fingers crossed.
+
+Finding the agents was always step one. The customer advisory team's
+[cost control and governance post](https://microsoft.github.io/mcscatblog/posts/copilot-harness-cost-governance/)
+covers what comes after: classifying each environment as maker development or
+funded production, deciding whether it should draw from the tenant pool or bill
+pay-as-you-go, and setting agent-level credit limits so an experiment can't
+quietly run up a bill. Worth reading if that query returned a longer list than
+you were expecting.
