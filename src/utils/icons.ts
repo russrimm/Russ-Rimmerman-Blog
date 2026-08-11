@@ -1,5 +1,5 @@
 export type IconName =
-  "sparkles" | "shield" | "chip" | "code" | "device" | "flow";
+  "sparkles" | "shield" | "chip" | "code" | "device" | "flow" | "key";
 
 /** SVG path data for the small line-icon set used across topic UI. */
 export const ICON_PATHS: Record<IconName, string> = {
@@ -11,4 +11,5 @@ export const ICON_PATHS: Record<IconName, string> = {
   device:
     "M9 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm2 15h2",
   flow: "M5 6h6M5 12h14M5 18h9M17 4l3 2-3 2M20 16l-3 2 3 2",
+  key: "M15 4a5 5 0 1 0-4.6 6.9L4 17.3V20h2.7l1-1v-2h2v-2h2l1.3-1.3A5 5 0 0 0 15 4Zm1.5 3.5h.01",
 };
