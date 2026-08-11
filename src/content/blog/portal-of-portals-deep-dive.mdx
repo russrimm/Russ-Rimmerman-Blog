@@ -5,7 +5,7 @@ heroAlt: "Dark architecture diagram showing Portal 360 routing Microsoft Entra I
 description: "A tour of Portal 360°: multi-tenant admin, config drift, CVE tracking, and the BFF-secured Next.js architecture behind one Microsoft cloud console."
 pubDate: 2026-07-15
 updatedDate: 2026-08-01
-tags: ["Microsoft", "Azure", "Intune", "Power Platform", "Microsoft Graph", "Security", "Projects"]
+tags: ["Azure", "Intune", "Power Platform", "Microsoft Graph", "Security", "Projects"]
 featured: false
 draft: false
 ---
@@ -30,8 +30,8 @@ cost alert. The Power Platform admin center for a DLP policy. Exchange for a
 stuck mailbox. Each one is a separate login, a separate navigation model, and a
 separate place to forget you left a tab open.
 
-I got tired of the bookmark folder. So I built **Portal of Portals** — branded
-**Portal 360°** — a single console that folds all of those surfaces into one
+I got tired of the bookmark folder. So I built **Portal of Portals**, branded
+**Portal 360°**: a single console that folds all of those surfaces into one
 authenticated workspace. This is the deep dive I promised when I first mentioned
 it: what it actually is, why it exists, what it talks to, and how it stays safe
 while doing it.
@@ -42,15 +42,15 @@ I build in the open (well, in a private repo for now). For anything compliance-
 critical, you should still use Microsoft's official portals. Portal 360° is about
 speed on the high-frequency stuff, not replacing the systems of record.
 
-It's also a handy way to stand up **purpose-built consoles** for people who
-don't need the whole admin universe — a service desk view scoped to password
-resets, user lookups, and device actions; a manager view with just licensing,
-group membership, and a few reports; an on-call view that leads with service
-health and recent incidents. Instead of handing someone the full Entra or Intune
-portal (and the cognitive load and blast radius that come with it), you can
-carve out exactly the surface their role actually uses.
+It's also a handy way to stand up **purpose-built consoles** for people who don't
+need the whole admin universe: a service desk view scoped to password resets,
+user lookups, and device actions; a manager view with just licensing, group
+membership, and a few reports; an on-call view that leads with service health and
+recent incidents. Instead of handing someone the full Entra or Intune portal (and
+the cognitive load and blast radius that come with it), you can carve out exactly
+the surface their role actually uses.
 
-> **Heads up — the repo is currently private, but I'm planning to open source it
+> **Heads up: the repo is currently private, but I'm planning to open source it
 > very soon.** If you'd like to help test it out before then, send me a message
 > with your GitHub alias and I'll add you to it.
 
@@ -61,32 +61,32 @@ identity, security, device, collaboration, and platform operations into one
 experience so IT and MSP teams can run their common workflows without the
 context-switch tax.
 
-The scope is genuinely broad — about 800 API routes at last count. Today it covers:
+The scope is genuinely broad: about 800 API routes at last count. Today it covers:
 
-- **Microsoft 365** — licensing, Copilot usage, and Entra Agent Registry pages
-- **Identity & Security** — users (including a consolidated "User 360" view), groups,
+- Microsoft 365: licensing, Copilot usage, and Entra Agent Registry pages
+- Identity & Security: users (including a consolidated "User 360" view), groups,
   apps and service principals, PIM, entitlement management, sign-ins, Conditional
   Access, risky users, risky workload identities, Secure Score, and audit logs
-- **Azure infrastructure** — org hierarchy, resources, networking, VMs, deployment
+- Azure infrastructure: org hierarchy, resources, networking, VMs, deployment
   stacks, policy and compliance, Advisor, cost, budgets, forecasts, reservations,
   and monitoring
-- **Power Platform** — environments with a self-service request form, Copilot
+- Power Platform: environments with a self-service request form, Copilot
   Studio, DLP, governance, billing and capacity, Dataverse analytics, and a
   tenant-settings reference that stays in sync with Microsoft's docs
-- **Device management** — Intune devices, compliance and configuration, reports,
+- Device management: Intune devices, compliance and configuration, reports,
   and the Windows update catalog
-- **Collaboration & health** — Exchange mailboxes and folders, Teams, SharePoint,
+- Collaboration & health: Exchange mailboxes and folders, Teams, SharePoint,
   and service health
-- **Threat and vulnerability data** — a live CVE feed, a Windows CVE report, NVD
+- Threat and vulnerability data: a live CVE feed, a Windows CVE report, NVD
   search, and tenant configuration drift monitoring
-- **Multi-tenant operations** — cross-tenant user lookup, Conditional Access
+- Multi-tenant operations: cross-tenant user lookup, Conditional Access
   coverage comparison, a tenant registry, and per-tenant portal roles
-- **Operations & integrations** — ServiceNow, a human-review queue for Copilot
+- Operations & integrations: ServiceNow, a human-review queue for Copilot
   Studio workflows, Azure DevOps, Microsoft Fabric, a reporting hub, Microsoft
   Foundry, a Graph Explorer, and a DOCX editor
 
-That's a lot of surface area, which is exactly why the boring parts — auth,
-scopes, rate limits — had to be right from the start.
+That's a lot of surface area, which is exactly why the boring parts had to be
+right from the start: auth, scopes, and rate limits.
 
 <Screenshot
   src={dashboard}
@@ -119,36 +119,35 @@ isolation and each unaware of the others. A single "who is this user, what do
 they have, and what's wrong right now" question can span five portals. I wanted
 one front door.
 
-The one that generalizes: I kept building smaller tools — Pulse 360°, the Microsoft
-Communications Portal — and each lived on its own. Portal 360° is the connective
-tissue. It's the hub that ties the hubs together, so there's one place to sign in
-and one consistent way to act, rather than a folder full of bookmarks pointing at
-a dozen different security models.
+The one that generalizes: I kept building smaller tools, Pulse 360° and the
+Microsoft Communications Portal, and each lived on its own. Portal 360° is the
+connective tissue. It's the hub that ties the hubs together, so there's one place
+to sign in and one consistent way to act, rather than a folder full of bookmarks
+pointing at a dozen different security models.
 
 There's also an honest personal thread here: I'm a Microsoft architect who came to
 real software development late, through AI-assisted coding. A project this broad
 is not something I'd have attempted the old way. What changed wasn't that I got
-better at TypeScript — it's that the models got good enough to work inside a
-harness. I describe what success looks like for a page, hand the model the skills
-and reference docs it has to abide by, and review what comes back. That turned
-"wire this page to the right API with the right scope" into a review problem
-instead of a research project. Portal 360° is the biggest thing I've built that
-way.
+better at TypeScript, it's that the models got good enough to work inside a
+harness, which turned "wire this page to the right API with the right scope" into
+a review problem instead of a research project. That approach gets its own post in
+[Coding with AI](/blog/vibe-coding-lessons/). Portal 360° is the biggest thing
+I've built that way.
 
 ## The goals
 
 I set a few rules before writing much code, and they've shaped every decision
 since:
 
-1. **Security first, always.** No token ever reaches the browser. Every route
+1. Security first, always. No token ever reaches the browser. Every route
    proves the caller is authenticated before it does anything.
-2. **Least privilege by default.** A page that reads users asks for a read scope,
+2. Least privilege by default. A page that reads users asks for a read scope,
    not a write one. Writes are explicit and narrow.
-3. **Audit-ready.** Actions should be traceable, and sensitive operations should
+3. Audit-ready. Actions should be traceable, and sensitive operations should
    leave a record.
-4. **Stay current without babysitting.** Where Portal 360° mirrors a Microsoft
-   schema, it should notice when Microsoft changes it — automatically.
-5. **Be honest about limits.** When a data source is an estimate, say so in the UI.
+4. Stay current without babysitting. Where Portal 360° mirrors a Microsoft
+   schema, it should notice when Microsoft changes it automatically.
+5. Be honest about limits. When a data source is an estimate, say so in the UI.
 
 ## How it works: the BFF architecture
 
@@ -166,11 +165,11 @@ the user's behalf.
 </Explain>
 
 The stack is Next.js 16, React 19, TypeScript 5, Tailwind 4, and NextAuth
-(Auth.js) v5. A few of those are on the bleeding edge — NextAuth v5 is still in
-beta as I write this — so I pin versions and re-verify behavior when I bump them.
+(Auth.js) v5. A few of those are on the bleeding edge: NextAuth v5 is still in
+beta as I write this, so I pin versions and re-verify behavior when I bump them.
 
 Every API route starts the same way: verify the session, or reject the request.
-There's a small helper for it, and the rule is absolute — an API route with no
+There's a small helper for it, and the rule is absolute: an API route with no
 auth check is a bug, and there's tooling in the repo whose only job is to find
 routes missing that check.
 
@@ -188,7 +187,7 @@ export async function GET(request: NextRequest) {
 Users sign in with Entra ID through an app registration. From there, Portal 360°
 prefers **delegated, on-behalf-of tokens** over app-only credentials for anything
 a user triggers. That means the app acts *as the signed-in admin*, inside their
-permissions — so RBAC and Conditional Access still apply, and the audit trail
+permissions, so RBAC and Conditional Access still apply, and the audit trail
 shows a person, not a faceless service principal.
 
 <Screenshot
@@ -209,16 +208,16 @@ Scopes are centralized in one file so nothing gets sloppy. Reads ask for read
 scopes; writes name the specific write scope so it surfaces in incremental-consent
 prompts. A sampling of what's registered:
 
-- **Graph reads** — `User.Read.All`, `Directory.Read.All`, `Group.Read.All`,
+- Graph reads: `User.Read.All`, `Directory.Read.All`, `Group.Read.All`,
   `AuditLog.Read.All`, `Reports.Read.All`, `Device.Read.All`
-- **Graph writes** — `User.ReadWrite.All`, `Group.ReadWrite.All`,
+- Graph writes: `User.ReadWrite.All`, `Group.ReadWrite.All`,
   `RoleManagement.ReadWrite.Directory`,
   `DeviceManagementManagedDevices.ReadWrite.All`
-- **Azure Resource Manager** — `https://management.azure.com/user_impersonation`
-- **Exchange Online** — `https://outlook.office365.com/EWS.AccessAsUser.All`
-- **Power Platform** — `https://api.bap.microsoft.com/.default`,
+- Azure Resource Manager: `https://management.azure.com/user_impersonation`
+- Exchange Online: `https://outlook.office365.com/EWS.AccessAsUser.All`
+- Power Platform: `https://api.bap.microsoft.com/.default`,
   `https://service.powerapps.com/.default`
-- **Microsoft Fabric** — `https://api.fabric.microsoft.com/.default`
+- Microsoft Fabric: `https://api.fabric.microsoft.com/.default`
 
 Keeping the scope map in one place makes over-permissioning a review problem
 instead of an accident scattered across hundreds of files.
@@ -231,8 +230,8 @@ parts that earn the project its existence.
 ### One console, many tenants
 
 If you run more than one tenant, this is the section that matters. The
-multi-tenant console does a cross-tenant UPN lookup — search one user across
-every registered tenant in a single query — and renders Conditional Access
+multi-tenant console does a cross-tenant UPN lookup: it searches one user across
+every registered tenant in a single query, then renders Conditional Access
 coverage for all tenants in one matrix, which is how you find the customer who
 never got the policy you thought you'd rolled out everywhere.
 
@@ -254,7 +253,7 @@ every role change appends to an audit log.
 
 ### Workload identity risk, not just user risk
 
-The identity surface covers the usual suspects — users, groups, PIM, entitlement
+The identity surface covers the usual suspects: users, groups, PIM, entitlement
 management, Conditional Access, Secure Score. The one that earns its keep is
 **risky service principals**, because compromised app registrations are the thing
 that gets missed. Identity Protection flags them; almost nobody goes looking.
@@ -267,10 +266,10 @@ that gets missed. Identity Protection flags them; almost nobody goes looking.
 
 ### Insights that name the fix
 
-There's a small set of pages that don't just list data — they answer a specific
+There's a small set of pages that don't just list data: they answer a specific
 question and hand you the remediation list. **MFA gap** reports registration
-coverage, passwordless capability, SSPR registration, and, critically, admins
-who haven't registered. **Legacy authentication** breaks recent sign-ins down by
+coverage, passwordless capability, SSPR registration, and, critically, admins who
+haven't registered. **Legacy authentication** breaks recent sign-ins down by
 protocol and user. **Stale users** lists accounts with no sign-in in 30, 60, or
 90 days alongside their assigned license count, which is usually the fastest way
 to find money on the floor.
@@ -299,7 +298,7 @@ every subscription with custom KQL, type filtering, and CSV export.
 
 Individual resources get a diagnostics tab that pulls Azure Resource Health and
 Advisor into a single scored view with the detected issues and the specific fix
-for each. It isn't magic, and it isn't a new data source — it's Microsoft's own
+for each. It isn't magic, and it isn't a new data source. It's Microsoft's own
 signal, collapsed into one screen instead of four blades.
 
 <Screenshot
@@ -345,9 +344,9 @@ of a ticket.
 />
 
 The governance area also has a **human review queue** for Copilot Studio. A
-Copilot Studio topic or a Power Automate flow can pause itself by calling a
-custom connector webhook action; Portal 360° stores the Power Platform callback
-URL server-side, shows the request with its connector context, and resumes the
+Copilot Studio topic or a Power Automate flow can pause itself by calling a custom
+connector webhook action; Portal 360° stores the Power Platform callback URL
+server-side, shows the request with its connector context, and resumes the
 workflow only after an authenticated reviewer submits a decision. It's a small
 feature with a big implication: agentic workflows get a real approval gate that
 lives outside the agent.
@@ -357,17 +356,18 @@ lives outside the agent.
 Unified Audit Log queries fall over at scale. Portal 360° reads audit records,
 Copilot usage, and Microsoft 365 usage from a Fabric lakehouse populated by
 [Microsoft PAX](https://github.com/microsoft/PAX), over the lakehouse's SQL
-analytics endpoint. The portal is a read-only consumer — no PAX runtime inside
-it — every query runs under the signed-in admin's identity via on-behalf-of, and
-only `SELECT`/`WITH` statements against a server-side table allowlist are
-permitted. That last part matters when you're handing a UI a SQL connection.
+analytics endpoint. The portal is a read-only consumer, with no PAX runtime
+inside it. Every query runs under the signed-in admin's identity via
+on-behalf-of, and only `SELECT`/`WITH` statements against a server-side table
+allowlist are permitted. That last part matters when you're handing a UI a SQL
+connection.
 
 ### A briefer that reads the console for you
 
 There's an in-portal chat agent, the **Tenant Health Briefer**, that answers
 questions like "what should I fix first" and "which pages are failing health
 checks" by reading the portal's own drift, health, and KPI data. Its replies link
-straight to the relevant page. It's a router, not an oracle — but for a console
+straight to the relevant page. It's a router, not an oracle, but for a console
 with 800 routes, a router is worth a lot.
 
 ## The APIs it talks to
@@ -375,23 +375,23 @@ with 800 routes, a router is worth a lot.
 Portal 360° is, fundamentally, a careful aggregator of a lot of APIs. The main
 ones:
 
-- **Microsoft Graph** for identity, groups, devices, audit logs, reports, and most
+- Microsoft Graph for identity, groups, devices, audit logs, reports, and most
   of the M365 surface.
-- **Azure Resource Manager** (`management.azure.com`) for subscriptions,
+- Azure Resource Manager (`management.azure.com`) for subscriptions,
   resources, cost, policy, and monitoring.
-- **Exchange Online** (EWS, as the user) for mailbox and folder operations.
-- **The M365 admin center's internal APIs** (`admin.microsoft.com`) for the bits
+- Exchange Online (EWS, as the user) for mailbox and folder operations.
+- The M365 admin center's internal APIs (`admin.microsoft.com`) for the bits
   Graph doesn't expose.
-- **Power Platform APIs** — the BAP service, Power Apps service, and Fabric — for
+- Power Platform APIs: the BAP service, Power Apps service, and Fabric for
   environments, governance, and analytics.
-- **Public vulnerability feeds** — the MSRC CVRF v3 feed, the NIST NVD API, and
+- Public vulnerability feeds: the MSRC CVRF v3 feed, the NIST NVD API, and
   the CISA Known Exploited Vulnerabilities catalog. None require auth.
-- **Microsoft Defender for Endpoint TVM** (`securitycenter.microsoft.com`) as an
+- Microsoft Defender for Endpoint TVM (`securitycenter.microsoft.com`) as an
   optional, higher-fidelity data source.
-- **The Fabric SQL analytics endpoint** (`database.windows.net`, delegated) for
+- The Fabric SQL analytics endpoint (`database.windows.net`, delegated) for
   PAX-exported audit and usage tables.
-- Plus integrations like **ServiceNow**, **Azure DevOps**, **Application
-  Insights**, and **Microsoft Foundry**.
+- Plus integrations like ServiceNow, Azure DevOps, Application Insights, and
+  Microsoft Foundry.
 
 Those three public feeds power a page called **Security Pulse**: CVEs disclosed
 in the last 24 hours, the top critical ones, and vendor advisories, with the CISA
@@ -399,14 +399,14 @@ KEV catalog marking what's actually being exploited. No licensing, no tenant
 data, and it answers "does anything today need my attention" in one screen.
 
 A concrete example shows how much thought the aggregation takes. The **Windows CVE
-Report** reproduces Intune's Autopatch CVE report — which Microsoft doesn't expose
+Report** reproduces Intune's Autopatch CVE report, which Microsoft doesn't expose
 through any API. So Portal 360° ships two interchangeable backends. The default
 pulls ~90 days of Windows CVEs from the public MSRC feed and joins them against
 Intune `managedDevices` to estimate exposure. It works with zero extra licensing,
 and the UI is honest that the "devices missing update" count is a deliberate
-undercount. For tenants with **Defender for Endpoint Plan 2**, an opt-in backend
+undercount. For tenants with Defender for Endpoint Plan 2, an opt-in backend
 swaps in Defender's vulnerability assessment for authoritative per-CVE machine
-counts. Same page, different data source behind an env flag — and the report tells
+counts. Same page, different data source behind an env flag, and the report tells
 you which one you're looking at.
 
 <Screenshot
@@ -430,18 +430,18 @@ morning ends.
 
 Auth checks are the floor, not the ceiling. A few other layers matter:
 
-- **RBAC on top of Entra.** Beyond "are you signed in," routes can check role and
+- RBAC on top of Entra. Beyond "are you signed in," routes can check role and
   permission, so the app can gate sensitive actions even further than the tenant
   would.
-- **CSRF protection** on state-changing requests. Portal 360° validates the
+- CSRF protection on state-changing requests. Portal 360° validates the
   request origin and compares a CSRF token using a constant-time comparison, so
   a malicious site can't ride a logged-in admin's session to POST something nasty.
-- **Distributed rate limiting.** A Redis-backed sliding-window limiter enforces
+- Distributed rate limiting. A Redis-backed sliding-window limiter enforces
   per-user, per-route limits with separate, stricter budgets for writes than
   reads, and tighter limits for unauthenticated callers. It falls back to
   in-memory only for local dev; production runs on Redis (authenticated with
   Entra ID) so limits hold across replicas.
-- **Server-side token storage.** Tokens live in a server-side store, never in the
+- Server-side token storage. Tokens live in a server-side store, never in the
   browser, and the Redis connection itself uses Entra ID auth rather than a
   connection-string secret where possible.
 
@@ -453,17 +453,17 @@ tool with this much reach absolutely has to get right.
 Two of Portal 360°'s integration surfaces mirror Microsoft schemas that drift over
 time: the Power Platform **tenant-settings** registry and the supported
 **inventory API version**. Rather than let those rot, a weekly GitHub Actions
-workflow diffs them against their upstream Microsoft sources — the Terraform
-Power Platform provider docs and the `inventory-api.md` in the Microsoft Docs
-repo — and opens a pull request whenever it spots a change. New tenant-settings
-attributes even get stub entries with Microsoft Learn links attached. I review the
-PR instead of manually chasing a moving target.
+workflow diffs them against their upstream Microsoft sources: the Terraform Power
+Platform provider docs and the `inventory-api.md` in the Microsoft Docs repo, and
+opens a pull request whenever it spots a change. New tenant-settings attributes
+even get stub entries with Microsoft Learn links attached. I review the PR
+instead of manually chasing a moving target.
 
 There's also a full interactive API reference baked in. Any authenticated user can
 hit an OpenAPI schema, Swagger UI, and ReDoc. Swagger's "Try it out" reuses the
 current session cookie and forwards the CSRF token automatically, so it works
-against a running instance with no manual token juggling — a nice payoff of the
-BFF design.
+against a running instance with no manual token juggling. That's a nice payoff of
+the BFF design.
 
 ## Where it stands, honestly
 
@@ -478,7 +478,7 @@ You're responsible for making sure your use fits Microsoft's terms and your own
 compliance requirements, and you should keep using the official admin portals for
 critical operations. Portal 360° is for the daily grind, not the audit of record.
 
-If a single, security-first console for Microsoft administration sounds useful —
-or if you've solved the portal-sprawl problem a different way — I'd genuinely like
-to compare notes. I'll share more as it moves toward something I can show off in
+If a single, security-first console for Microsoft administration sounds useful, or
+if you've solved the portal-sprawl problem a different way, I'd genuinely like to
+compare notes. I'll share more as it moves toward something I can show off in
 public.

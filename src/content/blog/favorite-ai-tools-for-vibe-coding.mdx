@@ -1,26 +1,24 @@
 ---
 title: "The Vibe-Coding/Engineering Stack I Actually Ship With"
 heroImage: ../../assets/blog/favorite-ai-tools-for-vibe-coding.webp
-heroAlt: "Cinematic enterprise hero image representing Vibe Coding — an AI innovation lab bathed in soft volumetric light."
-description: "The AI tools I use to design, ground, review, and ship vibe-coded projects—from Impeccable and Microsoft Foundry to MCPs and Power Platform Skills."
+heroAlt: "Cinematic enterprise hero image representing Vibe Coding as an AI innovation lab bathed in soft volumetric light."
+description: "The AI tools I use to design, ground, review, and ship vibe-coded projects, from Impeccable and Microsoft Foundry to MCPs and Power Platform Skills."
 pubDate: 2026-07-17
 updatedDate: 2026-08-10
-tags: ["Vibe Coding", "AI", "Tools", "Design", "GitHub Copilot", "Microsoft Foundry"]
+tags: ["Vibe Coding", "AI", "GitHub Copilot", "Microsoft Foundry"]
 featured: false
 draft: false
 ---
 
 import Explain from "@/components/Explain.astro";
 
-I've shipped a fair amount of software by vibe coding — describing what I want in
+I've shipped a fair amount of software by vibe coding: describing what I want in
 plain language and steering AI until the thing actually works.
 
-Which still feels odd to type, because I'm not a developer. Aside from some light
-PowerShell, I have no coding background at all. I'd looked at learning to code
-more than once and decided it wasn't for me: the stretch between starting
-something and finally having a finished thing I could use was far longer than my
-patience for it. AI collapsed that stretch. Now I can go from an idea to
-something running the same afternoon, and that changed my answer.
+That still feels odd to type, because I'm not a developer. Aside from some light
+PowerShell, I have no coding background at all. The longer version of that story,
+and the lessons that came with it, is in
+[Coding with AI](/blog/vibe-coding-lessons/).
 
 Along the way I've collected a short list of tools I now refuse to work without.
 Not because they're trendy, but because each one closes a specific gap between
@@ -32,11 +30,11 @@ This is that list. And it starts with the one that surprised me most: **Impeccab
 
 If you've built anything with AI, you know the look. The generic look. Centered
 hero, a couple of rounded cards, a purple-to-blue gradient nobody asked for, body
-text in a washed-out gray you can barely read. It *works*, technically — but it
+text in a washed-out gray you can barely read. It *works*, technically, but it
 screams "an AI made this," and nothing undercuts credibility faster.
 
 [Impeccable](https://impeccable.style) is the tool that fixed that for me. It's a
-design **skill** — a package of hard-won frontend craft that the AI reads and
+design **skill**: a package of hard-won frontend craft that the AI reads and
 follows before it writes a single line of interface. Instead of reaching for its
 default instincts, the AI works from a set of opinionated, professional rules
 about color, typography, layout, spacing, motion, and accessibility.
@@ -44,7 +42,7 @@ about color, typography, layout, spacing, motion, and accessibility.
 <Explain title="What actually is a 'skill' here?">
   A skill is a structured bundle of instructions and references the AI loads on
   demand when a task matches its domain. Impeccable's skill covers frontend
-  design — so when I ask for a page or a component, the AI first reads the
+  design, so when I ask for a page or a component, the AI first reads the
   design guidance and *then* builds, rather than improvising from whatever it
   half-remembers. Think of it as handing your AI a senior designer's playbook
   before it touches the canvas.
@@ -62,22 +60,22 @@ The value is easiest to see in the specifics it enforces:
   instead of clashing, heading sizes that don't shout. The stuff that separates
   a designed page from a defaulted one.
 - **Layout beyond the card grid.** Cards are the lazy answer, and the AI loves
-  them. Impeccable pushes toward layouts that fit the content — grids where grids
+  them. Impeccable pushes toward layouts that fit the content: grids where grids
   belong, flex where flex belongs, and rhythm in the spacing.
 - **Motion that's intentional.** Purposeful micro-interactions with proper easing
-  and a `prefers-reduced-motion` fallback — not bounce-everywhere animation or,
+  and a `prefers-reduced-motion` fallback, not bounce-everywhere animation or,
   worse, none at all.
 - **Accessibility baked in, not bolted on.** Contrast, focus states, semantic
   structure. The things you're supposed to do and usually skip.
 
 The result: interfaces that look like a person with taste built them. For someone
 who is neither a designer nor a developer, that's the difference between a
-project I quietly keep to myself and one I'm comfortable shipping in public. If you build UI with AI and
-you're not using something like this, start here — it's the single biggest
-quality jump I've found.
+project I quietly keep to myself and one I'm comfortable shipping in public. If
+you build UI with AI and you're not using something like this, start here. It's
+the single biggest quality jump I've found.
 
 <Explain title="Do I need to be a designer to use it?">
-  No — that's the whole point. I'm not a designer. The skill carries the design
+  No, and that's the whole point. I'm not a designer. The skill carries the design
   judgment so I don't have to. I describe the outcome, it applies the craft, and
   I steer with plain-language feedback like "make this quieter" or "the hero is
   shouting." It also works the other direction: point it at an existing page and
@@ -104,77 +102,67 @@ Two things make it a great fit for vibe coding a blog:
   `Explain` when I need one, and Astro handles the routing, the RSS feed, and the
   build. The AI and I spend our time on content and design, not plumbing.
 - **Fast by default.** Astro ships zero JavaScript to the browser unless a
-  component actually needs it — its "islands" model hydrates only the interactive
+  component actually needs it. Its "islands" model hydrates only the interactive
   bits and sends the rest as plain HTML. The result is pages that load instantly
   and score well on performance and SEO without me hand-tuning anything.
 
 <Explain title="Why is Astro so popular right now?">
   It hits a sweet spot: the developer experience of a modern framework with the
   speed of a static site. You can pull in components from React, Vue, Svelte, or
-  just write plain Astro, and it still ships lean HTML. For content sites — where
-  performance and SEO matter more than heavy interactivity — that combination is
+  just write plain Astro, and it still ships lean HTML. For content sites, where
+  performance and SEO matter more than heavy interactivity, that combination is
   hard to beat, which is why it's become a go-to for blogs and documentation.
 </Explain>
 
 ### Microsoft Foundry: where I pick the model
 
-Not every task wants the same model. For planning, architecture, and gnarly
-debugging I reach for the strongest reasoning model I have access to — Opus 5,
-Sonnet 5, or GPT-5.6 Sol. For fast, mechanical edits, a quicker model keeps the
-loop tight. Knowing when to switch is half the skill: a heavyweight model on a
-trivial rename is slow, and a lightweight model on a subtle bug will confidently
-lead you off a cliff.
+Not every task wants the same model, and [Microsoft Foundry](https://ai.azure.com)
+is where I do the switching. Frontier models sit next to the small, cheap, fast
+ones under one portal, one governance story, one deployment story, so changing
+models becomes a decision instead of a project. How I actually choose between them
+is [Lesson 4 of the vibe-coding post](/blog/vibe-coding-lessons/).
 
-[Microsoft Foundry](https://ai.azure.com) is where I do that switching. The
-catalog runs to something like 1,900 models, frontier and small alike, under one
-portal with one governance and deployment story. Swapping models becomes a
-decision instead of a project.
-
-The part I didn't expect: the line between Foundry and **Microsoft Copilot
-Studio** is blurring, in the useful direction. From Foundry you can
-[publish an agent directly to Microsoft 365 Copilot and Teams](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/publish-copilot) —
+The part I didn't expect: the line between Foundry and Microsoft Copilot
+Studio is blurring, in the useful direction. From Foundry you can
+[publish an agent directly to Microsoft 365 Copilot and Teams](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/publish-copilot),
 so the pro-dev surface and the place your users actually live are no longer
-separate problems. Build the agent where you have control over the model and the
-grounding, then ship it into the client people already have open. Worth knowing
-before you plan around it: publishing creates an Azure Bot Service resource, so
-you need rights to create one and configure its channels in the target resource
-group. Foundry roles alone don't cover that.
-
-Which means the work shifts to the part that was always the hard part: deciding
-what success should look like, picking the model that fits it, then handing that
-model the skills, instructions, and reference docs it has to abide by. That
-bundle is your agentic harness, and it matters more than which model you picked.
+separate problems. Worth knowing before you plan around it: publishing creates an
+Azure Bot Service resource, so you need rights to create one and configure its
+channels in the target resource group. Foundry roles alone don't cover that, and
+if you've turned off public network access the button disappears entirely. I
+walked that path in
+[Publish Foundry Agents to Teams Behind a Private Endpoint](/blog/foundry-agents-teams-private-endpoint/).
 
 ### Warp: a terminal that vibe codes with you
 
-Vibe coding still lives in a terminal — installing packages, running builds,
-wrangling Git — and the terminal is where a non-developer feels least at home.
+Vibe coding still lives in a terminal: installing packages, running builds, and
+wrangling Git. And the terminal is where a non-developer feels least at home.
 [Warp](https://www.warp.dev) is the tool that made that part comfortable. It's a
 modern, AI-native terminal that behaves less like a 1980s command line and more
 like a place you actually want to work.
 
 What earns it a spot on this list:
 
-- **Agentic AI built in.** Warp isn't just a terminal with a chatbot bolted on —
+- Agentic AI built in: Warp isn't just a terminal with a chatbot bolted on;
   you can describe what you want in plain English and it figures out the commands,
   runs them, reads the output, and iterates. When a build fails, it can read the
   error and propose the fix right there, without me copy-pasting stack traces
   into a separate window.
-- **Natural-language to commands.** Instead of remembering the exact `git` or
+- Natural-language to commands: Instead of remembering the exact `git` or
   `docker` incantation, I describe the goal and Warp drafts the command for me to
   review before running. For someone who lives in PowerShell but not much else,
   that's a huge unlock.
-- **Blocks, not a wall of text.** Warp groups each command and its output into a
-  tidy "block" you can collapse, copy, or share — so scrolling back through a long
+- Blocks, not a wall of text: Warp groups each command and its output into a
+  tidy "block" you can collapse, copy, or share, so scrolling back through a long
   session is actually readable instead of an undifferentiated stream.
-- **Modern editing and workflows.** A real text editor for your command line,
+- Modern editing and workflows: A real text editor for your command line,
   reusable saved commands, and shareable workflows mean less fumbling and fewer
   typos on the long, fiddly commands.
 
 <Explain title="Why does the terminal matter for vibe coding?">
   Because it's where the AI's plans meet reality. Plans and code are cheap; the
   terminal is where things actually run, fail, and get fixed. A terminal that can
-  read its own errors and suggest the next step keeps that loop tight — and it
+  read its own errors and suggest the next step keeps that loop tight, and it
   lowers the single biggest barrier for technical-adjacent folks, who often stall
   the moment a red error message scrolls past.
 </Explain>
@@ -184,7 +172,7 @@ What earns it a spot on this list:
 For a long time, every change I wanted started the same way: open VS Code, wait
 for it to load, find the project, then describe what I wanted. The
 [GitHub Copilot cloud agent](https://docs.github.com/en/copilot/concepts/agents/cloud-agent/about-cloud-agent)
-quietly deleted that ritual — and with it, a surprising amount of my dependence
+quietly deleted that ritual, and with it, a surprising amount of my dependence
 on the editor.
 
 The cloud agent lets you delegate from GitHub.com instead of sitting in front of
@@ -195,20 +183,20 @@ hands-on, line-by-line control.
 
 What earns it a spot on this list:
 
-- **Coding from GitHub.com, no editor required.** A fix I thought of away from my
+- Coding from GitHub.com, no editor required: A fix I thought of away from my
   editor becomes a request I fire off in seconds, and the agent handles it while
   I'm doing something else.
-- **The pull request is the interface.** The agent does the work on a branch and
-  opens a PR, so my job shifts to reviewing a clean diff and approving it —
+- The pull request is the interface: The agent does the work on a branch and
+  opens a PR, so my job shifts to reviewing a clean diff and approving it:
   exactly the reviewer-in-the-loop habit I already preach, now built into the
   workflow instead of bolted on.
-- **VS Code becomes a choice, not a requirement.** I still reach for the editor
+- VS Code becomes a choice, not a requirement: I still reach for the editor
   when a task genuinely needs me in the weeds. But a huge share of my day-to-day
   changes never touch it anymore, which means I can make progress on a project
   from a device that could never run a full dev environment.
 
 <Explain title="How is this different from Copilot inside VS Code?">
-  Inside VS Code, *you're* driving — the AI assists while you sit in the editor.
+  Inside VS Code, *you're* driving: the AI assists while you sit in the editor.
   Copilot cloud agent flips that: you delegate a task, it works asynchronously on
   a branch, and you review the result as a pull request. One is a copilot at your
   side; the other is more like handing work to a teammate and checking their PR
@@ -223,15 +211,15 @@ snapshot goes stale *fast*. The
 [Microsoft Learn MCP server](https://learn.microsoft.com/en-us/training/support/mcp)
 lets the AI pull the current official documentation instead of half-remembering
 how a service worked a year ago. The answers stop being "probably right" and
-start being *actually* right — with sources. If you work in the Microsoft world
+start being *actually* right, with sources. If you work in the Microsoft world
 and wire up only one MCP, make it this one.
 
 ### The Azure MCP
 
 The [Azure MCP server](https://github.com/Azure/azure-mcp) grounds the AI in real
 Azure context instead of generic examples, and it ships an **Azure best-practices
-tool** the AI can call before it writes or deploys. That means secure defaults —
-managed identities, Key Vault, least-privilege roles — instead of the
+tool** the AI can call before it writes or deploys. That means secure defaults:
+managed identities, Key Vault, and least-privilege roles instead of the
 hard-coded-secret shortcuts a model reaches for on its own. I make a habit of
 telling it to *check Azure best practices first* and I lead my instructions with
 security so it stays the priority.
@@ -240,7 +228,7 @@ security so it stays the priority.
 
 The lesson that scared me straight: builder AIs will hand you code that *works* in
 the demo and quietly hides a security hole. On one project a dedicated **reviewer**
-— an AI whose only job was responsible-AI and security — caught eight components
+(an AI whose only job was responsible-AI and security) caught eight components
 rendering untrusted HTML straight into the page with no sanitization. A live
 cross-site-scripting hole the demo would never surface. Now a reviewer pass is
 non-negotiable on anything I ship publicly.
@@ -250,8 +238,8 @@ non-negotiable on anything I ship publicly.
 If you build on Microsoft Power Platform, the
 [Power Platform Skills](https://github.com/microsoft/power-platform-skills)
 repo is the plugin marketplace for GitHub Copilot (and Claude Code). It bundles
-every available skill — Power Pages, Model-driven Apps, Canvas Apps, Code Apps,
-Copilot Studio, ALM, and more — so the AI can scaffold, deploy, and manage Power
+every available skill (Power Pages, Model-driven Apps, Canvas Apps, Code Apps,
+Copilot Studio, ALM, and more) so the AI can scaffold, deploy, and manage Power
 Platform solutions through natural-language prompts instead of you memorizing
 each service's quirks.
 
@@ -287,11 +275,11 @@ on reasoning. MCPs close it on facts and secure defaults. A dedicated reviewer
 closes it on safety.
 
 Vibe coding isn't about walking away and letting the AI cook. It's about
-surrounding the AI with enough good judgment — some of it yours, most of it
-borrowed from tools like these — that what comes out the other end is something
+surrounding the AI with enough good judgment, some of it yours, most of it
+borrowed from tools like these, that what comes out the other end is something
 you're proud to publish.
 
 If you're just getting started, begin with [Impeccable](https://impeccable.style).
 It's the fastest way to stop your projects from looking like every other AI demo
 on the internet. Then [reach out](/contact/) and tell me which tools earned a
-permanent spot in your own toolkit — I'm always looking to add to mine.
+permanent spot in your own toolkit. I'm always looking to add to mine.
