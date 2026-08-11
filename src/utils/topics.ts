@@ -31,7 +31,7 @@ export const TOPICS: TopicDef[] = [
     intro:
       "Notes on designing and shipping AI agents on the Microsoft stack — choosing the right model, grounding on trustworthy data, wiring up MCP servers, and keeping everything secure by default.",
     icon: "sparkles",
-    tags: ["AI", "MCP"],
+    tags: ["AI", "MCP", "Agents", "GitHub Copilot", "M365 Copilot"],
     focus: [
       "Agent design patterns and model selection",
       "Grounding, tools, and MCP servers",
@@ -61,7 +61,7 @@ export const TOPICS: TopicDef[] = [
     intro:
       "Hands-on guidance for Copilot Studio — designing, building, and shipping purpose-built agents that solve real business problems.",
     icon: "chip",
-    tags: ["Copilot Studio"],
+    tags: ["Copilot Studio", "ServiceNow"],
     focus: [
       "Building agents in Copilot Studio",
       "Topics, actions, and knowledge sources",
@@ -91,7 +91,7 @@ export const TOPICS: TopicDef[] = [
     intro:
       "Field-tested architecture, identity, and governance guidance for the Azure platform — the patterns and trade-offs behind solutions that hold up in production.",
     icon: "shield",
-    tags: ["Azure"],
+    tags: ["Azure", "Static Web Apps"],
     focus: [
       "Cloud architecture and design patterns",
       "Identity, security, and governance",
@@ -106,11 +106,26 @@ export const TOPICS: TopicDef[] = [
     intro:
       "Building low-code solutions on the Power Platform — apps, automation, and business process design that stays maintainable as it grows.",
     icon: "flow",
-    tags: ["Power Platform"],
+    tags: ["Power Platform", "Power Apps"],
     focus: [
       "Power Apps and Power Automate patterns",
       "Business process automation",
       "Governance and application lifecycle",
+    ],
+  },
+  {
+    slug: "security-and-identity",
+    title: "Security & Identity",
+    description:
+      "Authentication, permissions, and the security decisions behind everything else.",
+    intro:
+      "Identity is where most solutions quietly break. Notes on SSO and authentication flows, Microsoft Graph permissions, least-privilege design, and the security trade-offs that show up once something real hits production.",
+    icon: "key",
+    tags: ["Security", "Identity", "Microsoft Graph"],
+    focus: [
+      "SSO, authentication, and token flows",
+      "Microsoft Graph scopes and least-privilege permissions",
+      "Securing agents, apps, and endpoints by default",
     ],
   },
   {
