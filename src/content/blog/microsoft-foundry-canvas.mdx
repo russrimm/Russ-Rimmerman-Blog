@@ -4,7 +4,7 @@ heroImage: ../../assets/blog/microsoft-foundry-canvas.webp
 heroAlt: "Editorial illustration representing Microsoft Foundry."
 description: "Foundry Canvas puts model selection, toolboxes, guardrails, testing, and deployment in a Copilot side panel while leaving you the actual agent code."
 pubDate: 2026-08-07
-updatedDate: 2026-08-10
+updatedDate: 2026-08-11
 tags: ["Microsoft Foundry", "Agents", "GitHub Copilot", "Azure", "AI"]
 draft: false
 featured: false
@@ -28,7 +28,7 @@ actually in your Foundry project, and turns every choice you make into a prompt
 that Copilot runs against your workspace. You get the guided experience of the
 portal and the code stays yours.
 
-*Verified against Microsoft Learn on 2026-08-10. The canvas is in public preview,
+*Verified against Microsoft Learn on 2026-08-11. The canvas is in public preview,
 so check the docs before you build a process around it.*
 
 ## What it actually is
@@ -66,12 +66,21 @@ up.
 
 ## Getting it installed
 
-Install the extension from inside the GitHub Copilot App: **Settings** >
-**Plugins**, search for `microsoft-foundry`, select **Install**.
+The canvas ships as a plugin for the GitHub Copilot App, so that's the first
+prerequisite and the one easiest to skip past: it isn't a VS Code extension, and
+you won't find it in the VS Code marketplace. If VS Code is where you want to
+work, that's the separate
+[Microsoft Foundry Toolkit](https://aka.ms/foundrytk), which is a different
+product with a different workflow.
+
+With the app installed, the canvas itself comes from **Settings** >
+**Plugins**: search for `microsoft-foundry`, select **Install**.
 
 Check the rest of the prerequisites before you start. The `azd` ones in
 particular fail late and look like a canvas bug when they aren't:
 
+- **The [GitHub Copilot App](https://github.com/features/copilot)**, with the
+  Microsoft Foundry Canvas plugin installed.
 - **An Azure subscription**, and the right role. For an existing Foundry project
   you need `Foundry Project Manager` at project scope. To create a new project
   you need `Owner` at resource group scope. The
@@ -96,8 +105,10 @@ canvas remembers that selection between sessions, which matters more than it
 sounds like it does when you're switching between a dev project and a shared one.
 
 Then you scaffold. **Inspire me** generates an agent idea and scaffolds a working
-hosted agent from it. **Hello world** starts you from the basic sample. Either
-way, Copilot writes real files into your workspace, not a preview.
+hosted agent from it. **Hello world** starts you from the basic sample. A third
+button, **Help me decide**, sits between them; the docs show it in the Create
+stage but don't say what it produces, so I'm not going to guess for you. Either
+way you go, Copilot writes real files into your workspace, not a preview.
 
 **Build.** Here's where knowing your project pays off. You wire a deployed
 model for the agent's reasoning, connect
