@@ -239,6 +239,99 @@ Unmanaged environments with GitHub Copilot harness agents are where I'd look
 first. That's the combination where credits get spent during authoring, DLP
 enforcement is thinnest, and nobody has agreed on which models are acceptable.
 
+## What to do with the list
+
+Finding the agents was always step one. The customer advisory team's
+[cost control and governance post](https://microsoft.github.io/mcscatblog/posts/copilot-harness-cost-governance/)
+covers the rest, and the part I'd act on first is the split it draws between two
+kinds of environment:
+
+- **Maker development.** People building, previewing, and evaluating. The
+  consumption is real, but it isn't funded production usage. It needs a
+  deliberate boundary and a default limit.
+- **Funded production usage.** An approved process with a named cost owner. Same
+  set of controls, different reasoning: the numbers should reflect expected usage
+  and how much it hurts when the agent stops.
+
+Inventory gives you the technical relationship between agent, owner, and
+environment. It won't tell you which bucket an environment belongs in. That comes
+from your environment naming, environment groups, or governance metadata, and if
+you don't have any of those, this query is the argument for starting them.
+
+### Environment controls
+
+In the admin center, **Licensing > Copilot Studio > Manage Copilot Credits** is
+where you point capacity at an environment and answer four questions: how many
+pre-paid credits it reserves, whether it can draw unallocated capacity from the
+tenant pool, whether it can keep running on pay-as-you-go through an Azure
+subscription, and what happens as that capacity is approached or exhausted
+(alert, deny, or nothing).
+
+New environments can show up with tenant-pool draw already on, which is exactly
+the default a sandbox shouldn't keep. At scale, read the current state with
+[Get Allocations By Environment](https://learn.microsoft.com/en-us/rest/api/power-platform/licensing/allocations-by-environment/get-allocations-by-environment)
+and write it back with
+[Update Allocations By Environment](https://learn.microsoft.com/en-us/rest/api/power-platform/licensing/allocations-by-environment/update-allocations-by-environment).
+That PATCH covers the whole configuration, allocated credits included, so read
+first and send the complete intended state rather than the one field you meant to
+change.
+
+One tenant setting is worth checking before you delegate any of this. The
+[add-on capacity assignment setting](https://learn.microsoft.com/en-us/power-platform/admin/tenant-settings)
+decides who can allocate credits, and switching it to environment administrators
+does not scope them to the environments they administer. It gives them allocation
+control across every environment in the tenant. Leave it with tenant admins
+unless that's what you meant to do.
+
+### Agent-level limits
+
+**Licensing > Copilot Studio > Manage Agents** puts a monthly credit limit on a
+single agent, with an optional notification as it gets close and a stop when it
+arrives. The API equivalent is
+[Update Resource Threshold](https://learn.microsoft.com/en-us/rest/api/power-platform/licensing/resource-threshold/upsert-resource-threshold):
+
+```http
+PUT https://api.powerplatform.com/licensing/environments/<environment-id>/entitlements/MCSMessages/resources/<agent-resource-id>/threshold?api-version=2024-10-01
+Content-Type: application/json
+
+{
+  "stopResource": false,
+  "limit": 1000,
+  "stopIfOverCapacity": true,
+  "notifyIfOverCapacity": true,
+  "notificationThreshold": 80
+}
+```
+
+Read `stopResource` carefully before you send that. It is not "stop at the
+limit," which is `stopIfOverCapacity`. Setting it to `true` stops the agent the
+moment the request lands, the same as the stop action in **Manage Agents**.
+Getting those two confused across a scripted rollout would be a bad afternoon.
+
+Three things about limits changed how I'd plan them:
+
+- **They apply per agent, not per maker.** One person with ten experiments gets
+  ten times your default. Set the number knowing it multiplies, and decide how
+  someone asks for more before they need to.
+- **The built-in notifications go to tenant and environment administrators, not
+  to the agent owner.** Decide who reads those alerts and who picks up the phone.
+  Otherwise the first person to notice is whoever was using the agent when it
+  stopped.
+- **They don't cap an environment in aggregate.** Ten agents at 1,000 credits
+  each is a 10,000 credit environment. Microsoft has announced environment-level
+  limits in Message Center post
+  [MC1451872](https://portal.office.com/adminportal/home/?l=en-US&ref=MessageCenter/:/messages/MC1451872)
+  to close that gap, and they weren't available when I wrote this. Until they
+  land, the blunt fallback is watching consumption with
+  [Get Many Environment Entitlements](https://learn.microsoft.com/en-us/rest/api/power-platform/licensing/entitlement/get-many-environment-entitlements)
+  and unlinking the pay-as-you-go billing policy if you need it to stop.
+
+None of that is a one-time exercise. Environments get created, configurations
+drift, and a maker-development agent that graduates into a funded production
+process inherits a limit that was never meant for it. The environment sweep from
+the previous section plus a scheduled read of the current allocations is what
+turns this from a spreadsheet into a control.
+
 The honest summary is better than it was. `isCLIAgent` started out as a field I
 found in a response body and used because the alternative was not reporting at
 all. It's now the property Microsoft's own guidance points at for this exact
@@ -246,10 +339,6 @@ question. It still isn't in the schema reference table, so keep half an eye on
 that page and move to whatever lands there. You no longer have to run this query
 with your fingers crossed.
 
-Finding the agents was always step one. The customer advisory team's
-[cost control and governance post](https://microsoft.github.io/mcscatblog/posts/copilot-harness-cost-governance/)
-covers what comes after: classifying each environment as maker development or
-funded production, deciding whether it should draw from the tenant pool or bill
-pay-as-you-go, and setting agent-level credit limits so an experiment can't
-quietly run up a bill. Worth reading if that query returned a longer list than
-you were expecting.
+Run it. If it comes back longer than you expected, start with the unmanaged
+environments, put a default limit on the agents you find there, and classify the
+rest once you know what you're dealing with.
