@@ -5,6 +5,7 @@ import FeaturedPost from "@/components/FeaturedPost.astro";
 import PostCard from "@/components/PostCard.astro";
 import NewsletterSignup from "@/components/NewsletterSignup.astro";
 import Hero from "@/components/Hero.astro";
+import TagCloud from "@/components/TagCloud.astro";
 import { TOPICS, getTopicPosts } from "@/utils/topics";
 
 const posts = (await getCollection("blog", ({ data }) => !data.draft)).sort(
@@ -24,6 +25,18 @@ const heroTopics = topics.slice(0, 4).map(topic => ({
   label: topic.title,
   href: `/topics/${topic.slug}/`,
 }));
+
+// Every tag in one place, busiest first, so readers can jump straight to a
+// subject without digging through the archive.
+const tagCounts = new Map<string, number>();
+for (const post of posts) {
+  for (const tag of post.data.tags) {
+    tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
+  }
+}
+const tags = [...tagCounts.entries()]
+  .map(([tag, count]) => ({ tag, count }))
+  .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag));
 ---
 
 <BaseLayout>
@@ -52,6 +65,31 @@ const heroTopics = topics.slice(0, 4).map(topic => ({
               <PostCard post={post} />
             ))}
           </div>
+        </section>
+      )
+    }
+
+    <!-- Every tag, in one scannable stack -->
+    {
+      tags.length > 0 && (
+        <section class="border-ink-200 dark:border-ink-800 dark:bg-ink-900 mt-14 rounded-2xl border bg-white p-6 sm:p-8">
+          <div class="mb-5 flex items-end justify-between gap-4">
+            <div>
+              <h2 class="text-ink-900 text-2xl font-bold tracking-tight dark:text-white">
+                Browse by tag
+              </h2>
+              <p class="text-ink-600 dark:text-ink-300 mt-1 text-sm">
+                Every label used across the blog, busiest first.
+              </p>
+            </div>
+            <a
+              href="/tags/"
+              class="text-azure-600 dark:text-azure-400 shrink-0 text-sm font-medium hover:underline"
+            >
+              Tag index &rarr;
+            </a>
+          </div>
+          <TagCloud tags={tags} />
         </section>
       )
     }
