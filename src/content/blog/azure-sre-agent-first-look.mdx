@@ -1,0 +1,127 @@
+---
+title: "I Didn't Recognize an Azure Offering's Name. An Hour Later, It Was Reviewing My Code."
+description: "A name in the Azure portal I'd never seen before turned into Azure SRE Agent code reviews and cross-service telemetry checks across Dataverse, Copilot Studio, and Foundry inside an hour."
+pubDate: 2026-08-14
+tags: ["Azure", "Azure SRE Agent", "Application Insights", "Copilot Studio", "Dataverse", "Microsoft Foundry", "Security", "DevOps"]
+draft: false
+featured: false
+---
+
+I was poking around the Azure portal looking for something unrelated when a
+service name stopped me: Azure SRE Agent. Not Azure Monitor, not Azure
+Advisor, something I hadn't clocked before. I've spent enough years in Azure
+that an unfamiliar name is rare, and rare enough that I stop and look.
+
+Less than an hour later, I had it pointed at one of my repos and it was
+handing back code review notes that went past the usual security scan into
+performance, accessibility, and UX. Then I asked it to look at what my
+Application Insights instances were actually recording, and it started
+surfacing unhealthy telemetry from Dataverse, Copilot Studio, my app servers,
+and a Foundry agent, all in one pass. That's the kind of hour that makes you
+want to write it down.
+
+## What Azure actually is, for anyone who hasn't had to care
+
+If you're not a cloud admin day to day, here's the short version. Azure is
+Microsoft's public cloud platform: a global network of data centers you rent
+compute, storage, databases, networking, and AI services from instead of
+buying and racking your own hardware. You spin up a virtual machine, a web
+app, a SQL database, or a Copilot Studio agent, and Microsoft runs the
+physical infrastructure underneath it. You pay for what you use, you scale up
+or down on demand, and you get built-in redundancy across regions that would
+otherwise cost a fortune to replicate yourself.
+
+For a cloud admin, Azure's real job isn't just hosting things. It's giving
+you the tools to know whether what you hosted is actually healthy: monitoring
+services like Azure Monitor and Application Insights, identity and access
+control through Microsoft Entra ID, and increasingly, agents that do some of
+the watching and diagnosing for you. Azure SRE Agent is one of those agents.
+
+## What Azure SRE Agent is
+
+Azure SRE Agent is Microsoft's operations agent for reducing the manual
+toil around incident triage, health checks, and runbooks. It connects your
+observability tools, incident platforms, and source repositories into one
+workflow, so instead of hopping between a dashboard, PagerDuty, and Slack when
+something breaks, you get a single investigation with the "what changed,
+what's affected, what to do next" already worked out.
+
+It ships with six built-in subagents — Explore, Plan, CodeReview, Bash,
+Verification, and GeneralPurpose — plus extension points for custom skills,
+Python tools, MCP server connections, and event-triggered hooks. It reached
+general availability in March 2026, and Microsoft has since added native
+Application Insights and Log Analytics connectors that handle the RBAC
+wiring for you, so telemetry is queryable the moment you connect a resource
+instead of after a separate permissions project.
+
+Nothing it proposes deploys without a human approving it first. That
+distinction matters more than it sounds like it should: this is an agent that
+recommends and drafts, not one that reboots your production database because
+it decided that was a good idea at 3 a.m.
+
+## The code review went further than I expected
+
+I pointed the CodeReview subagent at one of my project repos expecting the
+usual: dependency CVEs, a couple of hardcoded secrets I'd meant to rotate out,
+maybe an injection risk in a query I'd written too quickly. I got that. What
+I didn't expect was the rest of the list.
+
+It flagged a performance issue in how I was paginating a large result set,
+an accessibility gap where a custom form control had no accessible label, and
+a UX inconsistency between two error messages that told users two different
+things for the same failure. None of that is exotic advice on its own — any
+good reviewer would catch it. What stood out was getting security, performance,
+accessibility, and UX findings back in the same pass, against my own code, in
+minutes instead of a scheduled review cycle.
+
+If you run a solo shop or a small team without a dedicated accessibility or
+performance reviewer, that's the gap this fills. Not a replacement for a real
+code review culture, but a much earlier catch than "we'll get to it before
+launch."
+
+## Then it checked what my telemetry was actually saying
+
+The second half of the hour was the one that changed how I think about this
+tool. I have Application Insights wired up across several different pieces of
+my environment: Dataverse, a Copilot Studio agent, a couple of app servers,
+and a Foundry-hosted agent. Each of those emits its own telemetry, and
+normally checking all of it means opening separate blades, running separate
+KQL queries, and manually correlating anything that looks off.
+
+Once Azure SRE Agent had read access to those Application Insights resources,
+it queried requests, dependencies, and exceptions across all of them and
+called out the unhealthy signals directly: a latency trend on one app server
+that had been quietly climbing, an elevated exception rate coming out of the
+Copilot Studio agent, and a dependency call from the Foundry agent that was
+failing more often than it should. It correlated pieces of that with recent
+changes and proposed what to look at first, rather than handing me four
+dashboards and telling me to figure it out myself.
+
+That's the difference between monitoring and triage. Monitoring tells you
+something is happening. Triage tells you what to do about it, and where to
+start.
+
+## Why this matters if you admin Azure for a living
+
+Cloud admins already know the shape of the problem this addresses: you're
+watching more services than you have hours to check by hand, alerts fire
+faster than root causes get found, and the person who understands why a
+system behaves the way it does is usually one person, not a team. Azure SRE
+Agent's pitch is that every investigation it runs builds institutional
+knowledge that sticks around even when that one person is on vacation or
+moves to another team.
+
+It's not magic, and it's not a reason to stop reviewing what it recommends.
+Microsoft is upfront that, like any AI system, it can produce an incorrect
+root cause or propose a mitigation that doesn't fit your environment. Treat
+its output the way you'd treat a report from a sharp junior engineer: worth
+taking seriously, still worth checking before you act on it.
+
+## Go look at what you already have running
+
+The part of this worth taking away isn't "go adopt Azure SRE Agent." It's
+that Azure ships new capability constantly, and some of it is worth an hour
+of your time the first time you notice the name. If you already have
+Application Insights collecting telemetry from more than one service, spend
+that hour pointing SRE Agent at it and see what it finds before your next
+on-call rotation does.
