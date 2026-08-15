@@ -4,7 +4,7 @@ heroImage: ../../assets/blog/azure-sre-agent-first-look.webp
 heroAlt: "Cinematic enterprise hero image representing Azure — an intelligent business operations center."
 description: "A name in the Azure portal I'd never seen before turned into Azure SRE Agent code reviews and cross-service telemetry checks across Dataverse, Copilot Studio, and Foundry inside an hour."
 pubDate: 2026-08-14
-tags: ["Azure", "Azure SRE Agent", "Application Insights", "Copilot Studio", "Dataverse", "Microsoft Foundry", "Security", "DevOps"]
+tags: ["Azure", "Azure SRE Agent", "Application Insights", "Copilot Studio", "Dataverse", "Microsoft Foundry", "GitHub", "Security", "DevOps"]
 draft: false
 featured: false
 ---
@@ -69,6 +69,27 @@ rules, private DNS, and firewalls apply the same way they would to a human
 making the change. See
 [Rethinking cloud operations with Azure SRE Agent](https://techcommunity.microsoft.com/blog/appsonazureblog/a-paradigm-shift-in-cloud-operations-with-azure-sre-agent/4533244)
 for the full picture.
+
+Those extension points aren't purely theoretical. Microsoft added a plugin
+marketplace so you're not building every skill from zero: it lets you browse
+and install community and internal skills and MCP integrations from
+GitHub-hosted repositories, including private repos and GitHub Enterprise.
+Two public marketplaces are registered out of the box — Azure's own
+[Azure SRE Agent Plugins](https://github.com/Azure/sre-agent-plugins) and
+Anthropic's [Claude Plugins](https://github.com/anthropics/claude-plugins-official)
+— and every install is pinned to a specific git commit, so an upstream change
+to a skill you installed months ago doesn't quietly alter your agent's
+behavior until you choose to update it.
+
+One thing worth flagging if you're the one managing this for a team: private
+marketplaces store a single credential — an OAuth token, a personal access
+token, or a GitHub App — at the marketplace level, and every install from
+that marketplace uses it. SRE Agent checks that the stored credential can
+read the repo, not that the person installing the plugin personally has
+access to it. Anyone with the Author or Administrator role on the agent can
+install from any registered marketplace, regardless of their own GitHub
+permissions. If you need to lock that down, the control point is the agent's
+RBAC roles, not GitHub repo access.
 
 ## The code review went further than I expected
 
