@@ -9,6 +9,15 @@ draft: false
 featured: false
 ---
 
+import Screenshot from "@/components/Screenshot.astro";
+import operationsHub from "@/assets/blog/azure-sre-agent-first-look/operations-hub-overview.png";
+import automation from "@/assets/blog/azure-sre-agent-first-look/automation-create-trigger.png";
+import toolPermissions from "@/assets/blog/azure-sre-agent-first-look/connector-tool-permissions.png";
+import codeReviewThread from "@/assets/blog/azure-sre-agent-first-look/code-review-thread.png";
+import parallelExploration from "@/assets/blog/azure-sre-agent-first-look/parallel-exploration-subagents.png";
+import codeReviewFindings from "@/assets/blog/azure-sre-agent-first-look/code-review-findings.png";
+import agentConsumption from "@/assets/blog/azure-sre-agent-first-look/agent-consumption-aau.png";
+
 Azure SRE Agent is Microsoft's operations agent for the work that eats an
 on-call rotation: triaging incidents, checking whether services are actually
 healthy, and running the runbook nobody has updated since the last reorg. It
@@ -31,12 +40,29 @@ repositories into one workflow. Instead of hopping between a dashboard,
 PagerDuty, and Slack when something breaks, you get a single investigation with
 the "what changed, what's affected, what to do next" already worked out.
 
+<Screenshot
+  src={operationsHub}
+  alt="Azure SRE Agent Operations Hub overview showing a setup checklist with Code, Logs, and Azure resources connected, a daily volume by source chart, an empty pending actions panel, and a system health panel reporting a healthy agent process and two healthy connectors"
+  caption="The Operations Hub is the front door: what's connected, what's pending your approval, and whether the agent itself is healthy."
+/>
+
 It ships with six built-in subagents — Explore, Plan, CodeReview, Bash,
 Verification, and GeneralPurpose — plus extension points for custom skills,
 Python tools, MCP server connections, and event-triggered hooks. Microsoft has
 since added native Application Insights and Log Analytics connectors that
 handle the RBAC wiring for you, so telemetry is queryable the moment you
 connect a resource instead of after a separate permissions project.
+
+Those hooks aren't something you script yourself. The Automation blade takes
+two kinds of trigger: a scheduled task that runs a check on a cadence you set,
+or an HTTP trigger you point an alert rule or webhook at, so an Azure Monitor
+alert can start the investigation before anyone opens a laptop.
+
+<Screenshot
+  src={automation}
+  alt="Azure SRE Agent Automation blade with the Create menu expanded, showing the two options: Scheduled task and HTTP trigger"
+  caption="Automation gives you two entry points — a scheduled check or an HTTP trigger fired by an alert or webhook."
+/>
 
 Nothing it proposes deploys without a human approving it first. That
 distinction matters more than it sounds like it should: this is an agent that
@@ -51,6 +77,20 @@ rules, private DNS, and firewalls apply the same way they would to a human
 making the change. See
 [Rethinking cloud operations with Azure SRE Agent](https://techcommunity.microsoft.com/blog/appsonazureblog/a-paradigm-shift-in-cloud-operations-with-azure-sre-agent/4533244)
 for the full picture.
+
+You set that approval model before anything runs. When you wire up a
+connector, every tool it exposes gets its own permission: Allow lets the agent
+call it unattended, Ask forces a prompt each time. The Microsoft Teams
+connector I set up exposes 71 tools, and they're individually switchable
+rather than a single all-or-nothing grant. If you're rolling this out to a
+team, that page is where you decide what the agent can do on its own and what
+it has to ask about.
+
+<Screenshot
+  src={toolPermissions}
+  alt="Azure SRE Agent connector setup wizard on the Configure tools step, showing 71 of 71 tools selected with a per-tool parameter policy toggle and an Allow or Ask permission control for each one"
+  caption="Per-tool permissions during connector setup — Allow for unattended calls, Ask to force a prompt."
+/>
 
 Those extension points aren't purely theoretical. Microsoft added a plugin
 marketplace so you're not building every skill from zero: it lets you browse
@@ -80,6 +120,25 @@ usual: dependency CVEs, a couple of hardcoded secrets I'd meant to rotate out,
 maybe an injection risk in a query I'd written too quickly. I got that. What
 I didn't expect was the rest of the list.
 
+<Screenshot
+  src={codeReviewThread}
+  alt="Azure SRE Agent chat thread titled portalofportals repository code recommendations, showing a parallel exploration step with two completed subagents, Review and Explore, followed by recommendations ordered by severity"
+  caption="One question, one thread. The agent picks its own subagents and shows each step as it runs."
+/>
+
+Before it answered, it fanned out. A CodeReview subagent took the security and
+convention pass while an Explore subagent mapped the repo structure, both
+running at once, both reporting back before the agent synthesized anything.
+That structure is visible in the thread rather than hidden behind a spinner,
+which matters when you want to know whether a finding came from reading the
+code or from guessing at it.
+
+<Screenshot
+  src={parallelExploration}
+  alt="Expanded parallel exploration card in Azure SRE Agent showing final results from two subagents side by side: a CodeReview agent summarizing a full repository review of a Next.js and React application, and an Explore agent reporting 813 route files across the API tree"
+  caption="Both subagents' final results, side by side — including the Explore agent counting 813 route files."
+/>
+
 It flagged a performance issue in how I was paginating a large result set,
 an accessibility gap where a custom form control had no accessible label, and
 a UX inconsistency between two error messages that told users two different
@@ -87,6 +146,20 @@ things for the same failure. None of that is exotic advice on its own — any
 good reviewer would catch it. What stood out was getting security, performance,
 accessibility, and UX findings back in the same pass, against my own code, in
 minutes instead of a scheduled review cycle.
+
+The findings came back ordered by severity, each one pointing at the specific
+file and line rather than describing the problem in the abstract. A pre-release
+`next-auth` sitting under 800-plus API routes, unguarded `console.log` calls
+leaking partial API keys and decoded token claims into production logs,
+hardcoded hex colors in six chart components that bypassed the theme tokens
+already defined in `globals.css`. Every one of those was checkable in under a
+minute because it told me where to look.
+
+<Screenshot
+  src={codeReviewFindings}
+  alt="Azure SRE Agent code recommendations listing a pre-release next-auth dependency, unguarded console.log calls in API routes leaking partial API keys and decoded token claims, and a table of six chart components with hardcoded hex colors that bypass the theme system"
+  caption="Findings with file paths and a suggested fix attached — not a generic 'consider reviewing your logging' note."
+/>
 
 If you run a solo shop or a small team without a dedicated accessibility or
 performance reviewer, that's the gap this fills. Not a replacement for a real
@@ -114,6 +187,26 @@ dashboards and telling me to figure it out myself.
 That's the difference between monitoring and triage. Monitoring tells you
 something is happening. Triage tells you what to do about it, and where to
 start.
+
+## What the hour actually cost
+
+Worth knowing before you turn this on: billing runs on Azure agent units, or
+AAUs, and it splits into two parts. There's a fixed always-on charge for
+having the agent running at all, and a variable charge for active work, which
+covers chats, incidents, scheduled tasks, and triggers. You set the
+active-flow allocation yourself and can raise or lower it whenever you want.
+
+My hour of poking at it burned 138 of the 10,000 active-flow AAUs I'd
+allocated for the month. Chats accounted for 127 of those and triggers for the
+other 11. That's roughly one percent of the allocation for a full repo review
+plus a telemetry sweep across five services, which is a useful anchor if
+you're trying to guess what a real on-call rotation would run.
+
+<Screenshot
+  src={agentConsumption}
+  alt="Azure SRE Agent Consumption page showing a monthly limit of always-on flow plus 10,000 active flow AAUs, with 138 of 10,000 consumed for August 2026 broken down as 127 from chats and 11 from triggers, above a daily consumption bar chart"
+  caption="The Agent Consumption page breaks usage down by source, so you can see what's actually spending your allocation."
+/>
 
 ## Why this matters if you admin Azure for a living
 
