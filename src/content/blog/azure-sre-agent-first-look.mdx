@@ -59,7 +59,16 @@ instead of after a separate permissions project.
 Nothing it proposes deploys without a human approving it first. That
 distinction matters more than it sounds like it should: this is an agent that
 recommends and drafts, not one that reboots your production database because
-it decided that was a good idea at 3 a.m.
+it decided that was a good idea at 3 a.m. Microsoft's own writeup on the
+rollout describes the mechanics behind that guardrail: the agent explains what
+it intends to do and why before acting, every interaction produces a full
+audit trail, routine operations run autonomously, and anything flagged as
+high-impact pauses for in-workflow sign-off. If your environment uses VNet
+integration, that traffic still routes through your own network, so your NSG
+rules, private DNS, and firewalls apply the same way they would to a human
+making the change. See
+[Rethinking cloud operations with Azure SRE Agent](https://techcommunity.microsoft.com/blog/appsonazureblog/a-paradigm-shift-in-cloud-operations-with-azure-sre-agent/4533244)
+for the full picture.
 
 ## The code review went further than I expected
 
@@ -112,6 +121,16 @@ system behaves the way it does is usually one person, not a team. Azure SRE
 Agent's pitch is that every investigation it runs builds institutional
 knowledge that sticks around even when that one person is on vacation or
 moves to another team.
+
+That pitch isn't just theoretical. In
+[Rethinking cloud operations with Azure SRE Agent](https://techcommunity.microsoft.com/blog/appsonazureblog/a-paradigm-shift-in-cloud-operations-with-azure-sre-agent/4533244),
+Microsoft walked through what happened when three customers actually put it
+into production. Zafin took incident triage from hours down to minutes.
+Provation Medical had the agent produce analysis for every production-related
+ticket in its first month. InEight reported an 80 percent drop in incident
+investigation time, an 80 percent drop in build-failure triage time, and a 67
+percent drop in bug investigation time. None of those are demo numbers; they're
+what happened after the agent was wired into real on-call rotations.
 
 It's not magic, and it's not a reason to stop reviewing what it recommends.
 Microsoft is upfront that, like any AI system, it can produce an incorrect
