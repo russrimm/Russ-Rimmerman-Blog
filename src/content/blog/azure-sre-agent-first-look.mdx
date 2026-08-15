@@ -1,60 +1,42 @@
 ---
-title: "I Didn't Recognize an Azure Offering's Name. An Hour Later, It Was Reviewing My Code."
+title: "An Hour with Azure SRE Agent"
 heroImage: ../../assets/blog/azure-sre-agent-first-look.webp
 heroAlt: "Editorial illustration representing Azure."
-description: "A name in the Azure portal I'd never seen before turned into Azure SRE Agent code reviews and cross-service telemetry checks across Dataverse, Copilot Studio, and Foundry inside an hour."
+description: "What Azure SRE Agent is, what it can do, and what happened in the hour I spent pointing it at my own repo and my Application Insights telemetry across Dataverse, Copilot Studio, and Foundry."
 pubDate: 2026-08-14
 tags: ["Azure", "Azure SRE Agent", "Application Insights", "Copilot Studio", "Dataverse", "Microsoft Foundry", "GitHub", "Security", "DevOps"]
 draft: false
 featured: false
 ---
 
-I was poking around the Azure portal looking for something unrelated when a
-service name stopped me: Azure SRE Agent. Not Azure Monitor, not Azure
-Advisor, something I hadn't clocked before. I've spent enough years in Azure
-that an unfamiliar name is rare, and rare enough that I stop and look.
+Azure SRE Agent is Microsoft's operations agent for the work that eats an
+on-call rotation: triaging incidents, checking whether services are actually
+healthy, and running the runbook nobody has updated since the last reorg. It
+went generally available in March 2026, and if you haven't tried it yet, the
+short version is that it does the first twenty minutes of an investigation for
+you and shows its work.
 
-Less than an hour later, I had it pointed at one of my repos and it was
-handing back code review notes that went past the usual security scan into
-performance, accessibility, and UX. Then I asked it to look at what my
-Application Insights instances were actually recording, and it started
-surfacing unhealthy telemetry from Dataverse, Copilot Studio, my app servers,
-and a Foundry agent, all in one pass. That's the kind of hour that makes you
-want to write it down.
+I gave it an hour. In that hour it reviewed one of my repos and handed back
+findings that went well past the usual security scan into performance,
+accessibility, and UX. Then I asked it what my Application Insights instances
+were actually recording, and it surfaced unhealthy telemetry from Dataverse,
+Copilot Studio, a couple of app servers, and a Foundry agent in a single pass.
 
-## What Azure actually is, for anyone who hasn't had to care
-
-If you're not a cloud admin day to day, here's the short version. Azure is
-Microsoft's public cloud platform: a global network of data centers you rent
-compute, storage, databases, networking, and AI services from instead of
-buying and racking your own hardware. You spin up a virtual machine, a web
-app, a SQL database, or a Copilot Studio agent, and Microsoft runs the
-physical infrastructure underneath it. You pay for what you use, you scale up
-or down on demand, and you get built-in redundancy across regions that would
-otherwise cost a fortune to replicate yourself.
-
-For a cloud admin, Azure's real job isn't just hosting things. It's giving
-you the tools to know whether what you hosted is actually healthy: monitoring
-services like Azure Monitor and Application Insights, identity and access
-control through Microsoft Entra ID, and increasingly, agents that do some of
-the watching and diagnosing for you. Azure SRE Agent is one of those agents.
+Here's what it is, what it can do, and where I'd be careful with it.
 
 ## What Azure SRE Agent is
 
-Azure SRE Agent is Microsoft's operations agent for reducing the manual
-toil around incident triage, health checks, and runbooks. It connects your
-observability tools, incident platforms, and source repositories into one
-workflow, so instead of hopping between a dashboard, PagerDuty, and Slack when
-something breaks, you get a single investigation with the "what changed,
-what's affected, what to do next" already worked out.
+It connects your observability tools, incident platforms, and source
+repositories into one workflow. Instead of hopping between a dashboard,
+PagerDuty, and Slack when something breaks, you get a single investigation with
+the "what changed, what's affected, what to do next" already worked out.
 
 It ships with six built-in subagents — Explore, Plan, CodeReview, Bash,
 Verification, and GeneralPurpose — plus extension points for custom skills,
-Python tools, MCP server connections, and event-triggered hooks. It reached
-general availability in March 2026, and Microsoft has since added native
-Application Insights and Log Analytics connectors that handle the RBAC
-wiring for you, so telemetry is queryable the moment you connect a resource
-instead of after a separate permissions project.
+Python tools, MCP server connections, and event-triggered hooks. Microsoft has
+since added native Application Insights and Log Analytics connectors that
+handle the RBAC wiring for you, so telemetry is queryable the moment you
+connect a resource instead of after a separate permissions project.
 
 Nothing it proposes deploys without a human approving it first. That
 distinction matters more than it sounds like it should: this is an agent that
@@ -161,9 +143,9 @@ taking seriously, still worth checking before you act on it.
 
 ## Go look at what you already have running
 
-The part of this worth taking away isn't "go adopt Azure SRE Agent." It's
-that Azure ships new capability constantly, and some of it is worth an hour
-of your time the first time you notice the name. If you already have
-Application Insights collecting telemetry from more than one service, spend
-that hour pointing SRE Agent at it and see what it finds before your next
-on-call rotation does.
+If you already have Application Insights collecting telemetry from more than
+one service, that's the fastest way to find out whether this is worth your
+time. Connect those resources, ask the agent what's unhealthy, and compare
+what it says to what you thought was true. An hour is enough to get an answer,
+and it's a better hour than the one you'll spend correlating dashboards during
+your next on-call rotation.
