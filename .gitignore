@@ -27,3 +27,6 @@ pnpm-debug.log*
 !.vscode/extensions.json
 .idea
 .DS_Store
+
+# local agent tooling cache (tracked config in .impeccable/ stays tracked)
+.impeccable/hook.cache.json
