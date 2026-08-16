@@ -1,16 +1,17 @@
 ---
-title: "Ready, Set, Vibe! (Using AI)"
+title: "Vibe Coding 99-101 for non-coders"
 heroImage: ../../assets/blog/vibe-code-your-blog-part-1-setup.webp
 heroAlt: "Cinematic enterprise hero image representing Vibe Coding as an AI innovation lab bathed in soft volumetric light."
-description: "A beginner-friendly setup guide for building your first project with AI: a GitHub account, Git, Node.js, Python, GitHub Copilot, agents, and reusable skills."
+description: "A beginner-friendly setup guide for building your first project with AI: the terminal, a GitHub account, Git, Node.js, Python, Azure, GitHub Copilot, agents, and reusable skills."
 pubDate: 2026-07-15
-updatedDate: 2026-08-01
-tags: ["Vibe Coding", "AI", "GitHub Copilot"]
+updatedDate: 2026-08-16
+tags: ["Vibe Coding", "AI", "GitHub Copilot", "Azure"]
 featured: false
 draft: false
 ---
 
 import Explain from "@/components/Explain.astro";
+import Term from "@/components/Term.astro";
 
 Here's the part most "build an app with AI" tutorials skip: before the magic
 happens, you have to install a small pile of tools and get them talking to each
@@ -23,9 +24,12 @@ wired up with the right agents and skills.
 [Part 2](/blog/vibe-code-your-blog-part-2-deploy/) picks up where this leaves
 off and actually builds the site.
 
-This is written for the technical-adjacent: you can follow instructions and
-you're not scared of a terminal, but you're not a career developer. That's
-exactly who vibe coding is for.
+This is written for someone who has never written a line of code. If you can
+install an app and follow a numbered list, you can do this. I'll define every
+piece of jargon the first time it shows up, and any word with a dotted underline
+is one you can hover over (or tap on a phone) for a plain-language definition.
+Try it here:
+<Term def="The written instructions that tell a computer what to do. Code lives in ordinary text files, and a project is usually made of hundreds of them.">code</Term>.
 
 One thing worth saying up front: there are *many* tools you can use to vibe code,
 and no single one is "correct." Whichever tool you're most comfortable with that
@@ -57,7 +61,7 @@ knowing when the AI has wandered off. Read that for the *why*. This post is the
 
 ## Before you install anything: the plan
 
-You're going to set up six things, in this order, because each one builds on the
+You're going to set up seven things, in this order, because each one builds on the
 last:
 
 1. A GitHub account: your home base for code, history, and hosting.
@@ -69,6 +73,9 @@ last:
 6. Python (latest): not strictly required to run the blog, but so much of the
    vibe-coding ecosystem (scripts, tools, MCP servers, AI helpers) assumes it's
    there that you'll save yourself pain by installing it now.
+7. An Azure account and the Azure CLI (`az`): where the finished blog actually
+   gets published in Part 2. Installing it now means Part 2 is a clean run
+   instead of a detour.
 
 Then you'll scaffold a home for your agents and skills so the AI works *with*
 you instead of guessing. Let's go.
@@ -77,7 +84,76 @@ you instead of guessing. Let's go.
 > that's what most first-timers are on. Where macOS or Linux differ, I'll call it
 > out inline.
 
-## Install the six tools
+## First, meet the terminal
+
+Almost every step below asks you to "run a command in a terminal," so let's kill
+that mystery before it trips you up.
+
+A **terminal** is a window where you type instructions to your computer as text
+instead of clicking buttons. That's the whole idea. You type a line, press Enter,
+and the computer does the thing and prints the result back at you. It looks
+intimidating because it's plain text on a plain background, not because it's
+hard.
+
+Here's how to open one:
+
+- **Windows:** press the Start button, type `Terminal`, and open **Windows
+  Terminal**. If you're on an older Windows build that doesn't have it, type
+  `PowerShell` instead and open that.
+- **macOS:** press `Cmd` + `Space`, type `Terminal`, press Enter.
+- **Linux:** `Ctrl` + `Alt` + `T` on most desktops.
+
+Try one now. Type this and press Enter:
+
+```bash
+whoami
+```
+
+It prints your username back. That's a command: you typed an instruction, the
+computer answered. Everything else in this post is the same move with longer
+words.
+
+Three things worth knowing before you go further.
+
+**A terminal is always "sitting" in some folder.** Commands act on wherever you
+currently are, which matters later when you're working inside your project. To
+see where you are and what's there:
+
+```bash
+pwd     # Windows PowerShell, macOS, and Linux: prints the folder you're in
+ls      # lists the files and folders in it
+cd somefolder   # moves into a folder
+cd ..           # moves back up one level
+```
+
+<Explain title="Why does the folder I'm in matter?">
+  Because commands are relative to it. Running a build command while sitting in
+  your Documents folder does nothing useful; running it inside your project folder
+  builds your project. When a step says "from your project folder," it means: use
+  `cd` to move there first, then run the command. The GitHub Copilot app handles
+  this for you most of the time, since its built-in terminal already starts inside
+  the project you have open.
+</Explain>
+
+**Nothing you type here is permanent unless it changes a file.** Commands that
+just *print* information, like every `--version` check in this post, are
+completely safe. Run them as many times as you like.
+
+**"Close and reopen your terminal" is real advice, not filler.** When you install
+a tool, the installer tells your system where to find it, but a terminal window
+that's already open doesn't get the memo. It only reads that information when it
+starts. So after every install below, close the window and open a fresh one
+before you test.
+
+<Explain title="Terminal, shell, command line, command prompt — are these all the same thing?">
+  Close enough to treat them as one thing for now. The **terminal** is the window.
+  The **shell** is the program inside it that actually reads what you type
+  (PowerShell on Windows, usually zsh on macOS). "Command line" and "command
+  prompt" are casual names for the same experience. Nobody will correct you if you
+  use them interchangeably, and this post does.
+</Explain>
+
+## Install the seven tools
 
 Work through these in order. Each one assumes the previous is done.
 
@@ -367,6 +443,79 @@ checkbox. Reinstall and make sure it's ticked, or add Python to your PATH
 through the installer's **Modify** option. On macOS or Linux, verify `python3`
 instead. Reopen the terminal before changing PATH by hand.
 
+### Step 7: Create an Azure account and install the Azure CLI
+
+Part 2 publishes your finished blog to
+[Azure Static Web Apps](https://learn.microsoft.com/azure/static-web-apps/overview),
+so you need two things: an Azure account, and the command-line tool that talks to
+it. Doing both now means Part 2 runs start to finish without a detour.
+
+First, the account. Sign up at
+[azure.microsoft.com/free](https://azure.microsoft.com/en-us/free/).
+
+A few things nobody tells you before you click:
+
+- **A credit or debit card is required**, purely to verify you're a real person.
+  Microsoft places a small temporary authorization and reverses it. You are not
+  charged unless you deliberately upgrade to pay-as-you-go or exceed the free
+  limits.
+- Prepaid and virtual cards are usually rejected for that verification.
+- New accounts get **$200 USD in credit, good for 30 days**. Unused credit
+  expires; it doesn't roll over. You will not need any of it for this blog.
+- Students can use [Azure for Students](https://azure.microsoft.com/free/students/),
+  which verifies with an eligible school email instead of a card.
+
+<Explain title="Am I going to get a surprise bill for hosting a blog?">
+  Not for what this series builds. Azure Static Web Apps has a genuine **Free**
+  plan that includes web hosting, a free SSL certificate (the thing that puts the
+  padlock next to your address), a custom domain, and one million free executions
+  for the small newsletter function. That's the plan Part 2 uses.
+
+  The habit worth building anyway: after you deploy, set a
+  [budget alert](https://learn.microsoft.com/azure/cost-management-billing/costs/tutorial-acm-create-budgets)
+  on your subscription for a few dollars. It costs nothing and it means Azure
+  emails you long before anything surprising happens.
+</Explain>
+
+Now the tool. The **Azure CLI** is the `az` command, and it's how both you and
+your deployment script talk to Azure without clicking through the portal.
+
+- Windows: `winget install --exact --id Microsoft.AzureCLI`
+- macOS: `brew update && brew install azure-cli` (requires macOS 13 or higher)
+- Linux (Debian/Ubuntu):
+  `curl -fsSL 'https://azurecliprod.blob.core.windows.net/$root/deb_install.sh' | sudo bash`
+
+Full instructions, including other Linux distributions, are on
+[Microsoft Learn](https://learn.microsoft.com/cli/azure/install-azure-cli).
+
+Close and reopen your terminal, then check it landed and sign in:
+
+```bash
+az version
+az login
+```
+
+`az login` opens your browser, you pick your account, and the terminal prints the
+subscriptions you have access to. If no browser opens, or you're working over a
+remote connection, use `az login --use-device-code` instead: it prints a short
+code you type at [aka.ms/devicelogin](https://aka.ms/devicelogin) on any device.
+
+<Explain title="What's a 'subscription,' and why does Azure keep saying it?">
+  A **subscription** is the billing container everything you create in Azure lives
+  inside. It's the answer to "who pays for this?" A free account comes with one,
+  already set up, and this series never needs a second. When a command or an error
+  message asks which subscription to use and you only have one, the answer is
+  always that one.
+</Explain>
+
+<Explain title="Why install a command-line tool instead of just using the Azure website?">
+  You could click all of this together in the Azure portal, and plenty of people
+  do. The problem is that clicking is unrepeatable: you can't hand a colleague
+  your mouse movements, and you can't ask an AI agent to redo them next month.
+  A command is text. It can be reviewed before it runs, saved, repeated, corrected,
+  and explained. That's why Part 2 hands you a script instead of forty screenshots.
+</Explain>
+
 ## Verify everything before you build
 
 Run this quick checklist in a **fresh** terminal. Each command should print a
@@ -379,6 +528,8 @@ gh auth status         # should name your GitHub account
 node --version         # e.g. v24.x.x
 npm --version          # e.g. 11.x.x
 python --version       # e.g. Python 3.14.x  (try 'python3' on macOS/Linux)
+az version             # e.g. "azure-cli": "2.89.x"
+az account show        # should name your Azure subscription
 ```
 
 If any line errors out, fix that tool before moving on. Every later step assumes
@@ -697,6 +848,7 @@ them:
 - ✅ `gh auth status` reports you're logged in, and Git is set to reuse those credentials.
 - ✅ The GitHub Copilot app installed, signed in, and responding.
 - ✅ `node`, `npm`, `git`, `gh`, and `python` (Windows) or `python3` (macOS/Linux) all return versions in a fresh terminal.
+- ✅ An Azure account created, `az version` returns a version, and `az account show` names your subscription.
 - ✅ A `~/.agents/skills` folder ready for your portable skills.
 - ✅ You understand the safety basics: commit often, branch for risk, no secrets.
 - ✅ You know how to make security the AI's default: ground it in the Azure and
