@@ -2,7 +2,7 @@
 title: "An Hour with Azure SRE Agent"
 heroImage: ../../assets/blog/azure-sre-agent-first-look.webp
 heroAlt: "Editorial illustration representing Azure."
-description: "What Azure SRE Agent is, what it can do, and what happened in the hour I spent pointing it at my own repo and my Application Insights telemetry across Dataverse, Copilot Studio, and Foundry."
+description: "What Azure SRE Agent is, what setup actually looks like, and what happened when I pointed it at my own repo, my Application Insights telemetry across Dataverse, Copilot Studio, and Foundry, and then asked it for a health check on everything at once."
 pubDate: 2026-08-14
 tags: ["Azure", "Azure SRE Agent", "Application Insights", "Copilot Studio", "Dataverse", "Microsoft Foundry", "GitHub", "Security", "DevOps"]
 draft: false
@@ -17,6 +17,17 @@ import codeReviewThread from "@/assets/blog/azure-sre-agent-first-look/code-revi
 import parallelExploration from "@/assets/blog/azure-sre-agent-first-look/parallel-exploration-subagents.png";
 import codeReviewFindings from "@/assets/blog/azure-sre-agent-first-look/code-review-findings.png";
 import agentConsumption from "@/assets/blog/azure-sre-agent-first-look/agent-consumption-aau.png";
+import quickstartAgentList from "@/assets/blog/azure-sre-agent-first-look/quickstart-agent-list.png";
+import quickstartSetup from "@/assets/blog/azure-sre-agent-first-look/quickstart-setup-checklist.png";
+import quickstartCodeAccess from "@/assets/blog/azure-sre-agent-first-look/quickstart-code-access.png";
+import builtinTools from "@/assets/blog/azure-sre-agent-first-look/builtin-tools-permissions.png";
+import pluginsMarketplace from "@/assets/blog/azure-sre-agent-first-look/plugins-add-marketplace.png";
+import demoRunning from "@/assets/blog/azure-sre-agent-first-look/demo-investigation-running.png";
+import demoFindings from "@/assets/blog/azure-sre-agent-first-look/demo-unhealthy-findings.png";
+import demoPriority from "@/assets/blog/azure-sre-agent-first-look/demo-priority-table.png";
+import liveReport from "@/assets/blog/azure-sre-agent-first-look/live-report-dashboard.png";
+import incidentsOnboarding from "@/assets/blog/azure-sre-agent-first-look/incidents-onboarding.png";
+import agentCanvas from "@/assets/blog/azure-sre-agent-first-look/agent-canvas-subagents.png";
 
 Azure SRE Agent is Microsoft's operations agent for the work that eats an
 on-call rotation: triaging incidents, checking whether services are actually
@@ -96,12 +107,22 @@ Those extension points aren't purely theoretical. Microsoft added a plugin
 marketplace so you're not building every skill from zero: it lets you browse
 and install community and internal skills and MCP integrations from
 GitHub-hosted repositories, including private repos and GitHub Enterprise.
-Two public marketplaces are registered out of the box — Azure's own
+Worth knowing before you go looking for it: a new agent has no marketplace
+registered at all, and the Plugins blade sits empty until you add one. The
+Add marketplace dialog offers two well-known ones as presets: Azure's own
 [Azure SRE Agent Plugins](https://github.com/Azure/sre-agent-plugins) and
-Anthropic's [Claude Plugins](https://github.com/anthropics/claude-plugins-official)
-— and every install is pinned to a specific git commit, so an upstream change
-to a skill you installed months ago doesn't quietly alter your agent's
-behavior until you choose to update it.
+Anthropic's [Claude Plugins](https://github.com/anthropics/claude-plugins-official).
+You can also point it at any other repo by `owner/repo`, a github.com URL,
+or a `tenant.ghe.com` URL. Every install is pinned to a specific git commit,
+so an upstream change to a skill you installed months ago doesn't quietly
+alter your agent's behavior until you choose to update it.
+
+<Screenshot
+  src={pluginsMarketplace}
+  alt="Add marketplace or plugin dialog in Azure SRE Agent with the well-known marketplaces dropdown open, showing two options: Azure SRE Agent Plugins (Azure/sre-agent-plugins) and Claude Plugins (anthropics/claude-plugins-official), above a field for a marketplace URL or owner/repo"
+  caption="Nothing is registered by default. The two well-known marketplaces are presets you pick, not defaults you inherit."
+/>
+
 
 One thing worth flagging if you're the one managing this for a team: private
 marketplaces store a single credential — an OAuth token, a personal access
@@ -112,6 +133,67 @@ access to it. Anyone with the Author or Administrator role on the agent can
 install from any registered marketplace, regardless of their own GitHub
 permissions. If you need to lock that down, the control point is the agent's
 RBAC roles, not GitHub repo access.
+
+## What setup actually looks like
+
+An agent is an Azure resource, so it starts where every Azure resource
+starts: a subscription, a resource group, and a region. You create it from
+the agent list at [sre.azure.com](https://sre.azure.com), and once it exists
+it shows up alongside any others you have, region and all. Mine live in two
+different regions because I built them at different times and never went
+back to tidy that up.
+
+<Screenshot
+  src={quickstartAgentList}
+  alt="Azure SRE Agent portal agent list showing two agents named sre-doc and the-sre-fixer with their subscription blurred, resource group appinsights, and regions North Central US and East US 2, above a Create agent button"
+  caption="The agent list. Each one is a real Azure resource in a subscription, resource group, and region."
+/>
+
+Open a new agent and it tells you what it still needs. The setup strip runs
+across the top of the chat and tracks five things: Incidents, Knowledge
+files, Code, Logs, and Azure resources. Green check means connected, hollow
+circle means the agent is flying without it. You don't have to finish all
+five before asking a question. I ran useful investigations with Incidents
+and Knowledge files still unconfigured. But the strip is honest about what
+it can't see yet.
+
+<Screenshot
+  src={quickstartSetup}
+  alt="Azure SRE Agent setup checklist expanded, showing Incidents and Knowledge files as not configured, and Code with one repository, Logs with one log provider, and Azure resources with one Azure resource all marked configured"
+  caption="The setup strip, expanded. Two unconfigured, three connected, and it works fine with the three."
+/>
+
+Code Access is where the repo connection lives, and it's per-domain rather
+than per-repo: you authorize github.com or your GitHub Enterprise host once,
+then add repositories under it. GitHub, Azure DevOps, and GitLab each get
+their own tab. Once a repo syncs, you get a Ready status and a timestamp, so
+you can tell at a glance whether the agent is reviewing today's code or a
+snapshot from last week.
+
+<Screenshot
+  src={quickstartCodeAccess}
+  alt="Code Access Configuration page in Azure SRE Agent with tabs for GitHub, Azure DevOps, and GitLab, showing a connected github.com domain using OAuth and one repository named PortalofPortals with a Ready status and a sync timestamp"
+  caption="Code Access. Authorize the domain once, then add repos under it. The sync time tells you how fresh the review is."
+/>
+
+The permissions story goes deeper than the per-connector toggles. The Tools
+blade lists every built-in tool the agent can call. Fifty of them on my
+agent, 35 active, and each one has both an on/off switch and an
+Allow-or-Ask permission. A few are locked on and can't be disabled. They're
+grouped by category, so you can reason about them in batches instead of one
+at a time: System, DevOps, Workspace Operation, and so on. There are
+separate tabs for MCP servers, custom tools, advanced permissions, and
+approval expiration.
+
+<Screenshot
+  src={builtinTools}
+  alt="Tools page in Azure SRE Agent showing 35 of 50 active built-in tools in a table with On/Off toggles, Allow or Ask permission controls, category, and description columns, plus tabs for MCP servers and services, custom tools, advanced permissions, and approval expiration"
+  caption="Every built-in tool, individually switchable, each with its own Allow or Ask setting. Some are locked on."
+/>
+
+If you're rolling this out to a team, this page and the connector one are
+where the actual policy lives. Everything else is configuration; these two
+decide what the agent is allowed to do when nobody's watching.
 
 ## The code review went further than I expected
 
@@ -187,6 +269,107 @@ dashboards and telling me to figure it out myself.
 That's the difference between monitoring and triage. Monitoring tells you
 something is happening. Triage tells you what to do about it, and where to
 start.
+
+## One prompt, one health check
+
+Since writing the first version of this post I went back and gave the agent
+a deliberately lazy prompt, the kind you'd actually type at 2 a.m.: give me
+a health check across everything you're connected to, list the Azure
+resources you manage, query Application Insights for the last 24 hours, and
+tell me what looks unhealthy and what you'd investigate first.
+
+It took 147 seconds. The interesting part is what it showed while it worked.
+It announced it was gathering everything in parallel, then ran the actual
+commands in the open: `az graph query` calls against Resource Graph, KQL
+against the requests, exceptions, and dependencies tables in Application
+Insights, with each one labeled and each one marked complete as it landed.
+The Resource Graph calls carried a **Medium risk** tag. You can read the
+exact query it ran and copy it out.
+
+<Screenshot
+  src={demoRunning}
+  alt="Azure SRE Agent thread mid-investigation showing a step labeled Performing comprehensive system health diagnostics, several completed Monitor Resource Log Query steps, and two Executing graph query cards tagged Medium risk with the raw az graph query commands visible"
+  caption="Mid-run. The queries aren't summarized for you. They're printed, tagged with a risk level, and copyable."
+/>
+
+The answer opened with an inventory, then a section headed "What's Unhealthy
+/ Noteworthy." All 13 VMs deallocated, including a 10-node compute fleet.
+Seven of ten web apps stopped, two of which still had failure-anomaly alert
+rules pointed at them, which, as it noted, is an odd combination if
+they're meant to be off.
+
+<Screenshot
+  src={demoFindings}
+  alt="Azure SRE Agent health check results listing resource inventory counts, then findings that all 13 VMs are deallocated, that 7 of 10 web apps are stopped with running and stopped apps in a table, and that one Application Insights resource shows a 100 percent request failure rate marked benign"
+  caption="Inventory first, then what's actually wrong, including the stopped apps that still have alert rules pointed at them."
+/>
+
+The finding I keep coming back to is the third one. One Application Insights
+resource showed a 100 percent request failure rate over 24 hours, which
+looks alarming until you read the next line: four requests, all 404s, all
+for `GET /robots933456.txt`. That's the App Service internal health probe
+hitting a container. The agent labeled it benign, explained why, and then
+made the point that actually mattered: near-zero real traffic means either
+nobody is using the app or the SDK isn't wired up correctly.
+
+A dashboard would have drawn that as a red 100 percent and left me to work
+out the rest. Catching a false positive and then finding the real problem
+hiding behind it is the part that's hard to automate, and it's the part it
+did well.
+
+It closed with a priority table, P1 through P4, each row carrying a reason
+rather than just a severity, and a separate list of what looked healthy so I
+wasn't left guessing about the things it didn't mention.
+
+<Screenshot
+  src={demoPriority}
+  alt="Azure SRE Agent investigation priority table with rows P1 through P4 listing the issue and the reason for its priority, followed by a What Looks Healthy list naming running web apps with their pricing tiers, enabled logic apps, provisioned Cosmos DB accounts, key vaults, and API Management instances"
+  caption="P1 through P4 with reasoning attached, plus an explicit healthy list so silence doesn't get mistaken for a pass."
+/>
+
+Its closing line was the right one: investigate the telemetry gap first,
+because it couldn't tell me whether my main app was healthy when there was
+no signal coming out of it. That's a better answer than a fake all-clear.
+
+## The parts I didn't expect to use
+
+A few blades I ignored on the first pass turned out to be the ones I'd
+actually keep.
+
+**Live Reports** are dashboards you build by talking to the agent. You
+describe what you want, it authors the report, and the report re-queries
+live data every time you open it. Each one is versioned and keeps a link
+back to the thread that created it, so when the numbers look wrong you can
+go read how they were defined instead of reverse-engineering a chart.
+
+<Screenshot
+  src={liveReport}
+  alt="A live report in Azure SRE Agent titled MCViewer Metrics Dashboard showing KPI tiles for total requests, failed requests, and average duration over 24 hours, above line and bar charts for request count, average request duration, failed requests, and dependency count"
+  caption="A dashboard authored by chatting with the agent, versioned, with an Open authoring thread button so you can see how it was built."
+/>
+
+**Incidents** is the piece I still haven't connected, and the portal is
+blunt about what that costs you: without an incident platform wired up, the
+agent handles conversations and scheduled work but doesn't have a queue to
+work from. The same blade carries triggers and response plans, which is
+where the "respond automatically when this fires" behavior gets defined.
+
+<Screenshot
+  src={incidentsOnboarding}
+  alt="Incidents page in Azure SRE Agent with tabs for Incidents and Triggers plus response plans, agent status counters for pending user input, in progress, and completed all at zero, and a get started panel prompting to connect an incident platform"
+  caption="Incidents, unconnected. The counters and the response-plan tab only start earning their keep once a platform is wired in."
+/>
+
+**Agent Canvas** is where the subagent story stops being something Microsoft
+does for you and starts being something you build. You can create your own
+subagents and skills, wire tools to them, view the whole thing as a graph or
+a table, and test it in a playground before it touches anything real.
+
+<Screenshot
+  src={agentCanvas}
+  alt="Agent Canvas in Azure SRE Agent showing an empty canvas with an illustration of an incident response plan connected to subagents and tools, a Create subagent and Create skill button, and toggles for canvas view, table view, and test playground"
+  caption="Agent Canvas. Build your own subagents and skills, then test them in a playground before they run for real."
+/>
 
 ## What the hour actually cost
 
