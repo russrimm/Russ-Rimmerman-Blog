@@ -2,9 +2,9 @@
 title: "Vibe Code Your Blog, Part 2: Build It, Then Ship It to Azure"
 heroImage: ../../assets/blog/vibe-code-your-blog-part-2-deploy.webp
 heroAlt: "Developer deploying an Astro blog through GitHub to Azure Static Web Apps, with supporting Azure services, GitHub OIDC, and a CI/CD pipeline."
-description: "Deploy an Astro blog to Azure Static Web Apps with OIDC, least-privilege access, and a walkthrough of the resources and trade-offs."
+description: "Create an Astro blog with GitHub Copilot, put it on GitHub, and deploy it to Azure Static Web Apps with OIDC and least-privilege access."
 pubDate: 2026-07-20
-updatedDate: 2026-07-31
+updatedDate: 2026-08-16
 tags: ["Vibe Coding", "Azure", "Static Web Apps", "Security"]
 featured: false
 draft: false
@@ -13,14 +13,15 @@ draft: false
 import Explain from "@/components/Explain.astro";
 import Term from "@/components/Term.astro";
 
-This post assumes you've completed [Part 1: Ready, Set, Vibe!
-(Using AI)](/blog/vibe-code-your-blog-part-1-setup/), which covers all the
+This post assumes you've completed [Part 1: Vibe Coding 99-101 for
+non-coders](/blog/vibe-code-your-blog-part-1-setup/), which covers all the
 prerequisites, tool installation, and project setup. If you haven't worked
 through it yet, start there first.
 
-Once that setup is complete, the site exists on your laptop, but a blog nobody
-can reach isn't a blog yet. This post is the other half: building the site and
-deploying it to [Azure Static Web Apps](https://learn.microsoft.com/azure/static-web-apps/overview),
+Part 1 got the tools onto your machine. Nothing has been built yet, so that's
+where this starts: you'll create the blog, teach Copilot how your project works,
+put it on GitHub, make your first change through the agent, and then deploy it to
+[Azure Static Web Apps](https://learn.microsoft.com/azure/static-web-apps/overview)
 the secure way, with everything provisioned for you.
 
 I'm writing this the way I wish someone had written it for me. When I first did
@@ -31,15 +32,17 @@ Azure resource, and then a plain-language explanation of *what* each piece is,
 *why* it's required, and *what the security trade-offs are*.
 
 <Explain title="Do I need to be a cloud engineer for this?">
-  No. You need an Azure subscription and the ability to run two sign-in commands.
-  The script does the rest. The long explanations after it are optional; read
-  them when you want to understand *why*, not because you need to type any of it.
+  No. You need the Azure account you created in Part 1 and the ability to run two
+  sign-in commands. The script does the rest. The long explanations after it are
+  optional; read them when you want to understand *why*, not because you need to
+  type any of it.
 </Explain>
 
 ## What you'll end up with
 
-- Your Astro blog built into static files (plus an `/api` for the newsletter
-  form)
+- An Astro blog you created, running on your own machine
+- A `.github/copilot-instructions.md` so Copilot stops guessing about your project
+- A GitHub repository holding all of it, with full history
 - A live Azure Static Web App serving it on `https://<something>.azurestaticapps.net`
 - A GitHub Actions pipeline that rebuilds and redeploys every time you push to
   `main`
@@ -47,7 +50,185 @@ Azure resource, and then a plain-language explanation of *what* each piece is,
   sign in to Azure, then retrieves the Static Web App's deployment token just in
   time for each Static Web Apps action
 
-## Step 1: Build the site locally
+## Step 1: Create the project
+
+You need a blog to deploy before you can deploy a blog. Astro's official blog
+template gives you a working one in about a minute.
+
+Open a terminal, move to wherever you keep projects (`cd Documents`, or wherever
+suits you), and run:
+
+```bash
+npm create astro@latest -- --template blog
+```
+
+<Explain title="What are those two dashes doing in the middle of the command?">
+  They're a separator, and they're only needed with npm. Without them, npm thinks
+  `--template blog` is an instruction for *npm itself* rather than for the Astro
+  setup wizard, and quietly ignores it. The `--` means "everything after this
+  belongs to the thing I'm running, not to me." If you use pnpm or yarn instead,
+  you don't need it.
+</Explain>
+
+The wizard asks a few questions. Where should the project live (it creates the
+folder for you), whether to install dependencies, and whether to start a Git
+repository. Say **yes** to installing dependencies and **yes** to Git.
+
+<Explain title="What did 'install dependencies' just do?">
+  A <Term def="A ready-made building block your project uses instead of writing that piece yourself. A typical site relies on dozens of them.">dependency</Term>
+  is code someone else wrote that your project relies on. Astro itself is one.
+  Saying yes downloads all of them into a folder called `node_modules`, which is
+  large and gets rebuilt from scratch on any machine, which is why it never gets
+  committed to Git. The exact versions it picked are recorded in a file called
+  `package-lock.json`, and *that* does get committed, so everyone building your
+  site gets an identical set.
+</Explain>
+
+Move into your new folder and start it up:
+
+```bash
+cd your-blog-folder
+npm run dev
+```
+
+Open [http://localhost:4321](http://localhost:4321) in a browser and you have a
+working blog running on your own machine. Nobody else can reach it yet;
+`localhost` means "this computer only." Press `Ctrl` + `C` in the terminal to
+stop the server when you're done looking.
+
+<Explain title="Why is Astro the pick here?">
+  Because it produces plain HTML files. There's no database to secure, no admin
+  login to get breached, and no server-side code running between your visitors and
+  your writing. That makes it fast, essentially free to host, and about as small an
+  attack surface as a website can have. It's also genuinely pleasant to write in:
+  posts are just Markdown files in a folder.
+</Explain>
+
+## Step 2: Open the project in Copilot and tell it about itself
+
+Open the GitHub Copilot app and add the folder you just created as a project.
+
+Before you ask it to change anything, spend five minutes on the file that does
+more for you than anything else in this series: `.github/copilot-instructions.md`.
+This is a plain English file that Copilot reads on every request in this project.
+It's how you stop it guessing about things it has no way to know.
+
+You don't have to write it by hand. Start a session and ask:
+
+```text
+Create .github/copilot-instructions.md for this project. Read package.json
+and the folder structure first so it's accurate. Cover: the package manager
+and exact install command, where blog posts live, the one command that
+verifies a change works, and a rule that security comes first — no secrets
+in code, and never weaken a check just to make it pass. Keep it under 300
+words. Show me the file before you save it.
+```
+
+Read what it produces. Correct anything wrong. For a stock Astro blog template
+the true answers are roughly: install with `npm ci` rather than `npm install`,
+posts live in `src/content/blog/`, and `npm run build` has to finish without
+errors before any change counts as done.
+
+<Explain title="Why does `npm ci` matter more than `npm install`?">
+  `npm install` is allowed to go looking for newer versions of your dependencies
+  and quietly update that `package-lock.json` file. `npm ci` installs exactly what
+  the lockfile already says, every time. On a project you're sharing with a build
+  pipeline, "exactly what we agreed on" is what you want, because a dependency that
+  silently changed version between your laptop and the cloud is a genuinely
+  miserable bug to chase.
+</Explain>
+
+Instructions pay you back faster than any other setup you can do, and there's a
+lot more of it worth knowing: global instructions, reusable skills, MCP servers,
+and custom agents. I wrote that up separately in
+[Customizing GitHub Copilot](/blog/customizing-github-copilot-app-quickstart/).
+Come back here when you're done, or carry on and read it later.
+
+## Step 3: Put it on GitHub
+
+Right now your blog exists on exactly one computer. Let's fix that.
+
+The Astro wizard already started a Git repository locally, so you have version
+history. What you don't have is a copy on GitHub. From inside your project
+folder:
+
+```bash
+git add .
+git commit -m "Initial blog from Astro template"
+gh repo create my-blog --public --source=. --remote=origin --push
+```
+
+That last command creates the repository on GitHub, connects your local folder to
+it, and pushes everything up in one move. Swap `my-blog` for whatever you want
+the repository called, and use `--private` instead of `--public` if you'd rather
+keep it to yourself for now.
+
+<Explain title="Public or private?">
+  Either works for this series, and you can switch later. Public means anyone can
+  read your source (not a problem: it's a blog, the content is meant to be read)
+  and it's required if you ever want free GitHub Pages hosting. Private keeps it to
+  you. The one rule that matters in both cases is the same: no passwords, keys, or
+  tokens in the files you commit. A private repository is not a safe place to keep
+  a secret, it's just a less public one.
+</Explain>
+
+Confirm it worked:
+
+```bash
+gh repo view --web
+```
+
+That opens your new repository in a browser. Your writing now lives in two
+places, and every change from here is recoverable.
+
+## Step 4: Make your first real change, using plan mode
+
+Now the part you came for. Back in the Copilot app, look at the dropdown below
+the prompt box: it sets how much freedom the agent has. There are three settings.
+
+- **Interactive**: the agent suggests changes and waits for you before it moves
+  on. This is the default and it's the right one most of the time.
+- **Plan**: the agent writes up what it intends to do and waits for you to
+  approve the plan before it touches anything.
+- **Autopilot**: the agent works straight through on its own, writing and testing
+  without checking in.
+
+Pick **Plan** and ask for something real:
+
+```text
+Add an About page to this blog with a short bio and a link to my GitHub
+profile, matching the styling of the existing pages.
+```
+
+You'll get a plan back rather than a pile of changed files. Read it. This is the
+moment where you catch a misunderstanding for free, before any code exists. If
+the plan says it'll rewrite your homepage layout and you only asked for a new
+page, say so and make it try again. When it looks right, approve it.
+
+Then check the work: read the diff it produced, run `npm run dev`, and look at
+the page in a browser. If it's good, commit it.
+
+```text
+Commit this with a clear message and push it.
+```
+
+<Explain title="When would I use Autopilot, then?">
+  Once you trust a particular kind of task and the cost of it going wrong is low.
+  Bulk renaming, fixing a failing build, applying a change you've already reviewed
+  the plan for. What makes it safe isn't bravery, it's Git: if you committed
+  before you started, the worst case is you throw the changes away and you've lost
+  ten minutes. Starting a risky task from an uncommitted mess is what turns a bad
+  agent run into a bad afternoon.
+</Explain>
+
+<Explain title="The agent says it's finished, but is it?">
+  Ask it to prove it. "Run `npm run build` and show me the output" turns a claim
+  into evidence. An agent that says a change is done without ever running the
+  project's own check is guessing, and this is exactly the habit that the
+  `copilot-instructions.md` file from Step 2 is meant to enforce automatically.
+</Explain>
+
+## Step 5: Build the site locally
 
 Before you deploy anything, make sure it builds. From your project folder:
 
@@ -70,16 +251,48 @@ builds clean locally, it'll build clean in the pipeline.
   nothing to attack at runtime.
 </Explain>
 
-## Step 2: Deploy to Azure, the easy way
+## Step 6: Deploy to Azure, the easy way
 
-Here's the whole thing. Sign in to Azure and GitHub, then run one script:
+You need one file that isn't in the Astro template: the setup script that
+provisions your Azure resources. Grab
+[`setup-azure-swa.sh`](https://github.com/russrimm/Russ-Rimmerman-Blog/blob/main/scripts/setup-azure-swa.sh)
+and
+[`.github/workflows/azure-static-web-apps.yml`](https://github.com/russrimm/Russ-Rimmerman-Blog/blob/main/.github/workflows/azure-static-web-apps.yml)
+from this blog's repository and drop them into the matching folders in your own
+project. Or point Copilot at those two links and ask it to adapt them for your
+repository, which is the more interesting option and a good test of everything
+you set up in Step 2.
+
+The script reads its settings from environment variables and works out your
+repository name from the GitHub CLI, so you don't need to edit it. You do need to
+override the defaults, or you'll create resources named after *my* blog.
+
+Sign in to both services, then run it:
 
 ```bash
 az login        # or: az login --use-device-code  (headless containers)
 gh auth login   # choose GitHub.com, HTTPS, and authenticate in the browser
 
-./scripts/setup-azure-swa.sh
+SWA_NAME=my-blog RESOURCE_GROUP=my-blog-rg LOCATION=eastus2 \
+  ./scripts/setup-azure-swa.sh
 ```
+
+<Explain title="I'm on Windows and that script won't run.">
+  It's a **bash** script, and Windows doesn't speak bash natively. You already have
+  what you need, though: installing Git in Part 1 also installed **Git Bash**.
+  Right-click your project folder, choose **Open Git Bash here**, and run the
+  command there. The alternative is
+  [WSL](https://learn.microsoft.com/windows/wsl/install), which gives you a full
+  Linux environment on Windows via `wsl --install`. Git Bash is the smaller step
+  and it's enough for this.
+</Explain>
+
+<Explain title="Do I need the `api/` folder this repo has?">
+  No. This blog has a small `api/` folder powering the newsletter sign-up form,
+  and the workflow deploys it alongside the site. A stock Astro blog template
+  doesn't have one, and the deploy handles its absence fine: there's simply nothing
+  to publish there. Add one later if you ever want a form that does something.
+</Explain>
 
 That's it. The script is idempotent: safe to run again if something was
 half-finished, and it prints each step as it goes. When it's done, it hands you
@@ -99,9 +312,10 @@ the live URL. Push to `main` and the site deploys automatically.
 > or resource group. Creating the app registration needs a directory role that
 > can register apps (**Application Developer** or higher). If you're on a locked-
 > down corporate tenant, you may need an admin to run one or two steps, and the
-> script stops on the first failure and tells you which one.
+> script stops on the first failure and tells you which one. On a personal Azure
+> account created in Part 1, you already have everything you need.
 
-## Step 3: Understand what just happened (and why it's secure)
+## Step 7: Understand what just happened (and why it's secure)
 
 The script created six things. None of it is magic, and every choice was made for
 a security reason. Here's each one, in plain language.
@@ -241,7 +455,7 @@ Why it's required: the pipeline needs to know *which* identity to sign in as and
 Security angle: despite living in "secrets," these three values are **not
 passwords**; they're public-ish identifiers (GUIDs). They tell the workflow
 *who* to authenticate as, but they grant no access on their own; the actual
-authentication still requires the OIDC trust from step 4. They're kept in secrets
+authentication still requires the OIDC trust from item 4 above. They're kept in secrets
 mostly to keep them tidy and out of logs, not because exposure would be dangerous.
 
 ## What the pipeline actually does
@@ -310,5 +524,10 @@ Push a commit to `main`, watch the Actions tab go green, and open your
 domain? Azure Static Web Apps gives you free managed certificates. Add your
 domain in the portal and point a CNAME at it.
 
-That's the series: Part 1 set up the workshop, Part 2 shipped the product. Now go
-write something.
+That's the series: Part 1 set up the workshop, Part 2 built the thing and shipped
+it. If you want to go further on the AI half, the next thing I'd read is
+[Customizing GitHub Copilot](/blog/customizing-github-copilot-app-quickstart/),
+which covers the skills, MCP servers, and custom agents that make the agent
+genuinely good at *your* project rather than projects in general.
+
+Now go write something.
