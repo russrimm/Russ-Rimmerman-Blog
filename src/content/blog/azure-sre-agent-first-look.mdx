@@ -2,8 +2,9 @@
 title: "An Hour with Azure SRE Agent"
 heroImage: ../../assets/blog/azure-sre-agent-first-look.webp
 heroAlt: "Editorial illustration representing Azure."
-description: "What Azure SRE Agent is, what setup actually looks like, and what happened when I pointed it at my own repo, my Application Insights telemetry across Dataverse, Copilot Studio, and Foundry, and then asked it for a health check on everything at once."
+description: "What Azure SRE Agent is, what setup actually looks like, and what happened when I pointed it at my own repo, my Application Insights telemetry across Dataverse, Copilot Studio, and Foundry, and then asked it for a health check on everything at once. Plus the harness engineering behind it, and how to switch on the parts you don't get by default."
 pubDate: 2026-08-14
+updatedDate: 2026-08-16
 tags: ["Azure", "Azure SRE Agent", "Application Insights", "Copilot Studio", "Dataverse", "Microsoft Foundry", "GitHub", "Security", "DevOps"]
 draft: false
 featured: false
@@ -469,6 +470,254 @@ a table, and test it in a playground before it touches anything real.
   alt="Agent Canvas in Azure SRE Agent showing an empty canvas with an illustration of an incident response plan connected to subagents and tools, a Create subagent and Create skill button, and toggles for canvas view, table view, and test playground"
   caption="Agent Canvas. Build your own subagents and skills, then test them in a playground before they run for real."
 />
+
+## The architecture behind it, and how to switch the rest on
+
+Everything above is what the agent does. The team that builds it published
+[Harness Engineering for Azure SRE Agent](https://techcommunity.microsoft.com/blog/appsonazureblog/the-agent-that-investigates-itself/4500073)
+in March, and that post explains why. Read it against the product docs and
+something more useful falls out: a list of the pieces you have to turn on
+yourself.
+
+The framing story is the one in its title. A KV cache hit-rate alert fired
+across their fleet, and instead of opening dashboards they asked the agent.
+It spawned parallel subagents, searched logs, read its own source code, and
+came back with two findings. Claude Haiku was sitting at 0% cache hits, but
+the average call was roughly 180 tokens against Anthropic's 4,096-token
+minimum for Haiku prompt caching, so those requests could never have been
+cached and the alert was a false positive. The real regression was Claude
+Opus falling from about 70% to 48% over a week, which it traced to a single
+PR that reordered prompts and broke the common prefix caching depends on. It
+submitted two fixes.
+
+Three months earlier it couldn't have done any of that, and the thing that
+changed wasn't better playbooks. It was removing them. Their high-scoring
+scenarios all shared a trait: heavy human scaffolding, custom response plans
+for known incident types, hand-built subagents, pre-written log queries
+exposed as opaque tools. They weren't measuring the agent's reasoning. They
+were measuring how much engineering had gone in beforehand, and on anything
+novel the agent had nowhere to start.
+
+So they inverted it. Three architectural bets: give the agent a filesystem
+instead of a custom API layer, inject ambient context so it knows what exists
+before it acts, and manage the context budget hard enough that long
+investigations don't fall over. Their "Intent Met" score, which is whether
+the on-call engineer judged that the investigation addressed the actual root
+cause, went from 45% to 75% on novel incidents.
+
+Most of that is switchable in the portal you already have open. Here's what
+maps to what.
+
+### Workspace tools are the first bet, and you should verify the flag
+
+The first bet was exposing everything the agent reasons over as files, read
+through `read_file`, `grep`, `find`, and `shell`. No `SearchCodebase` API, no
+`RetrieveMemory` endpoint. You can see that shape in the product: on the
+Tools page, the core tools — `CreateFile`, `FileSearch`, `GrepSearch` — are
+always enabled and can't be switched off. Those are the locked-on ones I
+mentioned earlier.
+
+File operations and terminal commands are a different story. They need
+workspace tools, and that's a per-agent experimental flag. Agents created
+before March 10, 2026 don't have it and need `EnableWorkspaceTools` turned on
+under **Capabilities > Experimental Settings**. Newer agents get it by
+default.
+
+Don't take the UI's word for it. Read it off the resource:
+
+```bash
+az resource list --resource-type Microsoft.App/agents -o table
+
+az resource show \
+  --resource-group <resource-group> \
+  --name <agent-name> \
+  --resource-type Microsoft.App/agents \
+  --query properties.experimentalSettings -o json
+```
+
+Mine came back like this:
+
+```json
+{
+  "EnableConnectorsV2": true,
+  "EnableInboundAuditLogging": true,
+  "EnableV2AgentLoop": true,
+  "EnableWorkspaceTools": true
+}
+```
+
+The part worth noticing is that my two agents didn't return the same set.
+They were created a day apart in the same subscription, and only the newer
+one carries `EnableInboundAuditLogging`. Flags land per agent, not per
+subscription, so check each one instead of assuming your fleet is
+consistent. While you're in there, `--query properties.defaultModel` is worth
+a look too. Mine reports `{"name": "Automatic", "provider": "Anthropic"}`,
+which is a quiet confirmation that the Haiku and Opus numbers in that KV
+cache story are about the same models running your investigations.
+
+### The default sandbox is not the sandbox in the article
+
+This is the gap I'd want to know about before planning anything around it.
+The article describes the agent installing packages mid-investigation with
+`pip` and `apt`, opening PRs with `gh cli`, and pushing Grafana dashboards.
+The Code Interpreter you get by default does none of that. It's an isolated
+Azure Container Apps session with no outbound network, no process spawning
+(`subprocess` and `os.system` are blocked), no `pip install`, and no
+filesystem access outside `/mnt/data/`. Pandas, matplotlib, and seaborn come
+preinstalled, and that's the deal.
+
+Enabling workspace tools moves Python execution out of that session and into
+the workspace sandbox, where the repo lives. It's a different environment,
+not a permission bump on the same one. What the docs don't spell out is
+whether `pip` and `apt` come with it, so if "an agent that installs its own
+tooling" is why you read the article, test that in your own agent before you
+design around it. The Packages tab covers the predictable half either way,
+and it does so without opening egress.
+
+One prerequisite that bites people behind a corporate proxy: the sandbox
+runs under `*.azuresre.ai`, and some network profiles block that domain by
+default. Your agent's endpoint sits on it too, so if the portal loads but
+code execution hangs, check the allowlist before you check anything else.
+
+### Memory is a directory, not a vector store
+
+Their first memory system was RAG over past session learnings, and it failed
+twice over. It had a circular dependency, since a limited agent learned from
+limited sessions. The deeper problem was retrieval: "KV cache regression" and
+"prompt prefix instability" sit far apart in embedding space and describe the
+same causal chain. Re-ranking, query expansion, and hybrid search didn't fix
+that mismatch. They replaced the whole thing with structured Markdown the
+agent reads and writes through its normal tools, and let the model navigate
+memory rather than query it.
+
+That shipped. Your agent keeps a knowledge directory at
+`memories/synthesizedKnowledge/`. The file `overview.md` loads into the
+system prompt at the start of every conversation on roughly a
+2,000-character budget, and it links out to topic files the agent reads only
+when it needs them. The documented shape carries budgets: `team.md` at about
+500 characters, `auth.md` at 800, `debugging.md` and `deployment.md` at
+1,000 each, `architecture.md` and `logs.md` at 1,500, plus `queries/*.md`.
+
+Those budgets are the interesting bit. `overview.md` is deliberately small
+because you pay for it on every single turn.
+
+You don't have to wait for the agent to fill it in. Ask directly in chat:
+
+```text
+Save this to your knowledge: Application Insights for the Copilot Studio
+agent lives in the AppInsights resource group, and the dependency failures
+we care about come from the Foundry agent, not the app servers.
+```
+
+It writes or updates the right file and links it from `overview.md`.
+Separately, `#remember` saves discrete facts to a different store, which you
+search with `#retrieve` and clear with `#forget`. Knowledge files are
+structured references consulted at the start of every conversation; user
+memories are individual facts you look up. Easy to conflate, different
+mechanics.
+
+One caveat, and it's Microsoft's rather than mine: staleness is unsolved.
+When two sessions write conflicting patterns into `debugging.md`, the model
+has to reconcile them, and when a service changes behavior, old entries turn
+into confidently wrong context. They rely on timestamps and explicit
+deprecation notes and say plainly that they don't have a systemic answer.
+Budget time to review what it wrote, the way you'd review a team wiki.
+
+### Give it the repo, then read the file it writes back
+
+The repo is the schema. Teams pre-wrote log queries because they didn't trust
+the agent to generate correct ones, and that distrust was fair: models
+hallucinate table names and query the wrong cluster. The fix wasn't tighter
+restriction, it was grounding. When the agent reads the code that produces
+the logs, it knows which exceptions get thrown and under what conditions,
+and query construction stops being guesswork.
+
+That grounding buys two things telemetry alone can't.
+Point-in-time investigation, where the agent checks out the exact commit
+from the time of the incident rather than current HEAD, is what cracked the
+KV cache case: the breaking diff was the only place the cause was visible.
+And it can reason about code paths nobody instrumented, which are
+disproportionately the ones involved in novel failures precisely because no
+one thought to instrument them.
+
+In the product this is the Code Access page I set up earlier. What I didn't
+mention then is what happens next: the agent analyzes your project structure,
+technology stack, deployment configuration, and service dependencies, then
+opens a PR adding an `SREAGENT.md` file to your repo. That's the same idea as
+the `AGENTS.md` and `CLAUDE.md` convention the article describes, ambient
+context the agent reads on every investigation instead of something you
+restate in each thread.
+
+Review that PR properly rather than rubber-stamping it. It's the file that
+shapes how every future investigation starts.
+
+### Close the loop with a scheduled task
+
+The feedback loop is the payoff, and it's the easiest piece to copy. Their
+example was mundane: LLM errors — timeouts, 429s, mid-stream failures, 400s
+from malformed payloads — were stalling investigations. They set up a daily
+task that pulls the last 24 hours of errors, clusters the top offenders,
+traces each to a root cause in the codebase, and submits a PR. Engineers
+review before merge. Errors dropped by more than 80% over two weeks.
+
+You build that under **Scheduled tasks > Create task**. Task details is a
+prompt, so write it like one:
+
+```text
+Query Application Insights for exceptions and failed requests in the last
+24 hours across every connected resource. Cluster them by exception type
+and failing operation, rank by count, and for the top three trace each one
+to the specific file and line in the connected repository. Report what you
+found and what you would change. Don't open a PR without asking me first.
+```
+
+Leave **Response custom agent** empty and the main agent handles it.
+Frequency gives you daily, weekly, monthly, or a cron expression in UTC. The
+field I'd actually stop and think about is **Agent autonomy level**:
+Autonomous is the default and lets the agent act without approval, which is
+not where I'd start. Run it in Review mode first, use **Run task now** to
+watch it once before it runs unattended, and read the thread each execution
+produces: planning steps, tool calls with timing, the memory it pulled in,
+and the outcome. Three consecutive failures flip the task to Failed.
+
+Then check **Monitor > Session insights**. That's where symptoms, resolution
+steps, root cause, and pitfalls get extracted from each thread, with every
+card linking back to the conversation that produced it. It's the closest
+thing you have to the weekly manual thread review the article describes,
+except you aren't the one reading fifty threads by hand.
+
+### The context budget shows up in ways you'll feel
+
+The third bet was frugality, and two of its consequences are visible from the
+chat window.
+
+Compaction summarizes earlier context when a conversation runs long, and you
+can force it with `/compact`. Here's the catch, buried in the skills
+documentation: active skills clear on compaction, and you can only have five
+active at once, with the oldest unloading when you go past that. A long
+investigation can quietly drop the skill that was guiding it. The agent
+re-reads `SKILL.md` to bring it back, but if a thread stops following your
+runbook halfway through, that's the first place to look.
+
+The other one is simpler. The reasoning loop runs up to 10 iterations per
+turn, then asks whether to continue. That's not a failure. It's the budget
+being honest with you.
+
+### What doesn't transfer
+
+Worth naming the ceiling. That post is about how Microsoft engineers its own
+harness, and some of it stays theirs. Their agent runs against their source,
+their telemetry, and their deployment history, and the numbers they quote —
+tens of thousands of investigations a week, roughly half of incidents handled
+autonomously for internal teams, Intent Met climbing from 45% to 75% — come
+out of that specific setup. What transfers is the shape: give it your repo,
+let it keep its own notes, put a scheduled task on whatever keeps breaking,
+and stop pre-writing the queries you don't trust it to write.
+
+Their closing line is the one I'd underline. They went from an agent that
+follows your playbook to one that writes the next one. Mine isn't there yet.
+But every piece that would get it there is a switch in a portal I already
+had open.
 
 ## What the hour actually cost
 
