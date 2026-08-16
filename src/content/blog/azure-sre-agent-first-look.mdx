@@ -546,14 +546,32 @@ Mine came back like this:
 }
 ```
 
-The part worth noticing is that my two agents didn't return the same set.
-They were created a day apart in the same subscription, and only the newer
-one carries `EnableInboundAuditLogging`. Flags land per agent, not per
-subscription, so check each one instead of assuming your fleet is
-consistent. While you're in there, `--query properties.defaultModel` is worth
-a look too. Mine reports `{"name": "Automatic", "provider": "Anthropic"}`,
-which is a quiet confirmation that the Haiku and Opus numbers in that KV
-cache story are about the same models running your investigations.
+My two agents didn't return the same set: only one carried
+`EnableInboundAuditLogging`. My first instinct was to call that platform
+drift between agents built a day apart, which was me getting ahead of the
+evidence. These are toggles, and I'd been clicking around in Experimental
+Settings on one of them. The resource said so once I bothered to look, since
+`systemData.lastModifiedAt` on that agent pointed at an afternoon I'd spent
+in its settings.
+
+That's the more useful lesson anyway. `experimentalSettings` is mutable
+per-agent state rather than something the platform stamps once at creation,
+so two agents in one subscription drift apart the moment somebody flips a
+switch on one of them. Ask the resource instead of trusting your memory of
+what you turned on where:
+
+```bash
+az resource show \
+  --resource-group <resource-group> \
+  --name <agent-name> \
+  --resource-type Microsoft.App/agents \
+  --query "{exp:properties.experimentalSettings, modified:systemData.lastModifiedAt}" -o json
+```
+
+While you're in there, `--query properties.defaultModel` is worth a look
+too. Mine reports `{"name": "Automatic", "provider": "Anthropic"}`, which is
+a quiet confirmation that the Haiku and Opus numbers in that KV cache story
+are about the same models running your investigations.
 
 ### The default sandbox is not the sandbox in the article
 
