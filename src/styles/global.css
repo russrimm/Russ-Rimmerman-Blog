@@ -120,6 +120,19 @@ body {
   text-wrap: balance;
 }
 
+/* Syntax highlighting.
+ * Shiki's palette lives in classes rather than style attributes so the CSP can
+ * keep style-src-attr 'none'. Each rule carries the light colour plus the dark
+ * one as a custom property; these swap to the dark set on <html class="dark">. */
+html.dark .astro-code {
+  background-color: var(--shiki-dark-bg);
+}
+
+html.dark .astro-code,
+html.dark .astro-code span {
+  color: var(--shiki-dark);
+}
+
 /* Reduced motion: suppress transforms and scale animations */
 @media (prefers-reduced-motion: reduce) {
   html {
