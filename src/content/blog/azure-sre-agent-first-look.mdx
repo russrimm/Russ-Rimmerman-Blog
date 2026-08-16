@@ -82,10 +82,8 @@ it decided that was a good idea at 3 a.m. Microsoft's own writeup on the
 rollout describes the mechanics behind that guardrail: the agent explains what
 it intends to do and why before acting, every interaction produces a full
 audit trail, routine operations run autonomously, and anything flagged as
-high-impact pauses for in-workflow sign-off. If your environment uses VNet
-integration, that traffic still routes through your own network, so your NSG
-rules, private DNS, and firewalls apply the same way they would to a human
-making the change. See
+high-impact pauses for in-workflow sign-off. There's a network layer underneath
+all of that as well, which I get into further down. See
 [Rethinking cloud operations with Azure SRE Agent](https://techcommunity.microsoft.com/blog/appsonazureblog/a-paradigm-shift-in-cloud-operations-with-azure-sre-agent/4533244)
 for the full picture.
 
@@ -194,6 +192,107 @@ approval expiration.
 If you're rolling this out to a team, this page and the connector one are
 where the actual policy lives. Everything else is configuration; these two
 decide what the agent is allowed to do when nobody's watching.
+
+## Where its traffic can actually go
+
+Those two pages decide what the agent can do. Neither of them decides where its
+traffic ends up. By default the answer is "anywhere on the public internet,"
+which is fine for a test agent and a real problem for one you've just handed
+read access across production.
+
+[VNet integration](https://techcommunity.microsoft.com/blog/appsonazureblog/vnet-integration-for-azure-sre-agent-preview/4524287)
+landed in preview in June, and it's the piece I'd read before putting this
+anywhere sensitive. The argument for it is one your security team already makes
+about every other workload: a component's network access shouldn't depend on
+the component behaving correctly. The agent reads logs, code, and configuration
+by design, so open egress gives that data a route out. It also reasons over
+text it didn't write, which is the textbook prompt injection surface. A
+boundary enforced in the network holds whether or not the model spots the trick.
+
+You pick from three egress modes under Settings > Workspace configuration >
+Networking:
+
+- **Unrestricted.** The default. Any endpoint, no restrictions.
+- **Limited.** Deny all, allow an explicit list of hosts. Host-level control
+  without standing up a VNet.
+- **Azure VNet.** Non-platform outbound traffic routes through a delegated
+  subnet in your network, with your NSG rules, firewall policies, custom DNS,
+  and network logging applied to it.
+
+In Azure VNet mode the agent is just another workload on that subnet. It
+reaches what the subnet can reach and nothing else: databases behind private
+endpoints, internal services, a Log Analytics workspace with public access
+disabled, anything on-premises you've connected over ExpressRoute or VPN.
+During a real incident most of what you want the agent reading is private
+anyway, so this constrains less than it sounds like it would.
+
+### The subnet has requirements, and the sources disagree on one
+
+The subnet has to be dedicated, sit in the same region as the agent, and be
+delegated to `Microsoft.App/environments` — the Container Apps delegation,
+which is not the one you'd guess. You need Network Contributor on the subnet
+(or any role carrying `Microsoft.Network/virtualNetworks/subnets/join/action`)
+plus SRE Agent Administrator on the agent resource.
+
+Size is where it gets annoying. The docs say /28 or larger and suggest /26 for
+a fleet. The announcement post says /27. Carve a /27 and you satisfy both with
+room to grow.
+
+Two bits of friction worth knowing before you commit: once a VNet is connected,
+the Unrestricted and Limited cards grey out, so changing modes means
+disconnecting first. Changing the subnet means disconnect and reconnect too.
+
+### Link the private DNS zones, or you'll debug this at the wrong layer
+
+Connecting a VNet enables "Use VNet's private DNS" automatically, but that only
+does something if the relevant Azure Private DNS zones are actually linked to
+the VNet: `privatelink.ods.opinsights.azure.com` for Log Analytics,
+`privatelink.vaultcore.azure.net` for Key Vault, and so on for anything else
+behind a private endpoint. Skip that step and the agent either falls back to
+public endpoints or fails to connect.
+
+That matters more than usual because of how the agent reports failures. When
+the network blocks a call, it gets the same error any workload on that subnet
+would get, notes it in the investigation output, and carries on with whatever
+it can still reach. Correct behavior, but it means an investigation can come
+back confident and incomplete at the same time. Read the failures, not just the
+findings.
+
+### The bypass toggles are the part to govern
+
+Some traffic never touches your VNet regardless. Platform services —
+orchestration, model endpoints, telemetry — always route through Microsoft's
+managed infrastructure and aren't configurable.
+
+Below that sits an "On the infra network" section with toggles for package
+registries (PyPI, npm, NuGet, apt), code repositories (GitHub, GitHub
+Enterprise, Azure DevOps), remote MCP servers, and a free-form list of extra
+hostnames. Anything switched on there skips your VNet entirely, so your NSG
+rules and firewall policy never see it.
+
+The reason they exist is practical rather than lazy. None of those services map
+to an Azure service tag, and they run on large, frequently changing IP ranges.
+If your firewall filters by IP, maintaining that list is a standing chore, and
+the day it falls behind an investigation stalls on a package download instead
+of the incident. Microsoft's own framing is that the toggles are transitional:
+the destination is FQDN-based egress filtering in your network, at which point
+you move those categories back through the VNet.
+
+Two things narrow the gap in the meantime. The Packages tab lets you preinstall
+pip and .NET CLI tool packages into the sandbox image, which removes a reason
+to leave the registry toggle on at all. And you can apply Azure Policy to
+restrict or disable the toggles, so no operator can quietly widen the agent's
+reach.
+
+### What the preview still doesn't cover
+
+Two limitations, and the second one is easy to miss. It's egress only, so
+reaching the agent privately from inside your network isn't part of this
+preview. And connector traffic doesn't route through the VNet at all. That
+Teams connector with 71 tools goes over the public internet whether or not
+you're in Azure VNet mode, and the same is true of anything else you wire in
+through Connectors. If your egress story assumes connectors sit inside the
+boundary, they don't yet.
 
 ## The code review went further than I expected
 
