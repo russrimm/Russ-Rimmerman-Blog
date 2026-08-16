@@ -227,7 +227,7 @@ disabled, anything on-premises you've connected over ExpressRoute or VPN.
 During a real incident most of what you want the agent reading is private
 anyway, so this constrains less than it sounds like it would.
 
-### The subnet has requirements, and the sources disagree on one
+### The subnet has a few requirements
 
 The subnet has to be dedicated, sit in the same region as the agent, and be
 delegated to `Microsoft.App/environments` — the Container Apps delegation,
@@ -235,9 +235,8 @@ which is not the one you'd guess. You need Network Contributor on the subnet
 (or any role carrying `Microsoft.Network/virtualNetworks/subnets/join/action`)
 plus SRE Agent Administrator on the agent resource.
 
-Size is where it gets annoying. The docs say /28 or larger and suggest /26 for
-a fleet. The announcement post says /27. Carve a /27 and you satisfy both with
-room to grow.
+On size, the docs say /28 or larger and suggest /26 for a fleet, and the
+announcement post mentions /27. A /27 covers all of that with room to grow.
 
 Two bits of friction worth knowing before you commit: once a VNet is connected,
 the Unrestricted and Limited cards grey out, so changing modes means
