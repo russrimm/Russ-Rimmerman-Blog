@@ -235,11 +235,18 @@ To enable it:
    az role assignment create --assignee "$APP_ID" --role "Cognitive Services OpenAI User" --scope "$OPENAI_ID"
    ```
 
-2. Add two repo **Variables** (not secrets \u2014 they're not sensitive) under
-   **Settings \u2192 Secrets and variables \u2192 Actions \u2192 Variables**:
-   `AZURE_OPENAI_ENDPOINT` and `AZURE_OPENAI_IMAGE_DEPLOYMENT`. The identity
-   secrets (`AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`) are
-   shared with the deploy workflow.
+2. Add the repo **Variables** (not secrets \u2014 an endpoint and a deployment name
+   are not sensitive) under **Settings \u2192 Secrets and variables \u2192 Actions \u2192
+   Variables**: `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_IMAGE_DEPLOYMENT`, and
+   `AZURE_OPENAI_CHAT_DEPLOYMENT`. The identity secrets (`AZURE_CLIENT_ID`,
+   `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`) are shared with the deploy
+   workflow.
+
+   Both generator workflows read `AZURE_OPENAI_CHAT_DEPLOYMENT` as
+   `${{ vars.AZURE_OPENAI_CHAT_DEPLOYMENT || secrets.AZURE_OPENAI_CHAT_DEPLOYMENT }}`,
+   so an older repo *secret* of that name still works. The variable wins when
+   both exist. It is optional for hero images (without it they fall back to the
+   static topic map) and required for figures.
 
 > The auto-commit is made with the built-in `GITHUB_TOKEN`, which by design does
 > **not** re-trigger other workflows \u2014 so the deploy workflow won't run on that
@@ -292,9 +299,9 @@ The workflow at
 [`.github/workflows/generate-post-figures.yml`](.github/workflows/generate-post-figures.yml)
 runs the same generator from **Run workflow**. It is deliberately
 `workflow_dispatch` only: unlike hero images, adding figures rewrites the body of
-a post, so it should always be an explicit, reviewed action. Beyond the hero
-workflow's configuration it needs one extra repo **Variable**,
-`AZURE_OPENAI_CHAT_DEPLOYMENT`.
+a post, so it should always be an explicit, reviewed action. It needs the same
+configuration as the hero workflow, with `AZURE_OPENAI_CHAT_DEPLOYMENT` being
+required rather than optional.
 
 ## Deploying to Azure Static Web Apps
 
