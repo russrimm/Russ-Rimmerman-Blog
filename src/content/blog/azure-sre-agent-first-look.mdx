@@ -30,7 +30,7 @@ import liveReport from "@/assets/blog/azure-sre-agent-first-look/live-report-das
 import incidentsOnboarding from "@/assets/blog/azure-sre-agent-first-look/incidents-onboarding.png";
 import agentCanvas from "@/assets/blog/azure-sre-agent-first-look/agent-canvas-subagents.png";
 
-Azure SRE Agent is Microsoft's operations agent for the work that eats an
+Azure SRE Agent is the operations agent for the work that eats an
 on-call rotation: triaging incidents, checking whether services are actually
 healthy, and running the runbook nobody has updated since the last reorg. It
 went generally available in March 2026, and if you haven't tried it yet, the
@@ -60,8 +60,8 @@ the "what changed, what's affected, what to do next" already worked out.
 
 It ships with six built-in subagents — Explore, Plan, CodeReview, Bash,
 Verification, and GeneralPurpose — plus extension points for custom skills,
-Python tools, MCP server connections, and event-triggered hooks. Microsoft has
-since added native Application Insights and Log Analytics connectors that
+Python tools, MCP server connections, and event-triggered hooks. Native
+Application Insights and Log Analytics connectors have since landed, and they
 handle the RBAC wiring for you, so telemetry is queryable the moment you
 connect a resource instead of after a separate permissions project.
 
@@ -79,12 +79,12 @@ alert can start the investigation before anyone opens a laptop.
 Nothing it proposes deploys without a human approving it first. That
 distinction matters more than it sounds like it should: this is an agent that
 recommends and drafts, not one that reboots your production database because
-it decided that was a good idea at 3 a.m. Microsoft's own writeup on the
-rollout describes the mechanics behind that guardrail: the agent explains what
-it intends to do and why before acting, every interaction produces a full
-audit trail, routine operations run autonomously, and anything flagged as
-high-impact pauses for in-workflow sign-off. There's a network layer underneath
-all of that as well, which I get into further down. See
+it decided that was a good idea at 3 a.m. The mechanics behind that guardrail
+are straightforward: the agent explains what it intends to do and why before
+acting, every interaction produces a full audit trail, routine operations run
+autonomously, and anything flagged as high-impact pauses for in-workflow
+sign-off. There's a network layer underneath all of that as well, which I get
+into further down. See
 [Rethinking cloud operations with Azure SRE Agent](https://techcommunity.microsoft.com/blog/appsonazureblog/a-paradigm-shift-in-cloud-operations-with-azure-sre-agent/4533244)
 for the full picture.
 
@@ -102,7 +102,7 @@ it has to ask about.
   caption="Per-tool permissions during connector setup — Allow for unattended calls, Ask to force a prompt."
 />
 
-Those extension points aren't purely theoretical. Microsoft added a plugin
+Those extension points aren't purely theoretical. It comes with a plugin
 marketplace so you're not building every skill from zero: it lets you browse
 and install community and internal skills and MCP integrations from
 GitHub-hosted repositories, including private repos and GitHub Enterprise.
@@ -274,9 +274,9 @@ The reason they exist is practical rather than lazy. None of those services map
 to an Azure service tag, and they run on large, frequently changing IP ranges.
 If your firewall filters by IP, maintaining that list is a standing chore, and
 the day it falls behind an investigation stalls on a package download instead
-of the incident. Microsoft's own framing is that the toggles are transitional:
-the destination is FQDN-based egress filtering in your network, at which point
-you move those categories back through the VNet.
+of the incident. The toggles are framed as transitional: the destination is
+FQDN-based egress filtering in your network, at which point you move those
+categories back through the VNet.
 
 Two things narrow the gap in the meantime. The Packages tab lets you preinstall
 pip and .NET CLI tool packages into the sandbox image, which removes a reason
@@ -459,7 +459,7 @@ where the "respond automatically when this fires" behavior gets defined.
   caption="Incidents, unconnected. The counters and the response-plan tab only start earning their keep once a platform is wired in."
 />
 
-**Agent Canvas** is where the subagent story stops being something Microsoft
+**Agent Canvas** is where the subagent story stops being something the service
 does for you and starts being something you build. You can create your own
 subagents and skills, wire tools to them, view the whole thing as a graph or
 a table, and test it in a playground before it touches anything real.
@@ -538,10 +538,10 @@ agent lives in the <resource-group> resource group, and the dependency
 failures we care about come from the Foundry agent, not the app servers.
 ```
 
-The caveat is Microsoft's, not mine: staleness is unsolved. When a service
-changes behavior, old entries turn into confidently wrong context, and they
-say plainly that they don't have a systemic fix. Budget time to review what
-it wrote, the way you'd review a team wiki.
+The caveat is documented, not mine to soften: staleness is unsolved. When a
+service changes behavior, old entries turn into confidently wrong context, and
+there's no systemic fix for that today. Budget time to review what it wrote,
+the way you'd review a team wiki.
 
 ### Give it the repo
 
@@ -586,7 +586,7 @@ the conversation.
 
 ### What doesn't transfer
 
-Worth naming the ceiling. That post is about how Microsoft engineers its own
+Worth naming the ceiling. That post is about how the team engineers its own
 harness against its own source, telemetry, and deployment history, and the
 numbers come out of that specific setup. What transfers is the shape: give it
 your repo, let it keep its own notes, put a scheduled task on whatever keeps
@@ -719,8 +719,8 @@ service or the client.
 
 While you're in there, note what else the CLI exposes. Alongside
 `threads investigate` there's `threads investigate_yolo`, which runs the same
-loop and auto-approves every pending gate. Microsoft's own documentation is
-unusually direct about it: there's no read-only restriction, the agent can
+loop and auto-approves every pending gate. The documentation is unusually
+direct about it: there's no read-only restriction, the agent can
 invoke any tool its managed identity permits, and that includes deleting pods,
 applying Kubernetes YAML, and scaling resources. It's a genuinely useful flag
 for a lab subscription. It is not something to reach for against production
@@ -780,8 +780,8 @@ sitting in an Application Insights resource, under whatever retention policy
 and whatever RBAC that resource happens to have. As a debugging aid it's
 excellent, and it's how I confirmed which model actually answers when the agent
 is set to Automatic. As a data-governance question it deserves a real answer
-before you connect this to anything regulated, and I haven't seen Microsoft
-address it anywhere.
+before you connect this to anything regulated, and I haven't found it
+addressed in the documentation anywhere.
 
 ### There's a pre-execution gate you can't write to
 
@@ -811,9 +811,9 @@ the tool already ran or when the agent tries to finish.
 That's a real distinction and not a pedantic one. A `PostToolUse` hook can
 block a *result*, inject context, and tell the agent to think again. What it
 cannot do is stop the command from running in the first place. The pre-execution
-veto exists, it's enforcing something on every call, and right now it's
-Microsoft's, not yours. Worth knowing before you promise anyone that hooks will
-prevent a destructive command.
+veto exists, it's enforcing something on every call, and right now it belongs
+to the runtime, not to you. Worth knowing before you promise anyone that hooks
+will prevent a destructive command.
 
 Hooks are still the most interesting governance surface here. Stop hooks let you
 define what "done" means and force the agent to keep working, command hooks run
@@ -850,9 +850,9 @@ Agent's pitch is that every investigation it runs builds institutional
 knowledge that sticks around even when that one person is on vacation or
 moves to another team.
 
-That pitch isn't just theoretical. In
-[Rethinking cloud operations with Azure SRE Agent](https://techcommunity.microsoft.com/blog/appsonazureblog/a-paradigm-shift-in-cloud-operations-with-azure-sre-agent/4533244),
-Microsoft walked through what happened when three customers actually put it
+That pitch isn't just theoretical.
+[Rethinking cloud operations with Azure SRE Agent](https://techcommunity.microsoft.com/blog/appsonazureblog/a-paradigm-shift-in-cloud-operations-with-azure-sre-agent/4533244)
+walks through what happened when three customers actually put it
 into production. Zafin took incident triage from hours down to minutes.
 Provation Medical had the agent produce analysis for every production-related
 ticket in its first month. InEight reported an 80 percent drop in incident
@@ -861,10 +861,11 @@ percent drop in bug investigation time. None of those are demo numbers; they're
 what happened after the agent was wired into real on-call rotations.
 
 It's not magic, and it's not a reason to stop reviewing what it recommends.
-Microsoft is upfront that, like any AI system, it can produce an incorrect
-root cause or propose a mitigation that doesn't fit your environment. Treat
-its output the way you'd treat a report from a sharp junior engineer: worth
-taking seriously, still worth checking before you act on it.
+The documentation is upfront that, like any AI system, it can produce an
+incorrect root cause or propose a mitigation that doesn't fit your
+environment. Treat its output the way you'd treat a report from a sharp
+junior engineer: worth taking seriously, still worth checking before you act
+on it.
 
 ## Go look at what you already have running
 
