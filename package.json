@@ -20,6 +20,7 @@
     "preview": "astro preview --host",
     "astro": "astro",
     "hero": "node --env-file-if-exists=.env.local --env-file-if-exists=.env scripts/generate-hero.mjs",
+    "figures": "node --env-file-if-exists=.env.local --env-file-if-exists=.env scripts/generate-figures.mjs",
     "format": "prettier --write src api scripts .github/workflows .github/dependabot.yml astro.config.mjs package.json tsconfig.json public/site.webmanifest public/staticwebapp.config.json"
   },
   "dependencies": {

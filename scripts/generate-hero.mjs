@@ -39,14 +39,25 @@
 // This is more secure than an API key: tokens are short-lived and scoped, there
 // is no long-lived secret to leak or rotate, and access is governed by RBAC.
 
-import { readFile, writeFile, readdir, access } from "node:fs/promises";
-import { fileURLToPath } from "node:url";
+import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import sharp from "sharp";
-import { DefaultAzureCredential } from "@azure/identity";
+import {
+  fail,
+  loadConfig,
+  requestChatJson,
+  requestImage,
+} from "./lib/azure-openai.mjs";
+import {
+  ROOT,
+  BLOG_DIR,
+  exists,
+  parseFrontmatter,
+  extractBody,
+  resolvePostPath,
+  listPosts,
+} from "./lib/posts.mjs";
 
-const ROOT = path.resolve(fileURLToPath(import.meta.url), "../..");
-const BLOG_DIR = path.join(ROOT, "src/content/blog");
 const HEADSHOT_PATH = path.join(ROOT, "src/assets/author/headshot.jpg");
 
 // --- Topic → enterprise scene map --------------------------------------------
@@ -414,62 +425,6 @@ function buildContentPrompt({
 }
 
 // --- Helpers -----------------------------------------------------------------
-function fail(message) {
-  console.error(`\n\u2716 ${message}\n`);
-  process.exit(1);
-}
-
-async function exists(p) {
-  try {
-    await access(p);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-function parseFrontmatter(raw) {
-  const match = raw.match(/^---\r?\n([\s\S]*?)\r?\n---/);
-  if (!match) return null;
-  const body = match[1];
-
-  const titleMatch = body.match(/^title:\s*(.+)$/m);
-  const title = titleMatch
-    ? titleMatch[1].trim().replace(/^['"]|['"]$/g, "")
-    : "";
-
-  const descMatch = body.match(/^description:\s*(.+)$/m);
-  const description = descMatch
-    ? descMatch[1].trim().replace(/^['"]|['"]$/g, "")
-    : "";
-
-  const tagsBlock = body.match(/^tags:\s*([\s\S]*?)(?=^\w|\Z)/m);
-  const tags = tagsBlock
-    ? [...tagsBlock[1].matchAll(/["']([^"']+)["']/g)].map(m => m[1])
-    : [];
-
-  return {
-    title,
-    description,
-    tags,
-    hasHero: /^heroImage:\s*\S/m.test(body),
-    draft: /^draft:\s*true\s*$/m.test(body),
-  };
-}
-
-// Strip frontmatter, imports, JSX tags and code fences to get readable prose
-// for the scene model to reason about.
-function extractBody(raw) {
-  return raw
-    .replace(/^---\n[\s\S]*?\n---\n?/, "")
-    .replace(/```[\s\S]*?```/g, " ")
-    .replace(/^import .*$/gm, " ")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/[#>*_`]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
 function pickScene(tags, title) {
   const haystacks = [...tags, title].map(t => t.toLowerCase());
   for (const [key, brief] of TOPIC_SCENES) {
@@ -484,10 +439,6 @@ function pickScene(tags, title) {
 async function deriveBrief({ title, description, body }, cfg) {
   if (!cfg?.chatDeployment) return null;
 
-  const url =
-    `${cfg.endpoint.replace(/\/$/, "")}/openai/deployments/${cfg.chatDeployment}` +
-    `/chat/completions?api-version=${cfg.apiVersion}`;
-
   const system =
     "You art-direct premium, photorealistic enterprise technology hero images for a Microsoft " +
     "cloud architecture blog. Given a post, respond with ONLY a compact JSON object: " +
@@ -501,93 +452,25 @@ async function deriveBrief({ title, description, body }, cfg) {
     "different posts look clearly different. No text, logos, camera terms, markdown, or commentary.";
   const user = `Title: ${title}\n\nSummary: ${description}\n\nExcerpt:\n${body.slice(0, 2000)}`;
 
-  try {
-    const token = await getAccessToken();
-    const res = await fetch(url, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        messages: [
-          { role: "system", content: system },
-          { role: "user", content: user },
-        ],
-        temperature: 0.9,
-        max_tokens: 220,
-      }),
-    });
-    if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      console.warn(
-        `  ! brief model returned ${res.status} ${res.statusText}; using topic fallback.\n${text}`
-      );
-      return null;
-    }
-    const json = await res.json();
-    const content = json?.choices?.[0]?.message?.content?.trim();
-    if (!content) return null;
-
-    const cleaned = content
-      .replace(/^```(?:json)?/i, "")
-      .replace(/```$/, "")
-      .trim();
-    let parsed;
-    try {
-      parsed = JSON.parse(cleaned);
-    } catch {
-      return null;
-    }
-
-    const clean = v =>
-      typeof v === "string" ? v.trim().replace(/\.$/, "") : "";
-    const environment = clean(parsed.environment);
-    const subjects = clean(parsed.subjects);
-    const technology = clean(parsed.technology);
-    const primaryTopic = clean(parsed.primaryTopic);
-    if (!environment && !subjects && !technology) return null;
-    return { primaryTopic, environment, subjects, technology };
-  } catch (err) {
-    console.warn(
-      `  ! brief model failed (${err.message}); using topic fallback.`
-    );
+  const parsed = await requestChatJson({
+    cfg,
+    system,
+    user,
+    temperature: 0.9,
+    maxTokens: 220,
+  });
+  if (!parsed) {
+    console.warn("  ! using the static topic map for this scene brief.");
     return null;
   }
-}
 
-async function resolvePostPath(slug) {
-  for (const ext of [".mdx", ".md"]) {
-    const p = path.join(BLOG_DIR, `${slug}${ext}`);
-    if (await exists(p)) return p;
-  }
-  return null;
-}
-
-async function listPosts() {
-  const files = await readdir(BLOG_DIR);
-  return files
-    .filter(f => f.endsWith(".mdx") || f.endsWith(".md"))
-    .map(f => f.replace(/\.mdx?$/, ""));
-}
-
-// --- Auth --------------------------------------------------------------------
-let cachedToken = null;
-async function getAccessToken() {
-  if (cachedToken) return cachedToken;
-  try {
-    const credential = new DefaultAzureCredential();
-    const token = await credential.getToken(
-      "https://cognitiveservices.azure.com/.default"
-    );
-    cachedToken = token?.token;
-  } catch (err) {
-    fail(
-      `Could not get an Entra ID token: ${err.message}\nRun \`az login\` first.`
-    );
-  }
-  if (!cachedToken) fail("Entra ID token was empty. Run `az login` and retry.");
-  return cachedToken;
+  const clean = v => (typeof v === "string" ? v.trim().replace(/\.$/, "") : "");
+  const environment = clean(parsed.environment);
+  const subjects = clean(parsed.subjects);
+  const technology = clean(parsed.technology);
+  const primaryTopic = clean(parsed.primaryTopic);
+  if (!environment && !subjects && !technology) return null;
+  return { primaryTopic, environment, subjects, technology };
 }
 
 // --- Headshot reference ------------------------------------------------------
@@ -712,52 +595,13 @@ async function loadReferenceImages(raw) {
   return loaded.filter(Boolean);
 }
 
-// Request one image from Azure OpenAI. When any reference images are supplied
-// (author headshot, article screenshots), use the image-edit endpoint
-// (multipart) so the model can lean on them for likeness and visual context;
-// otherwise use pure text-to-image generation.
-async function requestImage({ cfg, prompt, headshot, refImages = [] }) {
-  const token = await getAccessToken();
-  const base = `${cfg.endpoint.replace(/\/$/, "")}/openai/deployments/${cfg.deployment}`;
-
+// Build the reference-image list (author likeness first, then any article
+// images) and hand it to the shared Azure OpenAI image request.
+function requestHeroImage({ cfg, prompt, headshot, refImages = [] }) {
   const images = [];
   if (headshot) images.push({ buffer: headshot, filename: "headshot.png" });
   for (const r of refImages) images.push(r);
-
-  if (images.length > 0) {
-    const form = new FormData();
-    form.append("prompt", prompt);
-    form.append("size", "1536x1024");
-    form.append("quality", "medium");
-    form.append("n", "1");
-    const field = images.length > 1 ? "image[]" : "image";
-    for (const img of images) {
-      form.append(
-        field,
-        new Blob([img.buffer], { type: "image/png" }),
-        img.filename
-      );
-    }
-    return fetch(`${base}/images/edits?api-version=${cfg.apiVersion}`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
-      body: form,
-    });
-  }
-
-  return fetch(`${base}/images/generations?api-version=${cfg.apiVersion}`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      prompt,
-      size: "1536x1024",
-      quality: "medium",
-      n: 1,
-    }),
-  });
+  return requestImage({ cfg, prompt, images });
 }
 
 // --- Generation --------------------------------------------------------------
@@ -859,7 +703,7 @@ async function generatePost(slug, { force, dryRun, cfg, contentOnly }) {
     );
   }
 
-  const res = await requestImage({ cfg, prompt, headshot, refImages });
+  const res = await requestHeroImage({ cfg, prompt, headshot, refImages });
 
   if (!res.ok) {
     const text = await res.text().catch(() => "");
@@ -947,24 +791,13 @@ if (missing) {
 // Config is only needed for real generation (not dry runs).
 let cfg = null;
 if (!dryRun) {
-  const endpoint = process.env.AZURE_OPENAI_ENDPOINT;
-  const deployment = process.env.AZURE_OPENAI_IMAGE_DEPLOYMENT;
-  const chatDeployment = process.env.AZURE_OPENAI_CHAT_DEPLOYMENT || null;
-  const apiVersion =
-    process.env.AZURE_OPENAI_API_VERSION || "2025-04-01-preview";
-  if (!endpoint || !deployment) {
-    fail(
-      "Missing Azure OpenAI config. Set AZURE_OPENAI_ENDPOINT and " +
-        "AZURE_OPENAI_IMAGE_DEPLOYMENT (in .env locally, or as CI env vars)."
-    );
-  }
-  if (!chatDeployment) {
+  cfg = loadConfig();
+  if (!cfg.chatDeployment) {
     console.warn(
       "! AZURE_OPENAI_CHAT_DEPLOYMENT is not set \u2014 falling back to the static " +
         "topic map, so hero scenes will be less content-specific."
     );
   }
-  cfg = { endpoint, deployment, chatDeployment, apiVersion };
 }
 
 const results = { generated: 0, skipped: 0, failed: 0, "dry-run": 0 };

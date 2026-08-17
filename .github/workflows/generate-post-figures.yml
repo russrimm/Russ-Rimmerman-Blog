@@ -1,0 +1,131 @@
+name: Generate post figures
+
+# On-demand generator for explanatory in-article figures. It reads a post
+# section by section, asks a chat model which sections genuinely need a diagram
+# for readers of every experience level, generates those diagrams, inserts the
+# `<Figure>` markup into the post, and commits the result.
+#
+# Unlike "Generate hero images" this never runs on push: adding figures rewrites
+# the body of a post, so it is always an explicit, reviewed action.
+#
+# Auth is Microsoft Entra ID via OIDC (federated credential) — there is NO API
+# key and NO long-lived secret. It reuses the same identity as the deploy and
+# hero workflows; that identity needs the "Cognitive Services OpenAI User" role
+# on the Azure OpenAI resource. Endpoint + deployments are non-secret repo
+# *variables* (Settings → Secrets and variables → Actions → Variables):
+#   AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_IMAGE_DEPLOYMENT, AZURE_OPENAI_CHAT_DEPLOYMENT
+# and the same identity secrets as deploy:
+#   AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID
+# See "Auto-generating in-article figures" in README.md.
+
+on:
+  workflow_dispatch:
+    inputs:
+      slug:
+        description: "Post slug(s) to analyze (space- or comma-separated). Leave empty to analyze every published post."
+        type: string
+        default: ""
+      max_figures:
+        description: "Maximum figures per post"
+        type: string
+        default: "3"
+      include_drafts:
+        description: "Also analyze draft posts (only applies when no slug is given)"
+        type: boolean
+        default: false
+      dry_run:
+        description: "Print the plan and prompts only — generate no images and change no files"
+        type: boolean
+        default: false
+      force:
+        description: "Regenerate figure images that already exist"
+        type: boolean
+        default: false
+
+# Never run two generation jobs at once (they both commit to main).
+concurrency:
+  group: generate-post-figures
+  cancel-in-progress: false
+
+permissions:
+  contents: write # commit generated figures and post edits back to the repo
+  id-token: write # obtain the Entra ID OIDC token
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      # The Entra app's federated identity credential trusts only
+      # refs/heads/main, so Azure OIDC login fails on any other ref. Fail
+      # fast with a clear message instead of burning ~90s on a login error.
+      - name: Guard against non-main dispatches
+        if: github.ref != 'refs/heads/main'
+        run: |
+          echo "::error::This workflow can only run against the 'main' branch."
+          echo "::error::The Azure federated identity credential is scoped to refs/heads/main."
+          echo "::error::Re-run 'Generate post figures' with 'Use workflow from' set to 'main'."
+          exit 1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Federated OIDC login — no secrets, just the identity's client/tenant IDs.
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Generate figures
+        env:
+          AZURE_OPENAI_ENDPOINT: ${{ vars.AZURE_OPENAI_ENDPOINT }}
+          AZURE_OPENAI_IMAGE_DEPLOYMENT: ${{ vars.AZURE_OPENAI_IMAGE_DEPLOYMENT }}
+          AZURE_OPENAI_CHAT_DEPLOYMENT: ${{ vars.AZURE_OPENAI_CHAT_DEPLOYMENT }}
+          SLUG_INPUT: ${{ github.event.inputs.slug }}
+          MAX_FIGURES: ${{ github.event.inputs.max_figures }}
+          INCLUDE_DRAFTS: ${{ github.event.inputs.include_drafts }}
+          DRY_RUN: ${{ github.event.inputs.dry_run }}
+          FORCE: ${{ github.event.inputs.force }}
+        run: |
+          if ! echo "$MAX_FIGURES" | grep -qE '^[1-9][0-9]*$'; then
+            echo "::error::max_figures must be a positive integer."; exit 1
+          fi
+
+          extra_args="--max $MAX_FIGURES"
+          [ "$DRY_RUN" = "true" ] && extra_args="$extra_args --dry-run"
+          [ "$FORCE" = "true" ] && extra_args="$extra_args --force"
+
+          if [ -n "$SLUG_INPUT" ]; then
+            # Accept comma- or whitespace-separated slugs; normalize to spaces.
+            slugs=$(echo "$SLUG_INPUT" | tr ',' ' ' | tr -s '[:space:]' ' ' | sed 's/^ //;s/ $//')
+            echo "Analyzing: $slugs"
+            # shellcheck disable=SC2086
+            npm run figures -- $slugs $extra_args
+          else
+            [ "$INCLUDE_DRAFTS" = "true" ] && extra_args="$extra_args --include-drafts"
+            echo "Analyzing every published post"
+            # shellcheck disable=SC2086
+            npm run figures -- --all $extra_args
+          fi
+
+      - name: Commit generated figures
+        if: github.event.inputs.dry_run != 'true'
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add -A
+            git commit -m "chore: add generated in-article figures [skip ci]"
+            git push
+          else
+            echo "No figures to commit."
+          fi
