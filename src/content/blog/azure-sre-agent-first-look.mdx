@@ -2,7 +2,7 @@
 title: "An Hour with Azure SRE Agent"
 heroImage: ../../assets/blog/azure-sre-agent-first-look.webp
 heroAlt: "Editorial illustration representing Azure."
-description: "What Azure SRE Agent is, what setup actually looks like, and what happened when I pointed it at my own repo, my Application Insights telemetry across Dataverse, Copilot Studio, and Foundry, and then asked it for a health check on everything at once. Plus the harness engineering behind it, and how to switch on the parts you don't get by default."
+description: "What Azure SRE Agent is, what setup actually looks like, and what happened when I pointed it at my own repo, my Application Insights telemetry across Dataverse, Copilot Studio, and Foundry, and then asked it for a health check on everything at once. Plus the five switches worth flipping that you don't get turned on by default, and the 403 that stands between you and running the whole thing from your terminal."
 pubDate: 2026-08-14
 updatedDate: 2026-08-16
 tags: ["Azure", "Azure SRE Agent", "Application Insights", "Copilot Studio", "Dataverse", "Microsoft Foundry", "GitHub", "Security", "DevOps"]
@@ -470,63 +470,32 @@ a table, and test it in a playground before it touches anything real.
   caption="Agent Canvas. Build your own subagents and skills, then test them in a playground before they run for real."
 />
 
-## The architecture behind it, and how to switch the rest on
+## How to switch on the parts you don't get by default
 
-Everything above is what the agent does. The team that builds it published
+Everything above is what the agent does out of the box. The team that builds
+it published
 [Harness Engineering for Azure SRE Agent](https://techcommunity.microsoft.com/blog/appsonazureblog/the-agent-that-investigates-itself/4500073)
-in March, and that post explains why. Read it against the product docs and
-something more useful falls out: a list of the pieces you have to turn on
-yourself.
+in March, and the headline is counterintuitive: they got better results by
+taking scaffolding away. Fewer pre-written queries, fewer hand-built response
+plans, more raw access to code and context. Their "Intent Met" score on novel
+incidents, meaning the on-call engineer agreed the investigation found the
+real root cause, went from 45% to 75%.
 
-The framing story is the one in its title. A KV cache hit-rate alert fired
-across their fleet, and instead of opening dashboards they asked the agent.
-It spawned parallel subagents, searched logs, read its own source code, and
-came back with two findings. Claude Haiku was sitting at 0% cache hits, but
-the average call was roughly 180 tokens against Anthropic's 4,096-token
-minimum for Haiku prompt caching, so those requests could never have been
-cached and the alert was a false positive. The real regression was Claude
-Opus falling from about 70% to 48% over a week, which it traced to a single
-PR that reordered prompts and broke the common prefix caching depends on. It
-submitted two fixes.
+Read it if you want the full story. What I care about here is that most of
+what made it work is a switch in the portal you already have open, and it
+isn't switched on for you. Five of them are worth your afternoon.
 
-Three months earlier it couldn't have done any of that, and the thing that
-changed wasn't better playbooks. It was removing them. Their high-scoring
-scenarios all shared a trait: heavy human scaffolding, custom response plans
-for known incident types, hand-built subagents, pre-written log queries
-exposed as opaque tools. They weren't measuring the agent's reasoning. They
-were measuring how much engineering had gone in beforehand, and on anything
-novel the agent had nowhere to start.
+### Turn on workspace tools
 
-So they inverted it. Three architectural bets: give the agent a filesystem
-instead of a custom API layer, inject ambient context so it knows what exists
-before it acts, and manage the context budget hard enough that long
-investigations don't fall over. Their "Intent Met" score, which is whether
-the on-call engineer judged that the investigation addressed the actual root
-cause, went from 45% to 75% on novel incidents.
+File operations and terminal commands sit behind a per-agent experimental
+flag. Agents created before March 10, 2026 need `EnableWorkspaceTools` under
+**Capabilities > Experimental Settings**; newer ones get it by default.
 
-Most of that is switchable in the portal you already have open. Here's what
-maps to what.
-
-### Workspace tools are the first bet, and you should verify the flag
-
-The first bet was exposing everything the agent reasons over as files, read
-through `read_file`, `grep`, `find`, and `shell`. No `SearchCodebase` API, no
-`RetrieveMemory` endpoint. You can see that shape in the product: on the
-Tools page, the core tools — `CreateFile`, `FileSearch`, `GrepSearch` — are
-always enabled and can't be switched off. Those are the locked-on ones I
-mentioned earlier.
-
-File operations and terminal commands are a different story. They need
-workspace tools, and that's a per-agent experimental flag. Agents created
-before March 10, 2026 don't have it and need `EnableWorkspaceTools` turned on
-under **Capabilities > Experimental Settings**. Newer agents get it by
-default.
-
-Don't take the UI's word for it. Read it off the resource:
+These are toggles, not something the platform stamps once, so two agents in
+the same subscription drift apart the moment somebody flips a switch on one
+of them. Ask the resource rather than trusting your memory:
 
 ```bash
-az resource list --resource-type Microsoft.App/agents -o table
-
 az resource show \
   --resource-group <resource-group> \
   --name <agent-name> \
@@ -534,148 +503,68 @@ az resource show \
   --query properties.experimentalSettings -o json
 ```
 
-Mine came back like this:
+### Know what the default sandbox can't do
 
-```json
-{
-  "EnableConnectorsV2": true,
-  "EnableInboundAuditLogging": true,
-  "EnableV2AgentLoop": true,
-  "EnableWorkspaceTools": true
-}
-```
+The article describes the agent installing packages mid-investigation and
+opening PRs from the shell. The Code Interpreter you get by default does none
+of that. It's an isolated Azure Container Apps session with no outbound
+network, no process spawning, no `pip install`, and no filesystem access
+outside `/mnt/data/`. Pandas, matplotlib, and seaborn come preinstalled, and
+that's the deal.
 
-My two agents didn't return the same set: only one carried
-`EnableInboundAuditLogging`. My first instinct was to call that platform
-drift between agents built a day apart, which was me getting ahead of the
-evidence. These are toggles, and I'd been clicking around in Experimental
-Settings on one of them. The resource said so once I bothered to look, since
-`systemData.lastModifiedAt` on that agent pointed at an afternoon I'd spent
-in its settings.
+Workspace tools move Python execution into the workspace sandbox where your
+repo lives. That's a different environment, not a permission bump on the same
+one. The docs don't say whether `pip` and `apt` come along, so if
+"an agent that installs its own tooling" is why the article grabbed you, test
+that before you design around it.
 
-That's the more useful lesson anyway. `experimentalSettings` is mutable
-per-agent state rather than something the platform stamps once at creation,
-so two agents in one subscription drift apart the moment somebody flips a
-switch on one of them. Ask the resource instead of trusting your memory of
-what you turned on where:
+One thing that bites people behind a corporate proxy: the sandbox runs under
+`*.azuresre.ai`, and some network profiles block that domain. If the portal
+loads but code execution hangs, check the allowlist first.
 
-```bash
-az resource show \
-  --resource-group <resource-group> \
-  --name <agent-name> \
-  --resource-type Microsoft.App/agents \
-  --query "{exp:properties.experimentalSettings, modified:systemData.lastModifiedAt}" -o json
-```
+### Let it keep its own notes
 
-While you're in there, `--query properties.defaultModel` is worth a look
-too. Mine reports `{"name": "Automatic", "provider": "Anthropic"}`, which is
-a quiet confirmation that the Haiku and Opus numbers in that KV cache story
-are about the same models running your investigations.
+Your agent keeps a knowledge directory at `memories/synthesizedKnowledge/`.
+It's structured Markdown the agent reads and writes with its normal file
+tools, not a vector store you query. An `overview.md` loads into the system
+prompt at the start of every conversation and links out to topic files it
+reads only when it needs them.
 
-### The default sandbox is not the sandbox in the article
-
-This is the gap I'd want to know about before planning anything around it.
-The article describes the agent installing packages mid-investigation with
-`pip` and `apt`, opening PRs with `gh cli`, and pushing Grafana dashboards.
-The Code Interpreter you get by default does none of that. It's an isolated
-Azure Container Apps session with no outbound network, no process spawning
-(`subprocess` and `os.system` are blocked), no `pip install`, and no
-filesystem access outside `/mnt/data/`. Pandas, matplotlib, and seaborn come
-preinstalled, and that's the deal.
-
-Enabling workspace tools moves Python execution out of that session and into
-the workspace sandbox, where the repo lives. It's a different environment,
-not a permission bump on the same one. What the docs don't spell out is
-whether `pip` and `apt` come with it, so if "an agent that installs its own
-tooling" is why you read the article, test that in your own agent before you
-design around it. The Packages tab covers the predictable half either way,
-and it does so without opening egress.
-
-One prerequisite that bites people behind a corporate proxy: the sandbox
-runs under `*.azuresre.ai`, and some network profiles block that domain by
-default. Your agent's endpoint sits on it too, so if the portal loads but
-code execution hangs, check the allowlist before you check anything else.
-
-### Memory is a directory, not a vector store
-
-Their first memory system was RAG over past session learnings, and it failed
-twice over. It had a circular dependency, since a limited agent learned from
-limited sessions. The deeper problem was retrieval: "KV cache regression" and
-"prompt prefix instability" sit far apart in embedding space and describe the
-same causal chain. Re-ranking, query expansion, and hybrid search didn't fix
-that mismatch. They replaced the whole thing with structured Markdown the
-agent reads and writes through its normal tools, and let the model navigate
-memory rather than query it.
-
-That shipped. Your agent keeps a knowledge directory at
-`memories/synthesizedKnowledge/`. The file `overview.md` loads into the
-system prompt at the start of every conversation on roughly a
-2,000-character budget, and it links out to topic files the agent reads only
-when it needs them. The documented shape carries budgets: `team.md` at about
-500 characters, `auth.md` at 800, `debugging.md` and `deployment.md` at
-1,000 each, `architecture.md` and `logs.md` at 1,500, plus `queries/*.md`.
-
-Those budgets are the interesting bit. `overview.md` is deliberately small
-because you pay for it on every single turn.
-
-You don't have to wait for the agent to fill it in. Ask directly in chat:
+You don't have to wait for it to fill that in. Ask directly in chat:
 
 ```text
 Save this to your knowledge: Application Insights for the Copilot Studio
-agent lives in the AppInsights resource group, and the dependency failures
-we care about come from the Foundry agent, not the app servers.
+agent lives in the <resource-group> resource group, and the dependency
+failures we care about come from the Foundry agent, not the app servers.
 ```
 
-It writes or updates the right file and links it from `overview.md`.
-Separately, `#remember` saves discrete facts to a different store, which you
-search with `#retrieve` and clear with `#forget`. Knowledge files are
-structured references consulted at the start of every conversation; user
-memories are individual facts you look up. Easy to conflate, different
-mechanics.
+The caveat is Microsoft's, not mine: staleness is unsolved. When a service
+changes behavior, old entries turn into confidently wrong context, and they
+say plainly that they don't have a systemic fix. Budget time to review what
+it wrote, the way you'd review a team wiki.
 
-One caveat, and it's Microsoft's rather than mine: staleness is unsolved.
-When two sessions write conflicting patterns into `debugging.md`, the model
-has to reconcile them, and when a service changes behavior, old entries turn
-into confidently wrong context. They rely on timestamps and explicit
-deprecation notes and say plainly that they don't have a systemic answer.
-Budget time to review what it wrote, the way you'd review a team wiki.
+### Give it the repo
 
-### Give it the repo, then read the file it writes back
+Teams pre-write log queries because they don't trust the agent to generate
+correct ones, and that distrust is fair, since models hallucinate table names.
+The fix isn't tighter restriction, it's grounding. When the agent can read the
+code that produces the logs, it knows which exceptions get thrown and under
+what conditions, and it can reason about code paths nobody instrumented,
+which are disproportionately the ones involved in novel failures.
 
-The repo is the schema. Teams pre-wrote log queries because they didn't trust
-the agent to generate correct ones, and that distrust was fair: models
-hallucinate table names and query the wrong cluster. The fix wasn't tighter
-restriction, it was grounding. When the agent reads the code that produces
-the logs, it knows which exceptions get thrown and under what conditions,
-and query construction stops being guesswork.
+That's the Code Access page I set up earlier. What I didn't mention then is
+what happens next: the agent reads your project structure, stack, and
+dependencies, then opens a PR adding an `SREAGENT.md` file to your repo. Read
+that PR properly instead of rubber-stamping it. It's the file that shapes how
+every future investigation starts.
 
-That grounding buys two things telemetry alone can't.
-Point-in-time investigation, where the agent checks out the exact commit
-from the time of the incident rather than current HEAD, is what cracked the
-KV cache case: the breaking diff was the only place the cause was visible.
-And it can reason about code paths nobody instrumented, which are
-disproportionately the ones involved in novel failures precisely because no
-one thought to instrument them.
+### Put a scheduled task on whatever keeps breaking
 
-In the product this is the Code Access page I set up earlier. What I didn't
-mention then is what happens next: the agent analyzes your project structure,
-technology stack, deployment configuration, and service dependencies, then
-opens a PR adding an `SREAGENT.md` file to your repo. That's the same idea as
-the `AGENTS.md` and `CLAUDE.md` convention the article describes, ambient
-context the agent reads on every investigation instead of something you
-restate in each thread.
-
-Review that PR properly rather than rubber-stamping it. It's the file that
-shapes how every future investigation starts.
-
-### Close the loop with a scheduled task
-
-The feedback loop is the payoff, and it's the easiest piece to copy. Their
-example was mundane: LLM errors — timeouts, 429s, mid-stream failures, 400s
-from malformed payloads — were stalling investigations. They set up a daily
-task that pulls the last 24 hours of errors, clusters the top offenders,
-traces each to a root cause in the codebase, and submits a PR. Engineers
-review before merge. Errors dropped by more than 80% over two weeks.
+This is the easiest piece to copy and the one with the clearest payoff. Their
+example was mundane: LLM errors were stalling investigations, so they set up
+a daily task to cluster the last 24 hours of errors, trace the top offenders
+into the codebase, and submit a PR for an engineer to review. Errors dropped
+by more than 80% over two weeks.
 
 You build that under **Scheduled tasks > Create task**. Task details is a
 prompt, so write it like one:
@@ -688,53 +577,248 @@ to the specific file and line in the connected repository. Report what you
 found and what you would change. Don't open a PR without asking me first.
 ```
 
-Leave **Response custom agent** empty and the main agent handles it.
-Frequency gives you daily, weekly, monthly, or a cron expression in UTC. The
-field I'd actually stop and think about is **Agent autonomy level**:
-Autonomous is the default and lets the agent act without approval, which is
-not where I'd start. Run it in Review mode first, use **Run task now** to
-watch it once before it runs unattended, and read the thread each execution
-produces: planning steps, tool calls with timing, the memory it pulled in,
-and the outcome. Three consecutive failures flip the task to Failed.
-
-Then check **Monitor > Session insights**. That's where symptoms, resolution
-steps, root cause, and pitfalls get extracted from each thread, with every
-card linking back to the conversation that produced it. It's the closest
-thing you have to the weekly manual thread review the article describes,
-except you aren't the one reading fifty threads by hand.
-
-### The context budget shows up in ways you'll feel
-
-The third bet was frugality, and two of its consequences are visible from the
-chat window.
-
-Compaction summarizes earlier context when a conversation runs long, and you
-can force it with `/compact`. Here's the catch, buried in the skills
-documentation: active skills clear on compaction, and you can only have five
-active at once, with the oldest unloading when you go past that. A long
-investigation can quietly drop the skill that was guiding it. The agent
-re-reads `SKILL.md` to bring it back, but if a thread stops following your
-runbook halfway through, that's the first place to look.
-
-The other one is simpler. The reasoning loop runs up to 10 iterations per
-turn, then asks whether to continue. That's not a failure. It's the budget
-being honest with you.
+The field to stop and think about is **Agent autonomy level**. Autonomous is
+the default and lets the agent act without approval, which is not where I'd
+start. Run it in Review mode, use **Run task now** to watch it once before it
+runs unattended, then check **Monitor > Session insights**, where symptoms,
+root cause, and pitfalls get pulled out of each thread with a link back to
+the conversation.
 
 ### What doesn't transfer
 
 Worth naming the ceiling. That post is about how Microsoft engineers its own
-harness, and some of it stays theirs. Their agent runs against their source,
-their telemetry, and their deployment history, and the numbers they quote —
-tens of thousands of investigations a week, roughly half of incidents handled
-autonomously for internal teams, Intent Met climbing from 45% to 75% — come
-out of that specific setup. What transfers is the shape: give it your repo,
-let it keep its own notes, put a scheduled task on whatever keeps breaking,
-and stop pre-writing the queries you don't trust it to write.
+harness against its own source, telemetry, and deployment history, and the
+numbers come out of that specific setup. What transfers is the shape: give it
+your repo, let it keep its own notes, put a scheduled task on whatever keeps
+breaking, and stop pre-writing the queries you don't trust it to write.
 
 Their closing line is the one I'd underline. They went from an agent that
 follows your playbook to one that writes the next one. Mine isn't there yet.
-But every piece that would get it there is a switch in a portal I already
-had open.
+But every piece that would get it there is a switch in a portal I already had
+open.
+
+## Running it from the terminal, and the 403 that lies to you
+
+Here's the part I didn't know existed when I wrote everything above: you don't
+need the portal at all. The SRE Agent tools ship inside
+[Azure MCP Server](https://learn.microsoft.com/azure/sre-agent/mcp-server), so
+any MCP client can drive your agent. GitHub Copilot CLI, VS Code, Cursor, and
+Claude Code are all supported. Tools show up prefixed with `sreagent_`.
+
+Listing my agents took one command and about two seconds:
+
+```bash
+npx -y @azure/mcp@latest sreagent agents list \
+  --subscription <subscription-id>
+```
+
+Then I ran a real investigation without opening a browser:
+
+```bash
+npx -y @azure/mcp@latest sreagent threads investigate \
+  --agent <agent-name> \
+  --resource-group <resource-group> \
+  --subscription <subscription-id> \
+  --message "Read-only check: list the Azure resources you can see and tell me
+which ones are reporting an unhealthy or degraded state. Don't modify anything." \
+  --max-iterations 4
+```
+
+Twenty messages later it had walked about 430 resources across 40-odd resource
+groups and come back with a verdict: nothing degraded, two resources reporting
+Unknown because they were idle rather than broken. The reasoning steps stream
+back as messages with `messageType: Reasoning`, so you watch it think in your
+terminal the same way you would in the portal.
+
+Getting there took me longer than the investigation did, and all of it went to
+one error message that was wrong in three different ways.
+
+### Owner on the resource buys you nothing
+
+The first data-plane call failed:
+
+```text
+status 403: Forbidden: Access denied by PDP
+```
+
+I was Owner on that agent. Owner is a control-plane role, and the agent's data
+plane, everything served from `*.azuresre.ai`, is gated separately. Four
+dedicated roles exist, and none of them come with Owner or Contributor:
+
+```bash
+az role definition list --query "[?contains(roleName,'SRE')].roleName" -o tsv
+```
+
+That returns SRE Agent Reader, SRE Agent Standard User, SRE Agent Author, and
+SRE Agent Administrator. Threads, memories, skills, hooks, scheduled tasks,
+and workflows all live behind them. Assign one at the agent resource:
+
+```bash
+az role assignment create \
+  --assignee <your-upn> \
+  --role "SRE Agent Administrator" \
+  --scope "/subscriptions/<subscription-id>/resourceGroups/<resource-group>/providers/Microsoft.App/agents/<agent-name>"
+```
+
+### The same call, the same identity, two different answers
+
+The role assignment didn't fix it. Ten minutes later I was still getting 403,
+so I stopped blaming propagation delay and called the endpoint directly with
+the token my CLI was already using:
+
+```bash
+az account get-access-token \
+  --resource 59f0a04a-b322-4310-adc9-39ac41e9631e \
+  --query accessToken -o tsv
+```
+
+That's the first-party SRE Agent app ID, and it's the audience the data plane
+wants. Not `https://management.azure.com`, which is the same mismatch behind
+the 401 people hit on HTTP triggers. With that token, a plain `GET` against
+`/api/v2/extendedAgent/skills` on the agent endpoint returned **200**.
+
+So the service was fine and my permissions were fine. The tool was signing in
+as somebody else. `DefaultAzureCredential` walks an ordered chain of credential
+sources, and on a machine with several Azure sign-ins it doesn't have to land
+on the one you used for `az login`. Pin it, in PowerShell:
+
+```powershell
+$env:AZURE_TOKEN_CREDENTIALS = "AzureCliCredential"
+```
+
+Or in bash:
+
+```bash
+export AZURE_TOKEN_CREDENTIALS=AzureCliCredential
+```
+
+Same command, same second, 200 and an empty skills list.
+
+### Three layers of misdirection
+
+Worth spelling out, because each one sent me somewhere useless:
+
+The transport wrapper reports **status 503** with a message about service
+availability and network connectivity. Nothing was down. Underneath it was a
+403, and the 503 sent me debugging the wrong layer, the same trap the private
+DNS zones set earlier in this post.
+
+The 403 says "Access denied by PDP." That reads like an authorization problem
+with the resource, so you go fix RBAC. RBAC was a genuine prerequisite, but it
+wasn't the blocker.
+
+And the agent's own audit log is silent. Successful data-plane calls land in
+Application Insights with caller name, status, and the full list of actions the
+caller was entitled to. Denied ones never arrive, because the policy decision
+happens before the request reaches the agent. Don't waste time querying the
+telemetry for your own failures the way I did. Compare a direct `curl` against
+the tool instead. That's the test that tells you whether the problem is the
+service or the client.
+
+### One flag to be deliberate about
+
+While you're in there, note what else the CLI exposes. Alongside
+`threads investigate` there's `threads investigate_yolo`, which runs the same
+loop and auto-approves every pending gate. Microsoft's own documentation is
+unusually direct about it: there's no read-only restriction, the agent can
+invoke any tool its managed identity permits, and that includes deleting pods,
+applying Kubernetes YAML, and scaling resources. It's a genuinely useful flag
+for a lab subscription. It is not something to reach for against production
+because a thread stalled waiting on your approval.
+
+## What the agent writes down about itself
+
+Every agent ships its own telemetry to an Application Insights resource, and
+**Monitor > Logs** in the agent portal drops you straight into it. The
+documentation tells you to query `customEvents` and lists nine event types. I
+ran that query against my own agent expecting to confirm the list:
+
+```kql
+customEvents
+| where timestamp > ago(30d)
+| summarize Count = count() by name
+| sort by Count desc
+```
+
+Two of the busiest events that came back aren't on the documented list at all.
+
+### An access log nobody mentions
+
+`AgentInboundRequestAudit` fires on every inbound data-plane call, and it's a
+proper access log: the path and HTTP method, the response status, the caller's
+display name, whether identity resolution succeeded, and the complete list of
+`Microsoft.App/agents/*` actions that caller was entitled to. If you need to
+answer "who touched this agent, and what were they allowed to do," it's already
+being recorded.
+
+With one gap, and it's the one that cost me time earlier: denied calls never
+show up. The policy decision happens upstream of the agent, so a 403 leaves no
+trace in the agent's own telemetry. Successes are logged, refusals are not.
+It's an access log for what happened, not an audit trail of what was blocked.
+
+### The token fields in the docs aren't there
+
+The documented example for tracking spend sums `InputTokens` and `OutputTokens`
+off `ModelGeneration` events. Mine returned zeros, so I enumerated every field
+name on those events. Neither key exists. Not empty, not renamed that I could
+find. Absent.
+
+That matters because it's the obvious way you'd try to reconcile your AAU bill
+against actual model usage, and it quietly returns a confident zero rather than
+an error. If you build a cost dashboard on that query, check that it's counting
+anything at all before you trust it.
+
+### It writes down what the model was thinking
+
+Here's what `ModelGeneration` does carry, on the `ModelGenerationEnd` events:
+a `ModelThinking` field holding the model's own reasoning in plain text, along
+with `ModelOutput`, `ModelId`, and the reasoning `TaskType`.
+
+Read that twice before you decide how you feel about it. The chain of thought
+your agent produced while deciding what to do with your production estate is
+sitting in an Application Insights resource, under whatever retention policy
+and whatever RBAC that resource happens to have. As a debugging aid it's
+excellent, and it's how I confirmed which model actually answers when the agent
+is set to Automatic. As a data-governance question it deserves a real answer
+before you connect this to anything regulated, and I haven't seen Microsoft
+address it anywhere.
+
+### There's a pre-execution gate you can't write to
+
+The last surprise came out of `AgentHookEvaluation`, which logs a decision every
+time a tool runs:
+
+```kql
+customEvents
+| where name == "AgentHookEvaluation"
+| extend Event = tostring(customDimensions.HookEventType),
+    Tool = tostring(customDimensions.ToolName),
+    Decision = tostring(customDimensions.FinalDecision),
+    SystemHooks = tostring(customDimensions.SystemHooksRun),
+    UserHooks = tostring(customDimensions.UserGlobalHooksRun)
+| summarize Count = count() by Event, Tool, Decision, SystemHooks, UserHooks
+```
+
+Mine returns two event types: `PreToolUse` and `PostToolUse`, each with system
+hooks running and zero user hooks, every decision `pass`.
+
+The [hooks documentation](https://learn.microsoft.com/azure/sre-agent/agent-hooks)
+says two hook events are currently supported, and lists **Stop** and
+**PostToolUse**. `PreToolUse` isn't among them. So the runtime evaluates a gate
+before a tool executes, but the hooks you're invited to author run either after
+the tool already ran or when the agent tries to finish.
+
+That's a real distinction and not a pedantic one. A `PostToolUse` hook can
+block a *result*, inject context, and tell the agent to think again. What it
+cannot do is stop the command from running in the first place. The pre-execution
+veto exists, it's enforcing something on every call, and right now it's
+Microsoft's, not yours. Worth knowing before you promise anyone that hooks will
+prevent a destructive command.
+
+Hooks are still the most interesting governance surface here. Stop hooks let you
+define what "done" means and force the agent to keep working, command hooks run
+sandboxed bash or Python with a 64 KB script limit, and a rejection without a
+`reason` field is silently treated as approval. That last one will bite someone.
 
 ## What the hour actually cost
 
