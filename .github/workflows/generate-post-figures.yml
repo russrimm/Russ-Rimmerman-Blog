@@ -16,6 +16,12 @@ name: Generate post figures
 #   AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_IMAGE_DEPLOYMENT, AZURE_OPENAI_CHAT_DEPLOYMENT
 # and the same identity secrets as deploy:
 #   AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID
+#
+# AZURE_OPENAI_CHAT_DEPLOYMENT falls back to a repo *secret* of the same name,
+# because this repo still carries one from before these values moved to
+# variables. The variable wins when both are set; a deployment name is not
+# sensitive, so the variable is the preferred home.
+#
 # See "Auto-generating in-article figures" in README.md.
 
 on:
@@ -89,7 +95,7 @@ jobs:
         env:
           AZURE_OPENAI_ENDPOINT: ${{ vars.AZURE_OPENAI_ENDPOINT }}
           AZURE_OPENAI_IMAGE_DEPLOYMENT: ${{ vars.AZURE_OPENAI_IMAGE_DEPLOYMENT }}
-          AZURE_OPENAI_CHAT_DEPLOYMENT: ${{ vars.AZURE_OPENAI_CHAT_DEPLOYMENT }}
+          AZURE_OPENAI_CHAT_DEPLOYMENT: ${{ vars.AZURE_OPENAI_CHAT_DEPLOYMENT || secrets.AZURE_OPENAI_CHAT_DEPLOYMENT }}
           SLUG_INPUT: ${{ github.event.inputs.slug }}
           MAX_FIGURES: ${{ github.event.inputs.max_figures }}
           INCLUDE_DRAFTS: ${{ github.event.inputs.include_drafts }}

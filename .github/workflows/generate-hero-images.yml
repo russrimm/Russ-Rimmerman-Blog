@@ -6,11 +6,17 @@ name: Generate hero images
 # Auth is Microsoft Entra ID via OIDC (federated credential) — there is NO API
 # key and NO long-lived secret. It reuses the same identity as the deploy
 # workflow; that identity additionally needs the "Cognitive Services OpenAI
-# User" role on the Azure OpenAI resource. Endpoint + deployment are non-secret
+# User" role on the Azure OpenAI resource. Endpoint + deployments are non-secret
 # repo *variables* (Settings → Secrets and variables → Actions → Variables):
-#   AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_IMAGE_DEPLOYMENT
+#   AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_IMAGE_DEPLOYMENT, AZURE_OPENAI_CHAT_DEPLOYMENT
 # and the same identity secrets as deploy:
 #   AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID
+#
+# AZURE_OPENAI_CHAT_DEPLOYMENT is optional here: without it the generator falls
+# back to the static topic map and scenes are less content-specific. It reads a
+# repo *secret* of the same name as a fallback, because this repo still carries
+# one from before these values moved to variables.
+#
 # See "Auto-generating blog hero images" in README.md.
 
 on:
@@ -87,6 +93,7 @@ jobs:
         env:
           AZURE_OPENAI_ENDPOINT: ${{ vars.AZURE_OPENAI_ENDPOINT }}
           AZURE_OPENAI_IMAGE_DEPLOYMENT: ${{ vars.AZURE_OPENAI_IMAGE_DEPLOYMENT }}
+          AZURE_OPENAI_CHAT_DEPLOYMENT: ${{ vars.AZURE_OPENAI_CHAT_DEPLOYMENT || secrets.AZURE_OPENAI_CHAT_DEPLOYMENT }}
         run: |
           extra_args=""
           if [ "${{ github.event.inputs.include_drafts }}" = "true" ]; then
