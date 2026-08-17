@@ -20,6 +20,7 @@ copies it into `dist/` for prebuilt deployments.
 - ♿ Skip links, keyboard navigation, reduced-motion support, and responsive images
 - 🔒 Privacy disclosure, opt-in comment loading, CSP, and security headers
 - 🖼️ AI-generated, topic-aware photorealistic enterprise post hero images (Entra ID / OIDC — no API key)
+- 📐 AI-generated explanatory in-article figures, added only where a diagram genuinely helps
 - 🎨 Azure-inspired design system
 
 ## Prerequisites
@@ -56,6 +57,7 @@ npm run dev      # start the dev server at http://localhost:4321
 | `npm run preview`    | Preview the production build locally.                                                                                                                            |
 | `npm run astro`      | Passthrough to the Astro CLI (`npm run astro -- <cmd>`).                                                                                                         |
 | `npm run hero`       | Generate topic-aware AI hero images for posts (see [Auto-generating blog hero images](#auto-generating-blog-hero-images)).                                       |
+| `npm run figures`    | Generate explanatory in-article figures for posts (see [Auto-generating in-article figures](#auto-generating-in-article-figures)).                               |
 | `npm run format`     | Format the maintained source and configuration paths listed in `package.json`; editorial content and skill files outside those paths are intentionally excluded. |
 
 ## Writing a blog post
@@ -243,6 +245,56 @@ To enable it:
 > **not** re-trigger other workflows \u2014 so the deploy workflow won't run on that
 > commit. Re-run the deploy manually, or push any follow-up change, to publish
 > the new images.
+
+## Auto-generating in-article figures
+
+A hero image sets the tone; it does not explain anything. Some posts also need a
+diagram in the middle of the article (a trust chain, an architecture topology, a
+permission boundary, an ordered sequence) so a reader at any experience level can
+follow along without reverse-engineering it from prose.
+
+`npm run figures` handles that. It reads a post **section by section**, asks the
+chat deployment which sections genuinely need a picture, generates a labeled
+concept diagram for each one, writes the WebP to
+`src/assets/blog/<slug>/figure-<name>.webp`, and inserts the
+[`<Figure>`](src/components/Figure.astro) markup (with `alt` text and a caption)
+into the post's MDX right after that section's opening paragraph.
+
+It uses the **same Azure OpenAI endpoint, deployments, and Entra ID auth as the
+hero generator**, so [One-time setup](#one-time-setup) covers it. The one extra
+requirement is `AZURE_OPENAI_CHAT_DEPLOYMENT`, which is optional for hero images
+but **required** here: the chat model is what decides whether a section warrants
+a figure at all.
+
+The bar for adding a figure is deliberately high. Sections that already contain
+an image are skipped, and "this post needs no diagrams" is a normal, expected
+result. The generator does not pad a post with decoration.
+
+### Generating figures
+
+```bash
+npm run figures -- <post-slug>              # analyze one post and generate its figures
+npm run figures -- <post-slug> --dry-run    # print the plan + prompts, generate nothing
+npm run figures -- <post-slug> --max 2      # cap figures for this post (default 3)
+npm run figures -- <post-slug> --force      # regenerate figures that already exist
+npm run figures -- --all                    # every published post
+npm run figures -- --all --include-drafts   # ...including drafts
+```
+
+Start with `--dry-run`: it prints which sections were chosen, the alt text, and
+the full image prompt without spending a single image call. Review the generated
+WebP files and the inserted markup, then commit both with the post. To drop a
+figure, delete its `<Figure>` block, its `import`, and the WebP.
+
+### On demand (GitHub Actions)
+
+The workflow at
+[`.github/workflows/generate-post-figures.yml`](.github/workflows/generate-post-figures.yml)
+runs the same generator from **Run workflow**. It is deliberately
+`workflow_dispatch` only: unlike hero images, adding figures rewrites the body of
+a post, so it should always be an explicit, reviewed action. Beyond the hero
+workflow's configuration it needs one extra repo **Variable**,
+`AZURE_OPENAI_CHAT_DEPLOYMENT`.
 
 ## Deploying to Azure Static Web Apps
 
