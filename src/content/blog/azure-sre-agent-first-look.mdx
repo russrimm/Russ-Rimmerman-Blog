@@ -768,6 +768,11 @@ against actual model usage, and it quietly returns a confident zero rather than
 an error. If you build a cost dashboard on that query, check that it's counting
 anything at all before you trust it.
 
+My guess is this is still being wired up, since the service is in preview and
+the docs are clearly written against a schema someone intends to ship. It's also
+entirely possible the counts land somewhere I didn't think to look. Either way,
+the query as documented didn't work for me, and it failed silently.
+
 ### It writes down what the model was thinking
 
 Here's what `ModelGeneration` does carry, on the `ModelGenerationEnd` events:
