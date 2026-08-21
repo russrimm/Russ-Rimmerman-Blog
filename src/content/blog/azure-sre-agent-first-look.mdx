@@ -11,6 +11,10 @@ featured: false
 ---
 
 import Screenshot from "@/components/Screenshot.astro";
+import Diagram from "@/components/Diagram.astro";
+import capabilityOverview from "@/assets/blog/azure-sre-agent-first-look/figure-capability-overview.svg?raw";
+import servicenowLoop from "@/assets/blog/azure-sre-agent-first-look/figure-servicenow-loop.svg?raw";
+import incidentLifecycle from "@/assets/blog/azure-sre-agent-first-look/figure-incident-lifecycle.svg?raw";
 import operationsHub from "@/assets/blog/azure-sre-agent-first-look/operations-hub-overview.png";
 import automation from "@/assets/blog/azure-sre-agent-first-look/automation-create-trigger.png";
 import toolPermissions from "@/assets/blog/azure-sre-agent-first-look/connector-tool-permissions.png";
@@ -51,6 +55,11 @@ It connects your observability tools, incident platforms, and source
 repositories into one workflow. Instead of hopping between a dashboard,
 PagerDuty, and Slack when something breaks, you get a single investigation with
 the "what changed, what's affected, what to do next" already worked out.
+
+<Diagram
+  svg={capabilityOverview}
+  caption="The whole surface area in one picture: what it does, how you govern it, what it connects to, and what you still have to switch on yourself."
+/>
 
 <Screenshot
   src={operationsHub}
@@ -493,6 +502,11 @@ ServiceNow raises the incident, SRE Agent is connected to ServiceNow, and the
 investigation starts before anyone's phone lights up. Which is the whole point:
 everything I described earlier in this post, I had to go ask for.
 
+<Diagram
+  svg={servicenowLoop}
+  caption="The loop the Incidents connection closes: alert in, ticket raised, investigation, mitigation, then the ticket closed with the root cause written back."
+/>
+
 ### The response plan is the part I'd underestimated
 
 I gave response plans one line earlier. They deserve more. A response plan is
@@ -533,6 +547,11 @@ recent 500s before it called the mitigation good.
 That's the Verification step earning its place, and it's what most homegrown
 automation skips. Restarting something and declaring victory is easy.
 Checking whether the restart worked is the part people leave out.
+
+<Diagram
+  svg={incidentLifecycle}
+  caption="The same loop laid out end to end, from the alert firing to the ticket closing with resolution notes attached."
+/>
 
 ### The handoff to a coding agent is the headline
 
