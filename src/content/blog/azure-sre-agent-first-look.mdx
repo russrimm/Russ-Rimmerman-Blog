@@ -2,9 +2,9 @@
 title: "An Hour with Azure SRE Agent"
 heroImage: ../../assets/blog/azure-sre-agent-first-look.webp
 heroAlt: "Editorial illustration representing Azure."
-description: "What Azure SRE Agent is, what setup actually looks like, and what happened when I pointed it at my own repo, my Application Insights telemetry across Dataverse, Copilot Studio, and Foundry, and then asked it for a health check on everything at once. Plus the five switches worth flipping that you don't get turned on by default, and the 403 that stands between you and running the whole thing from your terminal."
+description: "What Azure SRE Agent is, what setup actually looks like, and what happened when I pointed it at my own repo, my Application Insights telemetry across Dataverse, Copilot Studio, and Foundry, and then asked it for a health check on everything at once. Plus what connecting an incident platform buys you — autonomous mitigation, a verification loop, and a handoff straight to the GitHub Copilot coding agent — and the five switches worth flipping that you don't get turned on by default."
 pubDate: 2026-08-14
-updatedDate: 2026-08-16
+updatedDate: 2026-08-21
 tags: ["Azure", "Azure SRE Agent", "Application Insights", "Copilot Studio", "Dataverse", "Microsoft Foundry", "GitHub", "Security", "DevOps"]
 draft: false
 featured: false
@@ -76,15 +76,21 @@ alert can start the investigation before anyone opens a laptop.
   caption="Automation gives you two entry points — a scheduled check or an HTTP trigger fired by an alert or webhook."
 />
 
-Nothing it proposes deploys without a human approving it first. That
-distinction matters more than it sounds like it should: this is an agent that
+By default, nothing it proposes deploys without a human approving it first,
+and that default earns its keep: out of the box this is an agent that
 recommends and drafts, not one that reboots your production database because
-it decided that was a good idea at 3 a.m. The mechanics behind that guardrail
-are straightforward: the agent explains what it intends to do and why before
-acting, every interaction produces a full audit trail, routine operations run
-autonomously, and anything flagged as high-impact pauses for in-workflow
-sign-off. There's a network layer underneath all of that as well, which I get
-into further down. See
+it decided that was a good idea at 3 a.m.
+
+Read "by default" literally, though. Autonomy is a setting, not a property of
+the product. A response plan or a scheduled task switched to autonomous will
+act without asking you, up to and including scaling a production app in the
+middle of an incident. I've got a worked example of exactly that further down.
+
+The mechanics of the guardrail are straightforward: the agent explains what it
+intends to do and why before acting, every interaction produces a full audit
+trail, routine operations run autonomously, and anything flagged as
+high-impact pauses for in-workflow sign-off. There's a network layer
+underneath all of that as well, which I get into further down. See
 [Rethinking cloud operations with Azure SRE Agent](https://techcommunity.microsoft.com/blog/appsonazureblog/a-paradigm-shift-in-cloud-operations-with-azure-sre-agent/4533244)
 for the full picture.
 
@@ -470,6 +476,98 @@ a table, and test it in a playground before it touches anything real.
   caption="Agent Canvas. Build your own subagents and skills, then test them in a playground before they run for real."
 />
 
+## What connecting Incidents actually buys you
+
+I just told you Incidents is the one I never wired up. Then I watched the
+[Azure Friday episode](https://learn.microsoft.com/shows/azure-friday/azure-sre-agent-less-toil-more-uptime-maximum-innovation)
+where Deepthi Chelupati walks Scott Hanselman through the full incident loop,
+and it reframed what that hollow circle on my setup strip was actually costing
+me.
+
+Two caveats before the details. This is a demo I watched, not a run I did. And
+it was recorded during public preview, so the specifics have almost certainly
+moved. Take the shape of it, not the particulars.
+
+The scenario is a food-ordering app where Add to cart starts failing.
+ServiceNow raises the incident, SRE Agent is connected to ServiceNow, and the
+investigation starts before anyone's phone lights up. Which is the whole point:
+everything I described earlier in this post, I had to go ask for.
+
+### The response plan is the part I'd underestimated
+
+I gave response plans one line earlier. They deserve more. A response plan is
+how you tell the agent to handle a class of incident, and you write it in plain
+English, including any runbook you've been maintaining for years. The agent
+turns that into a structured execution plan and picks the tools it will call to
+carry each step out. It also ships with built-in plans for common Azure service
+scenarios, so you're editing a starting point rather than staring at a blank
+box.
+
+Autonomy is set per plan. Fully autonomous, or human-in-the-loop at whichever
+steps you care about. That's the setting I mentioned near the top, and this is
+where it lives.
+
+### It diagnosed, then it actually fixed it
+
+The order it worked in is the order a decent on-call engineer would use. Metrics
+first: CPU, memory, and availability all looked fine. Then application logs,
+where it found an out-of-memory exception. Then it correlated that against
+request volume to decide whether it was looking at an application fault or a
+platform fault, ruled out the platform, and scaled the app up.
+
+Not proposed scaling it. Scaled it. The response plan was set to autonomous, so
+no human sat in the middle. If your read of this product is "it drafts and I
+approve," that's the default and it's a good default, but it is only a default.
+
+It also posted running updates into the ServiceNow discussion thread as it
+went, which matters more than it sounds like it should. If your team lives in
+the incident tool and gets its feed by email, they see the investigation without
+anyone opening the Azure portal.
+
+### Then it watched its own fix
+
+After scaling, it kept pulling the same metrics for a window you configure,
+looking for whether recovery held. It came back with stable metrics and no
+recent 500s before it called the mitigation good.
+
+That's the Verification step earning its place, and it's what most homegrown
+automation skips. Restarting something and declaring victory is easy.
+Checking whether the restart worked is the part people leave out.
+
+### The handoff to a coding agent is the headline
+
+Mitigation isn't a fix, and the agent doesn't pretend otherwise. It opened a
+GitHub issue carrying the logs, the metrics, the evidence chain, and its root
+cause. Then it ran semantic search across the connected repo, matched the
+failure to specific source files, and pointed at the code doing the leaking.
+The chapter markers on the episode say Azure DevOps work items too, not just
+GitHub issues.
+
+Then it assigned the issue to GitHub Copilot, and the coding agent opened a
+pull request removing the offending allocation.
+
+So: alert to diagnosis to mitigation to root cause to assigned issue to open
+PR, with two different agents handing work to each other and a human reviewing
+a diff at the end. The demo ran from 5:18 to 5:34. Fifteen minutes.
+
+### The drift check is the bit nobody would think to ask for
+
+This is my favorite detail and it's easy to miss. Having just scaled the app in
+Azure, the agent went and compared the live configuration against the
+infrastructure-as-code in the repo, noticed they no longer agreed, and told the
+engineer to go fix the source so the next deployment wouldn't quietly undo the
+mitigation.
+
+Nobody asked it to do that. It's the kind of follow-through that usually shows
+up three weeks later as "why did prod scale back down on its own."
+
+### What I'd change about my own setup
+
+Everything I ran in this post was me typing questions into a chat box. Useful,
+but it's the manual mode. The incident connection is what turns it into
+something that works while you're asleep, and the response plan is where the
+judgment goes. Mine is still an unconnected blade.
+
 ## How to switch on the parts you don't get by default
 
 Everything above is what the agent does out of the box. The team that builds
@@ -576,6 +674,20 @@ and failing operation, rank by count, and for the top three trace each one
 to the specific file and line in the connected repository. Report what you
 found and what you would change. Don't open a PR without asking me first.
 ```
+
+You can be lazier than that, though. Give it a paragraph and the agent expands
+it into the structured version itself: goal and scope, execution steps,
+constraints, and the shape the output should take. The generated version is
+plain text you can copy to a teammate, so the good tasks become something your
+team shares rather than something each person rewrites badly.
+
+The other pattern worth stealing is the one from the Azure Friday demo, and
+it's aimed at prevention rather than triage: check for a recent deployment,
+health-check whatever it touched, and roll back if it looks unhealthy. Most
+incidents start at deploy time, so a task that catches a bad rollout before
+your users do is a better first task than error clustering. It's also the one
+where I'd think hardest about autonomy, because "roll back automatically" is a
+production write.
 
 The field to stop and think about is **Agent autonomy level**. Autonomous is
 the default and lets the agent act without approval, which is not where I'd
