@@ -11,10 +11,10 @@ featured: false
 ---
 
 import Screenshot from "@/components/Screenshot.astro";
-import Figure from "@/components/Figure.astro";
-import teammateOverview from "@/assets/blog/azure-sre-agent-first-look/figure-ai-teammate-overview.webp";
-import healingLoop from "@/assets/blog/azure-sre-agent-first-look/figure-autonomous-healing-loop.webp";
-import incidentLifecycle from "@/assets/blog/azure-sre-agent-first-look/figure-incident-lifecycle.webp";
+import Diagram from "@/components/Diagram.astro";
+import capabilityOverview from "@/assets/blog/azure-sre-agent-first-look/figure-capability-overview.svg?raw";
+import servicenowLoop from "@/assets/blog/azure-sre-agent-first-look/figure-servicenow-loop.svg?raw";
+import incidentLifecycle from "@/assets/blog/azure-sre-agent-first-look/figure-incident-lifecycle.svg?raw";
 import operationsHub from "@/assets/blog/azure-sre-agent-first-look/operations-hub-overview.png";
 import automation from "@/assets/blog/azure-sre-agent-first-look/automation-create-trigger.png";
 import toolPermissions from "@/assets/blog/azure-sre-agent-first-look/connector-tool-permissions.png";
@@ -56,10 +56,9 @@ repositories into one workflow. Instead of hopping between a dashboard,
 PagerDuty, and Slack when something breaks, you get a single investigation with
 the "what changed, what's affected, what to do next" already worked out.
 
-<Figure
-  src={teammateOverview}
-  alt="Overview diagram of Azure SRE Agent split into four quadrants: core capabilities including autonomous incident response and root cause analysis, enterprise governance and security covering Allow, Ask, and Deny tool policies, managed identity, VNet integration in preview and a private plugin marketplace, deep context and integrations via MCP connectors and source code grounding, and pricing and adoption showing Azure Agent Units and a crawl, walk, run, fly progression. A center panel compares human triage against the agent."
-  caption="The whole surface area in one picture: what it does, how you govern it, what it connects to, and how it's billed. Treat the comparison numbers in the center as marketing figures — I haven't reproduced them."
+<Diagram
+  svg={capabilityOverview}
+  caption="The whole surface area in one picture: what it does, how you govern it, what it connects to, and what you still have to switch on yourself."
 />
 
 <Screenshot
@@ -503,9 +502,8 @@ ServiceNow raises the incident, SRE Agent is connected to ServiceNow, and the
 investigation starts before anyone's phone lights up. Which is the whole point:
 everything I described earlier in this post, I had to go ask for.
 
-<Figure
-  src={healingLoop}
-  alt="Infinity-loop diagram of the Azure SRE Agent and ServiceNow integration with four stages: incident trigger and ServiceNow sync when an Azure Monitor alert fires, multi-channel notification through Microsoft Teams, Outlook, or the SRE portal, deep context investigation correlating logs, metrics, and source code, autonomous remediation, and loop closure where the agent writes the root cause into the incident notes and closes the ticket. A callout notes the integration needs a ServiceNow user with ITIL, ITIL Admin, and SNC Platform REST API Access roles."
+<Diagram
+  svg={servicenowLoop}
   caption="The loop the Incidents connection closes: alert in, ticket raised, investigation, mitigation, then the ticket closed with the root cause written back."
 />
 
@@ -550,9 +548,8 @@ That's the Verification step earning its place, and it's what most homegrown
 automation skips. Restarting something and declaring victory is easy.
 Checking whether the restart worked is the part people leave out.
 
-<Figure
-  src={incidentLifecycle}
-  alt="Left-to-right timeline of an automated incident lifecycle: a fault breaches the availability target, Azure Monitor fires a Sev1 alert, a ServiceNow incident is created and acknowledged by the agent, the agent correlates logs, application traces, and deployment history to identify a root cause, selects a remediation runbook and executes it, monitors the service level indicator until recovery holds, then closes the ServiceNow incident with resolution notes."
+<Diagram
+  svg={incidentLifecycle}
   caption="The same loop laid out end to end, from the alert firing to the ticket closing with resolution notes attached."
 />
 
