@@ -156,9 +156,17 @@ html.dark .astro-code span {
     background-color: color-mix(in srgb, var(--color-ink-800) 60%, transparent);
   }
 
+  /* The timeline is deliberately declared in its own rule. Lightning CSS still
+   * models `animation-timeline` as part of the `animation` shorthand (an old
+   * draft), so when both sit in one rule it folds them into
+   * `animation: linear forwards reading-progress scroll(root)`, which browsers
+   * reject outright and the bar silently stops working in the minified build. */
   [data-reading-progress] {
     transform-origin: left;
     animation: reading-progress linear forwards;
+  }
+
+  [data-reading-progress]:not(:root) {
     animation-timeline: scroll(root block);
   }
 }
