@@ -19,7 +19,7 @@ const isActive = (href: string) =>
     <a
       href="/"
       aria-label={`${SITE_TITLE} home`}
-      class="group text-ink-900 inline-flex min-w-0 items-center gap-2 rounded-lg font-semibold dark:text-white"
+      class="group text-ink-900 inline-flex shrink-0 items-center gap-2 rounded-lg font-semibold dark:text-white"
     >
       <Image
         src={headshot}
@@ -29,10 +29,10 @@ const isActive = (href: string) =>
         aria-hidden="true"
         class="border-ink-200 group-hover:border-azure-300 dark:border-ink-700 dark:group-hover:border-azure-600 h-10 w-10 shrink-0 rounded-xl border bg-white object-cover shadow-sm transition"
       />
-      <span class="hidden min-w-0 flex-col sm:flex">
-        <span class="truncate leading-tight">{SITE_TITLE}</span>
+      <span class="hidden flex-col whitespace-nowrap sm:flex">
+        <span class="leading-tight">{SITE_TITLE}</span>
         <span
-          class="text-ink-500 dark:text-ink-400 truncate text-xs leading-tight font-normal"
+          class="text-ink-500 dark:text-ink-400 text-xs leading-tight font-normal"
         >
           {SITE_TAGLINE}
         </span>
@@ -95,7 +95,9 @@ const isActive = (href: string) =>
         href={SOCIALS.buymeacoffee}
         target="_blank"
         rel="noopener noreferrer"
-        class="hidden h-10 items-center gap-2 rounded-lg bg-[#FFDD00] px-3 text-sm font-semibold text-black shadow-sm transition hover:brightness-95 focus-visible:ring-2 focus-visible:ring-[#FFDD00]/50 xl:inline-flex"
+        aria-label="Buy me a coffee"
+        title="Buy me a coffee"
+        class="hidden h-10 w-10 items-center justify-center rounded-lg bg-[#FFDD00] text-black shadow-sm transition hover:brightness-95 focus-visible:ring-2 focus-visible:ring-[#FFDD00]/50 xl:inline-flex"
       >
         <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <path
@@ -119,7 +121,6 @@ const isActive = (href: string) =>
             stroke-width="1.4"
             stroke-linecap="round"></path>
         </svg>
-        <span>Buy me a coffee</span>
       </a>
 
       <ThemeToggle />
