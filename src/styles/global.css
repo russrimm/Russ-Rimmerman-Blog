@@ -119,6 +119,11 @@ body {
   @apply scroll-mt-24;
   text-wrap: balance;
 }
+/* Long inline code (resource IDs, cmdlets, URLs) must not force the page to
+ * scroll sideways on narrow screens. Block code inside <pre> still scrolls. */
+.prose :where(code):not(:where(.not-prose *, pre *)) {
+  overflow-wrap: anywhere;
+}
 
 /* Syntax highlighting.
  * Shiki's palette lives in classes rather than style attributes so the CSP can
@@ -131,6 +136,40 @@ html.dark .astro-code {
 html.dark .astro-code,
 html.dark .astro-code span {
   color: var(--shiki-dark);
+}
+
+/* Reading progress bar.
+ * Driven entirely by a CSS scroll timeline: the CSP sets style-src-attr 'none',
+ * so JS cannot write inline styles to animate it. Browsers without scroll-driven
+ * animation support simply never show the bar. */
+[data-reading-progress-track] {
+  display: none;
+}
+
+@supports (animation-timeline: scroll()) {
+  [data-reading-progress-track] {
+    display: block;
+    background-color: color-mix(in srgb, var(--color-ink-200) 60%, transparent);
+  }
+
+  :where(.dark) [data-reading-progress-track] {
+    background-color: color-mix(in srgb, var(--color-ink-800) 60%, transparent);
+  }
+
+  [data-reading-progress] {
+    transform-origin: left;
+    animation: reading-progress linear forwards;
+    animation-timeline: scroll(root block);
+  }
+}
+
+@keyframes reading-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
 }
 
 /* Reduced motion: suppress transforms and scale animations */
@@ -165,6 +204,8 @@ html.dark .astro-code span {
   [data-comments],
   [data-newsletter-container],
   [data-table-of-contents],
+  [data-toc-rail],
+  [data-reading-progress-track],
   nav[aria-label="More articles"] {
     display: none !important;
   }
@@ -172,6 +213,12 @@ html.dark .astro-code span {
   [data-blog-article] {
     max-width: none;
     padding: 0;
+  }
+
+  [data-blog-article-container] {
+    display: block !important;
+    max-width: none !important;
+    padding: 0 !important;
   }
 
   [data-blog-article] .prose {
