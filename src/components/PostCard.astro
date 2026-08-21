@@ -62,9 +62,11 @@ const Heading = headingLevel === 2 ? "h2" : "h3";
     <Heading class="text-ink-900 text-lg font-semibold dark:text-white">
       <a href={url} class="after:absolute after:inset-0">{title}</a>
     </Heading>
-    <p class="text-ink-600 dark:text-ink-300 line-clamp-3 flex-1 text-sm">
-      {description}
-    </p>
-    <TagList tags={tags} class="relative z-10 mt-1" />
+    <div class="flex-1">
+      <p class="text-ink-600 dark:text-ink-300 line-clamp-3 text-sm">
+        {description}
+      </p>
+    </div>
+    <TagList tags={tags} max={3} class="relative z-10 mt-1" />
   </div>
 </article>
