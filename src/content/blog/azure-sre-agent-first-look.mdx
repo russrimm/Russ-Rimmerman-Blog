@@ -14,7 +14,6 @@ import Screenshot from "@/components/Screenshot.astro";
 import Diagram from "@/components/Diagram.astro";
 import capabilityOverview from "@/assets/blog/azure-sre-agent-first-look/figure-capability-overview.svg?raw";
 import servicenowLoop from "@/assets/blog/azure-sre-agent-first-look/figure-servicenow-loop.svg?raw";
-import incidentLifecycle from "@/assets/blog/azure-sre-agent-first-look/figure-incident-lifecycle.svg?raw";
 import operationsHub from "@/assets/blog/azure-sre-agent-first-look/operations-hub-overview.png";
 import automation from "@/assets/blog/azure-sre-agent-first-look/automation-create-trigger.png";
 import toolPermissions from "@/assets/blog/azure-sre-agent-first-look/connector-tool-permissions.png";
@@ -32,6 +31,7 @@ import demoFindings from "@/assets/blog/azure-sre-agent-first-look/demo-unhealth
 import demoPriority from "@/assets/blog/azure-sre-agent-first-look/demo-priority-table.png";
 import liveReport from "@/assets/blog/azure-sre-agent-first-look/live-report-dashboard.png";
 import incidentsOnboarding from "@/assets/blog/azure-sre-agent-first-look/incidents-onboarding.png";
+import incidentLifecycle from "@/assets/blog/azure-sre-agent-first-look/incident-lifecycle-servicenow.png";
 import agentCanvas from "@/assets/blog/azure-sre-agent-first-look/agent-canvas-subagents.png";
 
 Azure SRE Agent is the operations agent for the work that eats an
@@ -548,9 +548,10 @@ That's the Verification step earning its place, and it's what most homegrown
 automation skips. Restarting something and declaring victory is easy.
 Checking whether the restart worked is the part people leave out.
 
-<Diagram
-  svg={incidentLifecycle}
-  caption="The same loop laid out end to end, from the alert firing to the ticket closing with resolution notes attached."
+<Screenshot
+  src={incidentLifecycle}
+  alt="Four-phase diagram of the Azure SRE Agent and ServiceNow incident lifecycle. Phase 1, detection and ingestion: a Sev1 Azure Monitor alert fires when availability drops below 95 percent, a ServiceNow incident is created, and the SRE Agent acknowledges the ticket under its service identity. Phase 2, autonomous investigation: the agent correlates Kusto logs, Application Insights traces, and recent GitHub commits, then runs diagnostic scripts through a Python code interpreter to tell a transient backend state from a persistent configuration error. Phase 3, automated remediation: running in autonomous mode the agent picks a runbook, executes the fix through the Azure CLI or REST APIs, and watches the telemetry stream until service level indicators return to healthy thresholds. Phase 4, resolution and closure: the agent writes investigation logs, the root cause hypothesis, and the remediation result into the ServiceNow incident, then resolves it and auto-closes the original Azure Monitor alert."
+  caption="The same loop again, this time with the machinery showing — which signals get correlated in the investigation, where the runbook fires, and what lands back in the ticket."
 />
 
 ### The handoff to a coding agent is the headline
