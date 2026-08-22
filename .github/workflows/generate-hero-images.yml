@@ -31,12 +31,12 @@ on:
         type: string
         default: ""
       style:
-        description: "Prompt style. 'presenter' = author at whiteboard (current default). 'content' = subject-matter illustration only, no author, no headshot, no training room."
+        description: "Prompt style. 'content' = subject-matter illustration only, no author, no headshot, no training room (current default). 'presenter' = author at whiteboard."
         type: choice
-        default: presenter
+        default: content
         options:
-          - presenter
           - content
+          - presenter
       include_drafts:
         description: "Also generate images for draft posts"
         type: boolean
@@ -100,9 +100,14 @@ jobs:
             extra_args="--include-drafts"
           fi
 
+          # A `push` event carries no inputs, so style_input is empty there and
+          # the default below is what every auto-generated new post gets.
           style_input="${{ github.event.inputs.style }}"
-          if [ "$style_input" = "content" ]; then
-            extra_args="$extra_args --content-only"
+          if [ -z "$style_input" ]; then
+            style_input="content"
+          fi
+          if [ "$style_input" = "presenter" ]; then
+            extra_args="$extra_args --presenter"
           fi
 
           slug_input="${{ github.event.inputs.slug }}"

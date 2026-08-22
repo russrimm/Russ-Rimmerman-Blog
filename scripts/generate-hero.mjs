@@ -5,18 +5,22 @@
 // likeness reference so the person in the hero resembles the author.
 //
 // Usage:
-//   npm run hero -- <slug>              generate one post's image (author + whiteboard scene)
+//   npm run hero -- <slug>              generate one post's image (content-only illustration)
 //   npm run hero -- <slug1> <slug2> ... generate several posts in one run
 //   npm run hero -- <slug> --force      overwrite an existing image / frontmatter
 //   npm run hero -- --missing           generate for every published post lacking one
 //   npm run hero -- --missing --include-drafts   ...including drafts
 //   npm run hero -- <slug> --dry-run    print the prompt only, no token / API call
 //   npm run hero -- --list-missing      list slugs that have no heroImage (no calls)
-//   npm run hero -- <slug> --content-only
-//                                       use the alternate content-only prompt: an editorial
-//                                       illustration of the post's subject matter, with NO
-//                                       author, NO headshot reference, and NO training-room
-//                                       venue. Combine with --force to replace existing.
+//   npm run hero -- <slug> --presenter
+//                                       use the presenter prompt instead: the author at a
+//                                       whiteboard in a venue, with the headshot passed as a
+//                                       likeness reference. Combine with --force to replace
+//                                       an existing image.
+//
+// The default is the content-only prompt: an editorial illustration of the post's
+// subject matter, with NO author, NO headshot reference, and NO training-room venue.
+// `--content-only` is still accepted and is now a no-op that names the default.
 //
 // This is a LOCAL / CI generator — never run it at page-build time. It calls a
 // paid image API, is non-deterministic, and needs Entra ID auth. Generate once,
@@ -383,7 +387,7 @@ function buildPrompt({
 
 // Alternate prompt: an editorial illustration of the post's subject matter
 // itself — no author, no headshot reference, no training-room / audience venue.
-// Use this via the `--content-only` flag (or the workflow's `style: content`
+// Use this via the default prompt path (or the workflow's `style: content`
 // input) when you want cover art driven purely by what the post is about.
 function buildContentPrompt({
   title,
@@ -645,8 +649,8 @@ async function generatePost(slug, { force, dryRun, cfg, contentOnly }) {
   const composition = pickComposition(slug);
   const outfit = pickOutfit(slug);
   // The presenter/whiteboard scene always features the author, so we pass the
-  // headshot as a likeness reference. In `--content-only` mode we skip the
-  // author entirely: no headshot, no venue, subject-matter-only illustration.
+  // headshot as a likeness reference. Content-only is the default: no author,
+  // no venue, subject-matter-only illustration.
   const withHeadshot = !contentOnly;
   const refImages = await loadReferenceImages(raw);
   const prompt = contentOnly
@@ -750,7 +754,7 @@ const force = flags.has("--force");
 const dryRun = flags.has("--dry-run");
 const missing = flags.has("--missing");
 const includeDrafts = flags.has("--include-drafts");
-const contentOnly = flags.has("--content-only");
+const contentOnly = flags.has("--content-only") || !flags.has("--presenter");
 
 async function missingSlugs() {
   const slugs = await listPosts();
