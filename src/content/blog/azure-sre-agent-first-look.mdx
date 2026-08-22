@@ -2,10 +2,10 @@
 title: "An Hour with Azure SRE Agent"
 heroImage: ../../assets/blog/azure-sre-agent-first-look.webp
 heroAlt: "Editorial illustration representing Azure."
-description: "What Azure SRE Agent is, what setup actually looks like, and what happened when I pointed it at my own repo, my Application Insights telemetry across Dataverse, Copilot Studio, and Foundry, and then asked it for a health check on everything at once. Plus what connecting an incident platform buys you — autonomous mitigation, a verification loop, and a handoff straight to the GitHub Copilot coding agent — and the five switches worth flipping that you don't get turned on by default."
+description: "What Azure SRE Agent is, what setup actually looks like, and what happened when I pointed it at my own repo, my Application Insights telemetry across Dataverse, Copilot Studio, and Foundry, and then asked it for a health check on everything at once. Plus what connecting an incident platform buys you — autonomous mitigation, a verification loop, and a handoff straight to the GitHub Copilot coding agent — the five switches worth flipping that you don't get turned on by default, and what the newly published Zero Ops framework recommends, including the two governance layers above per-tool Allow and Ask and three places where that guide runs ahead of the docs."
 pubDate: 2026-08-14
-updatedDate: 2026-08-21
-tags: ["Azure", "Azure SRE Agent", "Application Insights", "Copilot Studio", "Dataverse", "Microsoft Foundry", "GitHub", "Security", "DevOps"]
+updatedDate: 2026-08-22
+tags: ["Azure", "Azure SRE Agent", "Agents", "Application Insights", "Copilot Studio", "Dataverse", "Microsoft Foundry", "GitHub", "Security", "DevOps"]
 draft: false
 featured: false
 ---
@@ -52,6 +52,20 @@ were actually recording, and it surfaced unhealthy telemetry from Dataverse,
 Copilot Studio, a couple of app servers, and a Foundry agent in a single pass.
 
 Here's what it is, what it can do, and where I'd be careful with it.
+
+Before any of that, one thing to read alongside this post. Shamir Abdul Aziz, a
+principal product manager at Microsoft on the team that builds this, has just
+published
+[Zero Ops: Agents Operate, Humans Govern](https://www.linkedin.com/pulse/zero-ops-agents-operate-humans-govern-shamir-abdul-aziz-jcpic/),
+a design guide for running agentic operations as a governed practice rather
+than a demo. It's the first framework I've seen that treats context,
+governance, and measurement as the product and the agent itself as an
+implementation detail. Read it as a framework rather than as documentation:
+it's long, opinionated, and written by the person who ships the thing.
+
+I've folded its recommendations into this post where they land, and checked its
+product claims against Microsoft Learn while I did. Three of them don't match
+the docs yet. I've flagged those where they come up.
 
 ## What Azure SRE Agent is
 
@@ -195,6 +209,20 @@ back to tidy that up.
   caption="The agent list. Each one is a real Azure resource in a subscription, resource group, and region."
 />
 
+Two regions was accidental. How many agents you run shouldn't be, and the Zero
+Ops guide argues for fewer than most teams assume. Every agent carries a
+baseline charge just for existing, so idle agents cost real money. More
+importantly, splitting one application across two agents halves what each of
+them knows, and it's rarely the half you can spare. The splits the guide says
+survive scrutiny are narrow: data residency that legally can't cross a
+geography, genuinely different access boundaries and blast radius, and one
+non-production agent to test changes against before they touch prod.
+
+The context argument is the one I'd hold onto. An agent is useful because it
+holds a whole picture of a system. If your org chart forces a split anyway,
+plan for those agents to talk to each other, because otherwise every
+investigation starts with half the evidence and no way to know which half.
+
 Open a new agent and it tells you what it still needs. The setup strip runs
 across the top of the chat and tracks five things: Incidents, Knowledge
 files, Code, Logs, and Azure resources. Green check means connected, hollow
@@ -240,6 +268,101 @@ approval expiration.
 If you're rolling this out to a team, this page and the connector one are
 where the actual policy lives. Everything else is configuration; these two
 decide what the agent is allowed to do when nobody's watching.
+
+### The identity underneath all of it
+
+Both of those pages govern tools. Neither governs Azure. That's the managed
+identity, and you pick its shape once, at creation, from two levels. **Reader**
+gets core monitoring roles plus resource-type reader roles. **Privileged** adds
+resource-type contributor roles based on what it detects in the resource groups
+you gave it, so a group full of Container Apps gets Container App Contributor.
+Four roles are assigned either way: Reader, Log Analytics Reader, and
+Monitoring Reader on each resource group, plus Monitoring Contributor at the
+subscription so it can acknowledge and close Azure Monitor alerts.
+
+Two details worth having up front. Assign no resource groups at creation and
+the identity has no permissions at all, so a fresh agent can genuinely do
+nothing until you say otherwise. And you can't peel off individual permissions
+later, only remove whole resource groups, so the resource group is your unit of
+revocation whether that suits your layout or not.
+
+Reader is the safer default because it fails usefully. When the identity lacks
+permission for an action, the agent doesn't skip it quietly. It asks, and an
+Administrator authorizes that single operation with their own credentials
+through the on-behalf-of flow. Your credentials aren't cached, the agent goes
+back to its managed identity when the operation finishes, and the audit trail
+records who approved what. Two limits to plan around: only Administrators can
+authorize, and personal Microsoft accounts can't do it at all, so a work or
+school account has to be available when the agent asks.
+
+### Two governance layers sit above Allow and Ask
+
+I called those pages "where the actual policy lives," and that was true of the
+agent I'd built. It isn't the whole surface. Two more layers sit above per-tool
+toggles, and the Zero Ops guide is what sent me looking for them.
+
+**Tool access policies** are pattern rules rather than switches. They live under
+**Settings > Permissions**, they match tool names with `*` as a wildcard, and
+for anything that executes a command they match the arguments too, using
+`toolGlob(argGlob)` syntax. So `bash(az * delete *)` catches any `az ... delete
+...` regardless of which shell tool runs it, and
+`RunKubectlReadCommand(kubectl get *)` waves reads through while leaving writes
+alone. The cap is 1,000 patterns per scope, which is more than anyone needs.
+
+They apply at three scopes, and the asymmetry is the whole design:
+
+- **Global**, set by an Administrator. Allow, Ask, or Deny, across the agent.
+- **Custom agent**, set by an Administrator or the author. Allow only.
+- **Thread**, set by any user. Allow only, for a single conversation.
+
+Only global can deny. The lower two widen access inside the global boundary but
+can't punch through a deny, which is what makes handing an on-call engineer a
+thread-level override a reasonable thing to do at 3 a.m.
+
+**Hooks** are the layer that evaluates context instead of matching patterns. You
+attach a script or an LLM prompt to an agent event and it returns JSON saying
+allow or block. Command hooks run bash or Python in a sandbox for deterministic
+checks, capped at 64 KB and a 300-second timeout. Prompt hooks put a model in
+the loop for judgment calls, defaulting to a Fast Reasoning tier because they
+fire on every response or tool call and latency compounds fast. Agent-wide
+hooks are configured under **Builder > Hooks**, per-custom-agent ones from the
+Agent Canvas, and when both match the same event both run, agent level first.
+
+### Where the guide runs ahead of the docs
+
+Three things I'd check before designing around them.
+
+The guide describes four hook events: Start, PreToolUse, PostToolUse, and Stop.
+The [hooks documentation](https://learn.microsoft.com/azure/sre-agent/agent-hooks)
+says two are supported today, Stop and PostToolUse. That gap matters more than
+it looks, because PostToolUse fires *after* the tool already succeeded. The
+guide's worked example, allowing `DROP INDEX` while blocking `DROP TABLE` by
+inspecting the SQL before it runs, needs PreToolUse. With what's shipped you'd
+express that as a global deny policy on the pattern and let the hook audit the
+result afterward, which is a materially weaker guarantee than the example
+implies.
+
+The guide also says a global deny can't be overridden by a lower scope, so an
+admin can set a floor and know it holds. That's true of the policy scopes. It
+isn't true of the whole stack. The
+[tool access policy docs](https://learn.microsoft.com/azure/sre-agent/tool-access-policies)
+put hooks at the highest priority and state plainly that a user-defined hook
+returning allow overrides policy rules, global deny included. Only
+Administrators can create hooks and every override is audit-logged, so it's a
+governed hole rather than an open one. But if your mental model was "the deny
+list is the floor," the floor is the deny list plus whoever can write hooks.
+
+Third, roles. The guide lists four: Administrator, Author, Standard User, and
+Reader. The
+[user roles page](https://learn.microsoft.com/azure/sre-agent/user-roles)
+documents three and leaves Author out, even though the plugin marketplace docs
+name **SRE Agent Author** as a prerequisite in several places. Author is real,
+and it's the role I mentioned earlier that can install from any registered
+marketplace. It just isn't on the page you'd go to for the list.
+
+One more gotcha, this one straight out of the hooks reference. A Stop hook that
+rejects **without** a `reason` field is treated as approval. Miss that field and
+your validation gate fails open while looking exactly like a gate that passed.
 
 ## Where its traffic can actually go
 
@@ -531,6 +654,29 @@ humor is a good argument for checking that list.
   caption="A subagent with its own instructions, knowledge base, and 212 inherited tools. Read that tool list before you set one autonomous."
 />
 
+The Zero Ops guide draws a line here that I hadn't drawn for myself, and it
+reframed why this blade exists. The agent you get out of the box, which the
+guide calls the meta agent, is versatile and non-deterministic. Ask it the same
+question twice and it may take different steps in a different order and format
+the answer differently. That's fine when you're exploring. It's not fine for
+the incident that has to run the same way every time.
+
+Custom agents are the *what*. A specialist with its own instructions, its own
+tools, and its own scope, invoked deliberately rather than whenever the model
+decides it's relevant. Skills are the *how*: reusable procedures that both the
+meta agent and any custom agent can call, written once and available
+everywhere. What you're buying with either is repeatability, and repeatability
+is the precondition for automation you'd be willing to leave running unattended.
+
+The guide's advice on writing them is the part I'd steal outright. There are
+two on-ramps. If you already have a runbook, hand it over and have the agent
+generate the skill and the custom agent from it, then review what comes back
+and cut a PR. If you don't have one, work the live problem interactively, and
+at the moment you crack it, ask it to turn what just happened into a skill.
+The second path produces better artifacts, because they precipitate out of an
+investigation that actually worked rather than a guess at what one would look
+like.
+
 ## What connecting Incidents actually buys you
 
 I just told you Incidents is the one I never wired up. Then I watched the
@@ -707,6 +853,24 @@ service changes behavior, old entries turn into confidently wrong context, and
 there's no systemic fix for that today. Budget time to review what it wrote,
 the way you'd review a team wiki.
 
+The Zero Ops guide has the best partial answer I've read to that, and it's
+plumbing rather than a feature. What the agent learns lands with the agent.
+Your runbook, your architecture note, your alert definition lives in the repo,
+and that's the copy your humans read. So wire the automation that pushes a
+learning back into the original artifact as a pull request, and review it
+there. Skip it and the knowledge quietly forks into two versions that disagree,
+with neither one obviously wrong.
+
+I haven't built that yet. It moved up my list once I noticed the staleness
+problem and the two-copies problem are the same problem wearing different
+clothes.
+
+There's a related habit worth adopting before you fill that directory: don't
+dump everything in. Years of accumulated runbooks and wiki pages include a lot
+that's stale or contradictory, and the agent will faithfully reason over all of
+it. Curate to the scenarios you're actually tackling first, confirm those are
+current, and grow from there.
+
 ### Give it the repo
 
 Teams pre-write log queries because they don't trust the agent to generate
@@ -791,3 +955,118 @@ Their closing line is the one I'd underline. They went from an agent that
 follows your playbook to one that writes the next one. Mine isn't there yet.
 But every piece that would get it there is a switch in a portal I already had
 open.
+
+## What the Zero Ops guide is actually arguing
+
+The thesis fits on a line: agents operate, humans govern. The useful part isn't
+the slogan, it's the ladder underneath it, because what changes at each rung
+isn't how clever the agent is. It's what a human reviews.
+
+At **Crawl** it suggests and you do the work, so you review your own work. At
+**Walk** it acts one step at a time and you approve each step. At **Run** it
+completes whole tasks and you review the diff. At **Fly** it fixes, deploys to
+test, validates the outcome itself and posts the evidence, and you review the
+outcome rather than the diff.
+
+Everything in this post is Crawl and Walk. That's the honest read on my setup,
+and the guide is direct about why teams stall there.
+
+### Triggers promote you, not capability
+
+This is the line that landed hardest, because it describes me exactly. A
+brilliantly capable agent that only ever runs when somebody opens a chat window
+is permanently at Walk, no matter how good its answers are, because a human is
+still starting every piece of work. Capability doesn't promote you. Wiring
+does: response plans bound to an alert class, scheduled tasks on a rhythm, and
+HTTP triggers for everything else in your ecosystem that wants to start agent
+work.
+
+I have the Automation blade configured and I still spent this entire post
+typing questions into a box. The distance between those two facts is the
+distance between Walk and Run.
+
+### Two loops, and a safety net that isn't the agent
+
+Once agents work real incidents, the guide's advice is to stop making the
+routing a judgment call. Run an agent loop and a human loop, register every
+incident class to one of them in advance, and make promotion between them a
+reviewable change with a written gate, plus a written demotion trigger for when
+a class stops earning its place.
+
+The part I'd underline is where the safety net lives. It belongs to your
+incident platform, not to the agent. Define the conditions your process cares
+about, whether that's not acknowledged in x minutes, not mitigated, or not
+handed off, and let the incident system escalate when they're breached. An
+agent that has stalled can't be relied on to report that it has stalled, so
+something outside it has to notice. That's the same argument I made about the
+VNet earlier: a boundary that depends on the component behaving correctly isn't
+a boundary.
+
+Escalation should also carry the work with it, so the human who gets pulled in
+arrives to evidence already gathered rather than a blank page and a timestamp.
+
+Self-healing gets scoped the same careful way. It's granted per alert class,
+never per service. You pick the class, you enumerate the safe actions, and the
+agent's contribution is doing that work correctly at 3 a.m. without waking
+anyone. Running one class at full autonomy while another sits deliberately at
+zero isn't inconsistency. It's the control working.
+
+### Measure cost per outcome, and failures per tool
+
+Two measurement habits worth copying on day one.
+
+Price the outcome, not the month. Agents burn metered units and every unit maps
+to work, so you can finally answer "what did that incident cost" with a real
+number instead of a shrug. Total spend rising while cost per resolved outcome
+falls is what success looks like, and you'll misread it as a problem if you're
+only watching the invoice. Set a consumption budget deliberately, and find out
+who can raise it before it's 2 a.m. and you need them.
+
+Then track tool failure rate per tool rather than in aggregate. The guide's
+field note is that aggregate success across large estates usually sits above
+98%, which reads as fine while hiding the one connector with a stale token
+that's been failing every call for a fortnight. The aggregate is the number
+that makes you comfortable. The per-tool breakdown is the number that finds the
+bug.
+
+### Evals as a standing job, not a gate
+
+The reflex is to treat evals as a pre-production check: test the skill, it
+passes, ship it, done. The guide argues the larger half of the value is
+continuous, scoring real production runs on whether the agent stayed in scope,
+reached the right conclusion, and stopped to ask when it should have. Then wire
+a scheduled task to the eval signal so a degradation turns into work rather
+than a report nobody opens. Real traffic finds problems a fixture never will,
+and it finds them on your estate rather than someone else's.
+
+### One more thing that belongs in source control
+
+The guide treats the entire agent configuration as code, and that part is real
+and documented rather than aspirational. The
+[microsoft/sre-agent](https://github.com/microsoft/sre-agent) repo ships
+templates for four deploy backends, Bicep, Terraform, PowerShell, and the Azure
+Developer CLI, along with prebuilt recipes for common setups like Azure
+Monitor, PagerDuty, and Dynatrace. So the skills, custom agents, and settings
+you tuned on a dev agent can be promoted through the same pipeline as
+everything else, and rolled back by reverting a commit instead of by
+remembering which toggle you flipped.
+
+That's also the answer to the drift problem I hit with experimental settings a
+few sections up. Two agents in one subscription stop diverging when their
+configuration comes from a template rather than from whoever had the portal
+open last.
+
+### Where that leaves mine
+
+Crawl and Walk, honestly. Good answers, a repo connected, two automations
+running, and a human starting nearly every piece of work.
+
+The three things I'm doing next are all small, which is the guide's actual
+argument. Wire one response plan to one alert class I already understand, so
+something starts without me. Add the pull request loop that pushes what the
+agent learns back into the runbook in my repo. And put the agent configuration
+in a template, so the next agent I create doesn't drift from this one on day
+one.
+
+None of that requires the agent to get smarter. That's the part it took a long
+design guide to make obvious.
