@@ -2,7 +2,7 @@
 title: "An Hour with Azure SRE Agent"
 heroImage: ../../assets/blog/azure-sre-agent-first-look.webp
 heroAlt: "Editorial illustration representing Azure."
-description: "What Azure SRE Agent is, what setup actually looks like, and what happened when I pointed it at my own repo, my Application Insights telemetry across Dataverse, Copilot Studio, and Foundry, and then asked it for a health check on everything at once. Plus what connecting an incident platform buys you — autonomous mitigation, a verification loop, and a handoff straight to the GitHub Copilot coding agent — the five switches worth flipping that you don't get turned on by default, and what the newly published Zero Ops framework recommends, including the two governance layers above per-tool Allow and Ask and three places where that guide runs ahead of the docs."
+description: "What Azure SRE Agent is, what setup actually looks like, and what happened when I pointed it at my own repo, my Application Insights telemetry across Dataverse, Copilot Studio, and Foundry, and then asked it for a health check on everything at once. Plus what connecting an incident platform buys you — autonomous mitigation, a verification loop, and a handoff straight to the GitHub Copilot coding agent — the five switches worth flipping that you don't get turned on by default, and what the newly published Zero Ops framework recommends, including the two governance layers above per-tool Allow and Ask and three details worth verifying against the current docs."
 pubDate: 2026-08-14
 updatedDate: 2026-08-22
 tags: ["Azure", "Azure SRE Agent", "Agents", "Application Insights", "Copilot Studio", "Dataverse", "Microsoft Foundry", "GitHub", "Security", "DevOps"]
@@ -61,11 +61,14 @@ a design guide for running agentic operations as a governed practice rather
 than a demo. It's the first framework I've seen that treats context,
 governance, and measurement as the product and the agent itself as an
 implementation detail. Read it as a framework rather than as documentation:
-it's long, opinionated, and written by the person who ships the thing.
+it's a design perspective, written by someone who works on the product every
+day.
 
 I've folded its recommendations into this post where they land, and checked its
-product claims against Microsoft Learn while I did. Three of them don't match
-the docs yet. I've flagged those where they come up.
+product claims against Microsoft Learn while I did. In three places the guide
+describes where things are heading and Microsoft Learn describes where they are
+today. I've noted those where they come up so you can check the current docs
+before you design around them.
 
 ## What Azure SRE Agent is
 
@@ -211,7 +214,7 @@ back to tidy that up.
 
 Two regions was accidental. How many agents you run shouldn't be, and the Zero
 Ops guide argues for fewer than most teams assume. Every agent carries a
-baseline charge just for existing, so idle agents cost real money. More
+baseline charge, so it's worth right-sizing the count. More
 importantly, splitting one application across two agents halves what each of
 them knows, and it's rarely the half you can spare. The splits the guide says
 survive scrutiny are narrow: data residency that legally can't cross a
@@ -282,18 +285,18 @@ subscription so it can acknowledge and close Azure Monitor alerts.
 
 Two details worth having up front. Assign no resource groups at creation and
 the identity has no permissions at all, so a fresh agent can genuinely do
-nothing until you say otherwise. And you can't peel off individual permissions
-later, only remove whole resource groups, so the resource group is your unit of
-revocation whether that suits your layout or not.
+nothing until you say otherwise. And permissions are managed at the resource
+group level rather than individually, so the resource group is your unit of
+revocation — worth factoring into how you lay them out.
 
 Reader is the safer default because it fails usefully. When the identity lacks
 permission for an action, the agent doesn't skip it quietly. It asks, and an
 Administrator authorizes that single operation with their own credentials
 through the on-behalf-of flow. Your credentials aren't cached, the agent goes
 back to its managed identity when the operation finishes, and the audit trail
-records who approved what. Two limits to plan around: only Administrators can
-authorize, and personal Microsoft accounts can't do it at all, so a work or
-school account has to be available when the agent asks.
+records who approved what. Two things to plan around: only Administrators can
+authorize, and a work or school account has to be available when the agent asks,
+since personal Microsoft accounts aren't supported for this flow.
 
 ### Two governance layers sit above Allow and Ask
 
@@ -328,41 +331,40 @@ fire on every response or tool call and latency compounds fast. Agent-wide
 hooks are configured under **Builder > Hooks**, per-custom-agent ones from the
 Agent Canvas, and when both match the same event both run, agent level first.
 
-### Where the guide runs ahead of the docs
+### Three things to verify against the current docs
 
 Three things I'd check before designing around them.
 
 The guide describes four hook events: Start, PreToolUse, PostToolUse, and Stop.
 The [hooks documentation](https://learn.microsoft.com/azure/sre-agent/agent-hooks)
-says two are supported today, Stop and PostToolUse. That gap matters more than
-it looks, because PostToolUse fires *after* the tool already succeeded. The
-guide's worked example, allowing `DROP INDEX` while blocking `DROP TABLE` by
-inspecting the SQL before it runs, needs PreToolUse. With what's shipped you'd
-express that as a global deny policy on the pattern and let the hook audit the
-result afterward, which is a materially weaker guarantee than the example
-implies.
+says two are supported today, Stop and PostToolUse. Worth knowing which two,
+because PostToolUse fires *after* the tool has run. The guide's worked example,
+allowing `DROP INDEX` while blocking `DROP TABLE` by inspecting the SQL before
+it runs, is written for PreToolUse. With today's events you'd express that as a
+global deny policy on the pattern and let the hook audit the result afterward.
+Same outcome, different mechanism, so build it with the policy doing the
+blocking.
 
 The guide also says a global deny can't be overridden by a lower scope, so an
-admin can set a floor and know it holds. That's true of the policy scopes. It
-isn't true of the whole stack. The
+admin can set a floor and know it holds. That's how the policy scopes work. The
 [tool access policy docs](https://learn.microsoft.com/azure/sre-agent/tool-access-policies)
-put hooks at the highest priority and state plainly that a user-defined hook
-returning allow overrides policy rules, global deny included. Only
-Administrators can create hooks and every override is audit-logged, so it's a
-governed hole rather than an open one. But if your mental model was "the deny
-list is the floor," the floor is the deny list plus whoever can write hooks.
+add one more piece to the picture: hooks sit at the highest priority, and a
+user-defined hook returning allow takes precedence over policy rules, global
+deny included. Only Administrators can create hooks and every override is
+audit-logged, so it stays governed and visible. Just build the mental model as
+"the floor is the deny list plus whoever can write hooks."
 
 Third, roles. The guide lists four: Administrator, Author, Standard User, and
 Reader. The
 [user roles page](https://learn.microsoft.com/azure/sre-agent/user-roles)
-documents three and leaves Author out, even though the plugin marketplace docs
-name **SRE Agent Author** as a prerequisite in several places. Author is real,
-and it's the role I mentioned earlier that can install from any registered
-marketplace. It just isn't on the page you'd go to for the list.
+documents three today, and the plugin marketplace docs name **SRE Agent Author**
+as a prerequisite in several places. Author is real, and it's the role I
+mentioned earlier that can install from any registered marketplace. Look for it
+in the marketplace docs rather than the roles page.
 
-One more gotcha, this one straight out of the hooks reference. A Stop hook that
-rejects **without** a `reason` field is treated as approval. Miss that field and
-your validation gate fails open while looking exactly like a gate that passed.
+One more detail, this one straight out of the hooks reference. A Stop hook that
+rejects **without** a `reason` field is treated as approval. Include that field
+and your validation gate behaves the way you expect.
 
 ## Where its traffic can actually go
 
@@ -408,7 +410,7 @@ plus SRE Agent Administrator on the agent resource.
 On size, the docs say /28 or larger and suggest /26 for a fleet, and the
 announcement post mentions /27. A /27 covers all of that with room to grow.
 
-Two bits of friction worth knowing before you commit: once a VNet is connected,
+Two behaviors worth knowing before you commit: once a VNet is connected,
 the Unrestricted and Limited cards grey out, so changing modes means
 disconnecting first. Changing the subnet means disconnect and reconnect too.
 
@@ -454,15 +456,15 @@ to leave the registry toggle on at all. And you can apply Azure Policy to
 restrict or disable the toggles, so no operator can quietly widen the agent's
 reach.
 
-### What the preview still doesn't cover
+### What the preview covers today
 
-Two limitations, and the second one is easy to miss. It's egress only, so
-reaching the agent privately from inside your network isn't part of this
-preview. And connector traffic doesn't route through the VNet at all. That
+Two boundaries to plan around, and the second one is easy to miss. It's egress
+only, so reaching the agent privately from inside your network is outside this
+preview. And connector traffic routes separately from the VNet. That
 Teams connector with 71 tools goes over the public internet whether or not
 you're in Azure VNet mode, and the same is true of anything else you wire in
-through Connectors. If your egress story assumes connectors sit inside the
-boundary, they don't yet.
+through Connectors. Plan your egress story with connectors accounted for
+separately.
 
 ## The code review went further than I expected
 
@@ -824,9 +826,9 @@ that's the deal.
 
 Workspace tools move Python execution into the workspace sandbox where your
 repo lives. That's a different environment, not a permission bump on the same
-one. The docs don't say whether `pip` and `apt` come along, so if
-"an agent that installs its own tooling" is why the article grabbed you, test
-that before you design around it.
+one. Whether `pip` and `apt` come along in that sandbox is worth confirming for
+yourself, so if "an agent that installs its own tooling" is why the article
+grabbed you, test that before you design around it.
 
 One thing that bites people behind a corporate proxy: the sandbox runs under
 `*.azuresre.ai`, and some network profiles block that domain. If the portal
@@ -848,10 +850,9 @@ agent lives in the <resource-group> resource group, and the dependency
 failures we care about come from the Foundry agent, not the app servers.
 ```
 
-The caveat is documented, not mine to soften: staleness is unsolved. When a
-service changes behavior, old entries turn into confidently wrong context, and
-there's no systemic fix for that today. Budget time to review what it wrote,
-the way you'd review a team wiki.
+One documented consideration worth planning for: knowledge entries can go stale.
+When a service changes behavior, older entries can carry context that no longer
+applies. Budget time to review what it wrote, the way you'd review a team wiki.
 
 The Zero Ops guide has the best partial answer I've read to that, and it's
 plumbing rather than a feature. What the agent learns lands with the agent.
