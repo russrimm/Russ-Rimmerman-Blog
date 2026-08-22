@@ -16,6 +16,9 @@ import capabilityOverview from "@/assets/blog/azure-sre-agent-first-look/figure-
 import servicenowLoop from "@/assets/blog/azure-sre-agent-first-look/figure-servicenow-loop.svg?raw";
 import operationsHub from "@/assets/blog/azure-sre-agent-first-look/operations-hub-overview.png";
 import automation from "@/assets/blog/azure-sre-agent-first-look/automation-create-trigger.png";
+import automationAnalytics from "@/assets/blog/azure-sre-agent-first-look/automation-run-analytics.png";
+import httpTrigger from "@/assets/blog/azure-sre-agent-first-look/automation-http-trigger-runs.png";
+import connectorsList from "@/assets/blog/azure-sre-agent-first-look/connectors-list-categories.png";
 import toolPermissions from "@/assets/blog/azure-sre-agent-first-look/connector-tool-permissions.png";
 import codeReviewThread from "@/assets/blog/azure-sre-agent-first-look/code-review-thread.png";
 import parallelExploration from "@/assets/blog/azure-sre-agent-first-look/parallel-exploration-subagents.png";
@@ -33,6 +36,7 @@ import liveReport from "@/assets/blog/azure-sre-agent-first-look/live-report-das
 import incidentsOnboarding from "@/assets/blog/azure-sre-agent-first-look/incidents-onboarding.png";
 import incidentLifecycle from "@/assets/blog/azure-sre-agent-first-look/incident-lifecycle-servicenow.png";
 import agentCanvas from "@/assets/blog/azure-sre-agent-first-look/agent-canvas-subagents.png";
+import agentCanvasSubagent from "@/assets/blog/azure-sre-agent-first-look/agent-canvas-subagent-flobot.png";
 
 Azure Site Reliability Engineering ("Azure SRE") Agent is the operations agent
 for the work that eats an on-call rotation: triaging incidents, checking whether
@@ -85,6 +89,20 @@ alert can start the investigation before anyone opens a laptop.
   caption="Automation gives you two entry points — a scheduled check or an HTTP trigger fired by an alert or webhook."
 />
 
+Pick the HTTP trigger and you get an endpoint to hand to Logic Apps, Event
+Grid, a Function, or anything else that can POST. The trigger keeps its own
+run history, there's a **Run trigger now** button so you can fire it yourself
+before wiring a real alert to it, and a message-grouping setting that decides
+whether repeated fires land in one chat thread or spawn a new one each time.
+One quirk worth not chasing: mine reported "Last triggered: Never" while
+listing two successful runs directly underneath. Trust the run table.
+
+<Screenshot
+  src={httpTrigger}
+  alt="Configure trigger page for an HTTP-triggered automation named SNOW in Azure SRE Agent, showing the trigger switched on, a message grouping setting of use same chat thread, buttons for update list, turn off, run trigger now, and delete, and a run history table listing two runs with a Success status and a thread name of HTTP Trigger: SNOW"
+  caption="An HTTP trigger with its own run history. The Last triggered field says Never; the two successful runs below it disagree."
+/>
+
 By default, nothing it proposes deploys without a human approving it first,
 and that default earns its keep: out of the box this is an agent that
 recommends and drafts, not one that reboots your production database because
@@ -115,6 +133,20 @@ it has to ask about.
   src={toolPermissions}
   alt="Azure SRE Agent connector setup wizard on the Configure tools step, showing 71 of 71 tools selected with a per-tool parameter policy toggle and an Allow or Ask permission control for each one"
   caption="Per-tool permissions during connector setup — Allow for unattended calls, Ask to force a prompt."
+/>
+
+Once they're in place, the Connectors blade groups everything by category —
+Notification, Telemetry, MCP, Other — with a status per connector. Mine ended
+up with Outlook and Teams for notification, two Application Insights
+connections for telemetry, GitHub and Microsoft Learn as MCP servers, and
+Microsoft Graph filed under Other. Worth noticing what isn't there:
+repository connections moved out to Code Access, and the blade tells you so
+rather than leaving you hunting.
+
+<Screenshot
+  src={connectorsList}
+  alt="Connectors page in Azure SRE Agent with a banner reading repository connections have moved to Code Access, and connectors grouped into Notification with office365 for Microsoft Outlook and teams for Microsoft Teams, Telemetry with messagecenter and pulse360 for Application Insights, MCP with Github and mslearn, and Other with graphgroupsanduser for Microsoft Graph, all showing a Connected status"
+  caption="Connectors grouped by category. The two Application Insights entries are the native telemetry connectors, added without a separate RBAC project."
 />
 
 Those extension points aren't purely theoretical. It comes with a plugin
@@ -485,6 +517,20 @@ a table, and test it in a playground before it touches anything real.
   caption="Agent Canvas. Build your own subagents and skills, then test them in a playground before they run for real."
 />
 
+Build one and the graph fills in. A subagent carries its own instructions in
+plain English, its own knowledge base, and its own tool list — mine inherited
+all 212 tools the parent agent had available, which is the number to look at
+before you decide a subagent doesn't need its own permission story. Mine tells
+knock-knock jokes, because I wanted to see the shape of the thing before I gave
+it anything real to do, and a subagent with 212 Azure tools and a sense of
+humor is a good argument for checking that list.
+
+<Screenshot
+  src={agentCanvasSubagent}
+  alt="Agent Canvas in Azure SRE Agent showing a single autonomous subagent node named FloBot with 212 tools and Knowledge Base Enabled, and a details pane listing its plain-English instructions and a table of available tools including CheckIfResourceExists, CheckTcpConnectivity, DisableTrafficManagerEndpoint, and GetAppSetting"
+  caption="A subagent with its own instructions, knowledge base, and 212 inherited tools. Read that tool list before you set one autonomous."
+/>
+
 ## What connecting Incidents actually buys you
 
 I just told you Incidents is the one I never wired up. Then I watched the
@@ -715,6 +761,23 @@ start. Run it in Review mode, use **Run task now** to watch it once before it
 runs unattended, then check **Monitor > Session insights**, where symptoms,
 root cause, and pitfalls get pulled out of each thread with a link back to
 the conversation.
+
+Once a few of these are running, the Automation tab in the Operations Hub is
+where you find out whether they're earning their keep. Totals, success rate,
+and run duration across a time range you pick, and each automation expands
+into a plain-English summary of what its last run actually did. Mine reports
+a daily Application Insights check that queried 12 connected resources, found
+activity in two, compared five-day trends, traced the top clusters to bot
+traffic and platform-internal issues rather than my code, and explicitly noted
+that it did not open a PR. That last clause is the one I'd check first. A
+summary that tells you what it decided *not* to do is how you audit a task
+you've left running unattended.
+
+<Screenshot
+  src={automationAnalytics}
+  alt="Automation tab of the Azure SRE Agent Operations Hub over the last 7 days, showing tiles for 2 total automations, 7 total runs, a 100 percent success rate, and a 6.0 minute average run duration, above an Automation Overview listing a daily scheduled app-insights-check task and an HTTP-triggered SNOW automation, each with a written summary of its last run"
+  caption="The Automation tab, after the tasks have been running a while. Read the summaries, not just the success rate."
+/>
 
 ### What doesn't transfer
 
