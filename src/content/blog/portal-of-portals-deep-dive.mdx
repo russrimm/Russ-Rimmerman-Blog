@@ -23,6 +23,10 @@ import windowsUpdates from "@/assets/projects/portal-of-portals/windows-updates-
 import powerPlatform from "@/assets/projects/portal-of-portals/power-platform-environments.png";
 import cveDatabase from "@/assets/projects/portal-of-portals/cve-database.png";
 import serviceHealth from "@/assets/projects/portal-of-portals/service-health.png";
+import governancePolicies from "@/assets/projects/portal-of-portals/environment-governance-policies-inventory.png";
+import tenantSettings from "@/assets/projects/portal-of-portals/tenant-settings-categories-inventory.png";
+import dataverseStorage from "@/assets/projects/portal-of-portals/dataverse-storage-inventory.png";
+import copilotStudioDashboard from "@/assets/projects/portal-of-portals/copilot-studio-dashboard-overview-inventory.png";
 
 Count the admin portals you touched this week. Entra for a user's sign-in logs.
 Intune for a device that fell out of compliance. The Azure portal for a runaway
@@ -341,6 +345,48 @@ of a ticket.
   src={powerPlatform}
   alt="Portal 360 Power Platform environment management showing environment counts by type and capacity consumption"
   caption="Power Platform environments — capacity, state, and resource inventory, with managed-environment controls and a self-service request path."
+/>
+
+The DLP side of governance rolls up policy assignment across every environment
+instead of clicking into each one: which environments have advanced connector
+policies applied, which have DLP policies, and where the gaps are.
+
+<Screenshot
+  src={governancePolicies}
+  alt="Portal 360 Environment Governance Policies page listing advanced connector policy and DLP policy counts across every Power Platform environment"
+  caption="Advanced connector and DLP policy counts across every environment, so a coverage gap shows up as a blank cell instead of a support ticket."
+/>
+
+Tenant settings get the same treatment. Microsoft's admin center buries these
+settings across a dozen category pages; Portal 360° mirrors the same categories
+in one searchable reference so a maker or admin can check a setting without
+guessing which blade it lives on.
+
+<Screenshot
+  src={tenantSettings}
+  alt="Portal 360 Power Platform Tenant Settings page with configuration categories for governance, AI and intelligence, environment management, Power Apps, Power Automate, and licensing"
+  caption="Tenant settings, organized by the same categories Microsoft uses — governance, AI and intelligence, Power Apps, Power Automate, licensing, and more."
+/>
+
+Capacity is the question every Center of Excellence eventually gets asked:
+how much Dataverse storage is left before someone has to buy more. The
+inventory pulls database, file, and log consumption per environment so that's
+a lookup, not a support ticket to Microsoft.
+
+<Screenshot
+  src={dataverseStorage}
+  alt="Portal 360 Dataverse storage page showing database, file, and log capacity across environments with a per-environment usage bar chart"
+  caption="Dataverse storage across every environment, broken down by database, file, and log capacity."
+/>
+
+Copilot Studio agents get their own inventory pass too: how many agents exist,
+how many are actually published, which environments they're scattered across,
+and which authentication mode and connectors they're built on.
+
+<Screenshot
+  src={copilotStudioDashboard}
+  alt="Portal 360 Copilot Studio Dashboard showing total agents, active agents, published agents, and environment counts with distribution donut charts"
+  caption="Copilot Studio's own inventory: agent counts, publish state, and where each agent actually lives."
 />
 
 The governance area also has a **human review queue** for Copilot Studio. A
