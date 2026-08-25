@@ -18,6 +18,7 @@ import dlpPolicyDetail from "@/assets/projects/portal-of-portals/dlp-policy-deta
 import tenantSettingsCategories from "@/assets/projects/portal-of-portals/tenant-settings-categories.png";
 import tenantSettingsDetail from "@/assets/projects/portal-of-portals/tenant-settings-power-apps-detail.png";
 import powerAppsInventory from "@/assets/projects/portal-of-portals/power-apps-inventory.png";
+import argQuery from "@/assets/blog/ghcp-harness-agents/resource-graph-explorer-query.png";
 import flowConnections from "@/assets/projects/portal-of-portals/flow-connections-panel.png";
 import flowAiAssistant from "@/assets/projects/portal-of-portals/flow-ai-assistant.png";
 import agentBuilder from "@/assets/projects/portal-of-portals/agent-builder-wizard.png";
@@ -220,12 +221,75 @@ export const INVENTORY_QUERY_URL =
 
 ```http
 POST https://api.powerplatform.com/resourcequery/resources/query?api-version=2024-10-01
+Content-Type: application/json
 
-{ "query": "PowerPlatformResources | where type == 'microsoft.powerapps/canvasapps'" }
+{
+  "TableName": "PowerPlatformResources",
+  "Clauses": [
+    {
+      "$type": "where",
+      "FieldName": "type",
+      "Operator": "==",
+      "Values": ["'microsoft.powerapps/canvasapps'"]
+    },
+    {
+      "$type": "project",
+      "FieldList": [
+        "name",
+        "properties.displayName",
+        "properties.environmentId",
+        "properties.createdAt",
+        "properties.ownerId"
+      ]
+    }
+  ]
+}
 ```
 
-Swap the `type` value and the same endpoint hands back model-driven apps, cloud
-flows — or, as you'll see below, Copilot Studio agents.
+The body isn't a raw KQL string — it's a `TableName` plus an ordered array of
+`Clauses`, each one a small JSON object the API translates into a KQL operator
+before handing the whole thing to Azure Resource Graph. The two clauses above
+become one `where` and one `project`:
+
+```kusto
+PowerPlatformResources
+| where type == 'microsoft.powerapps/canvasapps'
+| project name, properties.displayName, properties.environmentId, properties.createdAt, properties.ownerId
+```
+
+Swap the `type` value in that first clause and the same endpoint hands back
+model-driven apps, cloud flows — or, as you'll see below, Copilot Studio
+agents.
+
+## The same table, no Power Platform API in between
+
+`PowerPlatformResources` isn't exclusive to `api.powerplatform.com`. It's an
+[Azure Resource Graph](https://learn.microsoft.com/en-us/azure/governance/resource-graph/overview)
+table, so anything that already speaks Resource Graph — Resource Graph
+Explorer in the Azure portal, `az graph query`, the `Az.ResourceGraph`
+PowerShell module, or the Resource Graph REST API — can query it directly,
+authenticated the normal Azure way, with no Power Platform-specific client or
+request shape to learn:
+
+```bash
+az graph query -q "PowerPlatformResources | where type == 'microsoft.powerapps/canvasapps' | project name, properties.displayName, properties.environmentId, properties.createdAt | order by properties.createdAt desc"
+```
+
+<Screenshot
+  src={argQuery}
+  alt="Azure Resource Graph Explorer running a KQL query against PowerPlatformResources, returning three Copilot Studio agents with display name, environment ID, created and last published timestamps, and model."
+  caption="Resource Graph Explorer against that same PowerPlatformResources table — this particular query filters to Copilot Studio agents on the GitHub Copilot harness; see [Finding GitHub Copilot Harness Agents Before PPAC Shows Them](/blog/find-github-copilot-harness-agents-resource-graph/) for that walkthrough."
+/>
+
+Same rows, same schema, two front doors. `api.powerplatform.com` is the
+better fit when a service that already authenticates as a Power Platform
+service principal needs a stable, versioned, tenant-scoped endpoint. Resource
+Graph is the better fit when you're already living in Azure tooling and want
+to run a query without standing up a separate call — it's also how the Power
+Platform admin center's own inventory grid gets its data under the hood.
+Microsoft's [Power Platform inventory](https://learn.microsoft.com/en-us/power-platform/admin/power-platform-inventory)
+documentation lists both paths, plus the Power Platform for Admins V2
+connector, as first-class ways to reach the same data.
 
 ## Automation: the same governance an admin console does, as a low-code flow
 
