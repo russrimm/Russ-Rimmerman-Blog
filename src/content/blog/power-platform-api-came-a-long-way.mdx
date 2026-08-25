@@ -117,7 +117,7 @@ Compare that to `New-PowerAppManagementApp` with no scope argument at all. What
 follows is what those two hosts — plus Dataverse, plus a third host neither of
 them owns — actually look like once you're calling them from a real console.
 
-## Environments: still BAP's job
+## Environments: capacity and add-ons are still BAP's job
 
 <Screenshot
   src={environmentsList}
@@ -127,9 +127,14 @@ them owns — actually look like once you're calling them from a real console.
 
 Every column here — type, managed-environment badge, database size — comes
 from one BAP call, expanded with `$expand=properties.capacity` and
-`properties.linkedEnvironmentMetadata`. Nothing about environment listing has
-moved to the new API yet; it's the single largest piece of BAP's job that
-`api.powerplatform.com` hasn't taken over.
+`properties.linkedEnvironmentMetadata`. There is a newer environment-listing
+endpoint on `api.powerplatform.com` —
+[List Environments For User](https://learn.microsoft.com/en-us/rest/api/power-platform/environmentmanagement/environments/list-environments-for-user),
+still marked preview — and it does return `type`, `state`, and
+`protectionLevel`. But its `EnvironmentResponse` shape has no capacity,
+add-on, or `linkedEnvironmentMetadata` fields, so the database-size and
+add-on columns on this page still have to come from BAP's `$expand`. That's
+the piece of BAP's job `api.powerplatform.com` hasn't taken over yet.
 
 ## Governance: three different sources, reconciled on one page
 
@@ -404,8 +409,9 @@ None of this makes Portal 360° a Microsoft product — it's an independent,
 unaffiliated project I build in my own time, and for anything compliance-
 critical you should still reach for the official admin center. But as a stress
 test, it's a decent one: an API that started as one host, one audience, and a
-PowerShell registration step now backs a console where environments still come
-from BAP, apps and Copilot Studio agents come from one shared query endpoint,
+PowerShell registration step now backs a console where environment capacity
+and add-on data still come from BAP, apps and Copilot Studio agents come from
+one shared query endpoint,
 RBAC replaces an all-or-nothing trust model, and a handful of surfaces —
 Dataverse, a tenant-scoped usage host, Microsoft Graph — still do the jobs
 `api.powerplatform.com` hasn't reached yet. The clearest evidence it's still
