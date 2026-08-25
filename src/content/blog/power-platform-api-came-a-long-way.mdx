@@ -1,7 +1,7 @@
 ---
 title: "The Power Platform API Grew Up. Here's What That Looks Like in Production"
 heroAlt: "Editorial illustration representing Power Platform and Copilot Studio APIs."
-description: "From a single BAP admin surface to a unified, RBAC-secured Power Platform API that now treats Copilot Studio agents as first-class resources — with real calls from Portal 360°."
+description: "A technical tour of every Power Platform and Copilot Studio API surface behind Portal 360° — BAP, api.powerplatform.com, RBAC, the inventory query endpoint, Dataverse, and the tenant-scoped usage host — with real, sanitized calls and screenshots."
 pubDate: 2026-08-24
 tags: ["Power Platform", "Copilot Studio", "APIs", "Dataverse", "Security"]
 draft: true
@@ -10,7 +10,26 @@ featured: false
 
 import Explain from "@/components/Explain.astro";
 import Screenshot from "@/components/Screenshot.astro";
-import powerPlatform from "@/assets/projects/portal-of-portals/power-platform-environments.png";
+import environmentsList from "@/assets/projects/portal-of-portals/environments-list.png";
+import environmentGovernance from "@/assets/projects/portal-of-portals/environment-governance-policies.png";
+import advancedConnectorPolicies from "@/assets/projects/portal-of-portals/advanced-connector-policies.png";
+import dlpPolicyDetail from "@/assets/projects/portal-of-portals/dlp-policy-detail.png";
+import tenantSettingsCategories from "@/assets/projects/portal-of-portals/tenant-settings-categories.png";
+import tenantSettingsDetail from "@/assets/projects/portal-of-portals/tenant-settings-power-apps-detail.png";
+import powerAppsInventory from "@/assets/projects/portal-of-portals/power-apps-inventory.png";
+import flowConnections from "@/assets/projects/portal-of-portals/flow-connections-panel.png";
+import flowAiAssistant from "@/assets/projects/portal-of-portals/flow-ai-assistant.png";
+import agentBuilder from "@/assets/projects/portal-of-portals/agent-builder-wizard.png";
+import agentConnectorReport from "@/assets/projects/portal-of-portals/agent-connector-report.png";
+import copilotDashboardOverview from "@/assets/projects/portal-of-portals/copilot-studio-dashboard-overview.png";
+import copilotDashboardDetail from "@/assets/projects/portal-of-portals/copilot-studio-dashboard-detail.png";
+import userPromptReport from "@/assets/projects/portal-of-portals/user-prompt-report-trend.png";
+import tenantCapacity from "@/assets/projects/portal-of-portals/tenant-capacity-details.png";
+import dataverseStorage from "@/assets/projects/portal-of-portals/dataverse-storage.png";
+import usagePowerAutomate from "@/assets/projects/portal-of-portals/usage-power-automate-trend.png";
+import usageCopilotStudio from "@/assets/projects/portal-of-portals/usage-copilot-studio-trend.png";
+import recommendations from "@/assets/projects/portal-of-portals/recommendations.png";
+import knownIssues from "@/assets/projects/portal-of-portals/known-issues.png";
 
 Credit where it's due first: the Power Platform product group shipped
 `api.powerplatform.com`, and the rest of this post is basically a long way of
@@ -26,17 +45,20 @@ API at all; it lived entirely in Dataverse tables you had to already know about.
 
 I'm building **[Portal 360°](/blog/portal-of-portals-deep-dive/)**, a single
 console that consolidates the Microsoft admin surfaces I touch every day, and
-Power Platform is one of its biggest sections: environments, DLP, governance,
-licensing, Dataverse analytics, and Copilot Studio. Building that section over
-the last couple of years meant watching the underlying API grow up in real
-time. Here's what changed, shown through the actual calls Portal 360° makes
-today.
+Power Platform is one of its biggest sections. This post is a technical tour of
+that section, screen by screen, with the exact endpoint behind each one — BAP,
+`api.powerplatform.com`, the Dataverse Web API, and a tenant-scoped usage host
+I didn't even know existed until I started building this. Every call shown
+below is real (trimmed and sanitized) code from that codebase.
 
-## Where it started: one host, one audience, manual trust
+## Two hosts, one platform
 
 The legacy surface — informally called "BAP" after its
-`Microsoft.BusinessAppPlatform` resource-provider segment — is still very much
-alive. Portal 360° still calls it for tenant settings and some capacity data:
+`Microsoft.BusinessAppPlatform` resource-provider segment — predates any concept
+of scoped access. A service principal calling it isn't granted a role; it's
+registered wholesale as an "admin management app" via
+`New-PowerAppManagementApp`, and from that point on it can see and touch every
+environment in the tenant:
 
 ```typescript
 // Delegated audience: https://service.powerapps.com
@@ -60,26 +82,9 @@ export async function getBAPClientCredentialsToken(): Promise<string> {
 }
 ```
 
-That token is useless against BAP until the calling service principal is
-separately registered as a Power Platform admin management app — there's no
-"API permission" checkbox for it in the Azure portal, just a PowerShell cmdlet
-or a raw `PUT` to `adminApplications/{clientId}`. It works, but it's ceremony,
-and it's all-or-nothing: a management app can see and touch every environment
-in the tenant, because BAP predates any concept of scoped roles.
-
-<Explain title="Why 'BAP' and not a friendlier name?">
-  Microsoft never branded it. The name stuck because every endpoint sits under
-  `providers/Microsoft.BusinessAppPlatform/...`, and admins started calling it
-  "the BAP API" in forum posts and PowerShell docs. Microsoft Learn now calls it
-  the [legacy admin programmability surface](https://learn.microsoft.com/en-us/power-platform/admin/programmability-authentication),
-  to distinguish it from what came next.
-</Explain>
-
-## The pivot: one gateway, RBAC, and a name people can look up
-
-What came next is `api.powerplatform.com` — the **Power Platform API** —
-and in 2025 Microsoft described it explicitly as a strategy shift, not just a
-new host name. From the
+`api.powerplatform.com` — the **Power Platform API** — is the newer, RBAC-based
+gateway that's meant to replace it over time. In 2025 the product team
+described the move as a strategy shift, not just a new host name. From the
 [Power Platform team's own write-up](https://devblogs.microsoft.com/powerplatform/power-platform-api-and-sdks-from-ux-first-to-api-first/):
 
 > "We're transforming Power Platform into an API-first ecosystem — where every
@@ -88,17 +93,15 @@ new host name. From the
 > Microsoft Purview, granular role-based access control, and SDK parity across
 > C#, TypeScript, and Python via Kiota-generated clients.
 
-That RBAC piece is the part that actually changes how you build against it.
-Instead of one all-or-nothing management app, the
+The RBAC piece is the part that actually changes how you build against it. The
 [Authorization API](https://learn.microsoft.com/en-us/power-platform/admin/programmability-tutorial-rbac-role-assignment)
 (currently in preview) lets you assign one of four built-in roles — **Power
 Platform owner**, **contributor**, **reader**, or **RBAC administrator** — to a
-user, a group, or a service principal, scoped to a single environment, an
-environment group, or the whole tenant:
+user, group, or service principal, scoped to one environment, an environment
+group, or the whole tenant:
 
 ```http
 POST https://api.powerplatform.com/authorization/roleAssignments?api-version=2024-10-01
-Authorization: [access token, https://api.powerplatform.com/.default]
 Content-Type: application/json
 
 {
@@ -109,17 +112,96 @@ Content-Type: application/json
 }
 ```
 
-Compare that to `New-PowerAppManagementApp` with no scope argument at all. A
-service principal that only needs to read one environment group no longer has
-to be trusted with the entire tenant.
+Compare that to `New-PowerAppManagementApp` with no scope argument at all. What
+follows is what those two hosts — plus Dataverse, plus a third host neither of
+them owns — actually look like once you're calling them from a real console.
 
-## One query endpoint instead of one loop per resource type
+## Environments: still BAP's job
 
-The change I feel the most while writing Portal 360° routes is the **inventory
-/ resource query** endpoint. Before it existed, listing "every app across every
-environment" meant looping environments and calling a separate endpoint per
-resource type. Now it's one query, with a `type` filter that decides what comes
-back:
+<Screenshot
+  src={environmentsList}
+  alt="Portal 360 Environments page listing environments with type, status, database, protection level, and size for each"
+  caption="Environments still come from BAP: `GET .../scopes/admin/environments?api-version=2020-10-01&$expand=properties.capacity,properties.addons,properties.linkedEnvironmentMetadata`."
+/>
+
+Every column here — type, managed-environment badge, database size — comes
+from one BAP call, expanded with `$expand=properties.capacity` and
+`properties.linkedEnvironmentMetadata`. Nothing about environment listing has
+moved to the new API yet; it's the single largest piece of BAP's job that
+`api.powerplatform.com` hasn't taken over.
+
+## Governance: three different sources, reconciled on one page
+
+<Screenshot
+  src={environmentGovernance}
+  alt="Portal 360 Environment Governance Policies page listing each environment with its Advanced Connector Policy and DLP policies"
+  caption="The page's own subtitle names its sources: “resolved from api.powerplatform.com and the Power Platform admin API.”"
+/>
+
+This page literally prints its own data lineage in the UI: every environment's
+Advanced Connector Policy (ACP) and Data Loss Prevention (DLP) policies,
+resolved from two different hosts and joined by environment ID. That split is
+worth unpacking, because it's a good example of "old and new coexisting" rather
+than one clean migration:
+
+<Screenshot
+  src={advancedConnectorPolicies}
+  alt="Portal 360 Advanced Connector Policies detail showing a rule-based policy's allowed, non-business, and blocked connector lists"
+  caption="ACP is a governance Rule-Based Policy: `GET https://api.powerplatform.com/governance/ruleBasedPolicies?api-version=2024-10-01`."
+/>
+
+Advanced Connector Policies are the newer model: a rule-based policy holding a
+`ConnectorManagement` rule set, with three buckets — business, non-business,
+blocked — served entirely from `api.powerplatform.com`.
+
+<Screenshot
+  src={dlpPolicyDetail}
+  alt="Portal 360 DLP Policies detail modal showing enforcement tier, connector groups, and policy definition for a data loss prevention policy"
+  caption="Classic DLP policies are still BAP: `GET https://api.bap.microsoft.com/providers/PowerPlatform.Governance/v1/policies?$top=100`."
+/>
+
+Classic DLP policies — the ones admins have used for years — are still served
+from `api.bap.microsoft.com`, under a `PowerPlatform.Governance` provider
+namespace that, confusingly, has nothing to do with the new `governance/`
+routes on `api.powerplatform.com`. Same word, two different hosts, two
+different data models. If you're building against both, that naming collision
+is the first thing that will trip you up.
+
+## Tenant settings: one `POST`, one enormous payload
+
+<Screenshot
+  src={tenantSettingsCategories}
+  alt="Portal 360 Power Platform Tenant Settings page with categories for Governance, Power Apps, AI & Intelligence, Environment Management, and more"
+  caption="One BAP call, `POST .../providers/Microsoft.BusinessAppPlatform/listtenantsettings`, returns every one of these categories in a single response."
+/>
+
+<Screenshot
+  src={tenantSettingsDetail}
+  alt="Portal 360 Tenant Settings page with the Power Apps category expanded, showing individual boolean toggles with their current values"
+  caption="Each toggle here — 'Disable Create from Figma,' 'Disable Power Automate Copilot' — is one field in that same payload."
+/>
+
+`listtenantsettings` hasn't moved off BAP, and it's still the single widest
+call in the whole surface: one `POST` returns every governance, licensing,
+Power Apps, Power Automate, and AI toggle in the tenant as one JSON object.
+Microsoft adds fields to it several times a year, which is exactly why Portal
+360° runs a scheduled job that diffs its own settings registry against the
+[Terraform provider's tenant_settings schema](https://microsoft.github.io/terraform-provider-power-platform/resources/tenant_settings/)
+and opens a pull request when they drift — `learn.microsoft.com` tends to catch
+up to new fields later than that provider does.
+
+## Apps: one query, not one loop per environment
+
+<Screenshot
+  src={powerAppsInventory}
+  alt="Portal 360 Power Apps page listing canvas and model-driven apps across an environment with owner, created, and modified columns"
+  caption="Backed by the inventory / resource-query endpoint, filtered to `microsoft.powerapps/canvasapps` and `microsoft.powerapps/modeldrivenapps`."
+/>
+
+This is where `api.powerplatform.com` earns its keep. Before the **inventory /
+resource query** endpoint existed, listing every app across every environment
+meant looping environments and calling a separate endpoint per resource type.
+Now it's one query, with a `type` filter that decides what comes back:
 
 ```typescript
 // src/lib/power-platform-inventory-api.ts
@@ -136,95 +218,204 @@ POST https://api.powerplatform.com/resourcequery/resources/query?api-version=202
 { "query": "PowerPlatformResources | where type == 'microsoft.powerapps/canvasapps'" }
 ```
 
-Swap the `type` value and the same endpoint hands back canvas apps, model-driven
-apps, cloud flows — or, since sometime in the last couple of years,
-`microsoft.copilotstudio/agents`.
+Swap the `type` value and the same endpoint hands back model-driven apps, cloud
+flows — or, as you'll see below, Copilot Studio agents.
 
-## Copilot Studio stopped being a separate universe
-
-That last type filter is the detail worth sitting with. Copilot Studio agents
-used to be reachable only through Dataverse — the `bots` table, plus whatever
-raw transcript JSON you were willing to parse yourself. Today, the same
-resource-query call that lists a tenant's canvas apps also lists its Copilot
-Studio agents, with `properties.orchestration`, `properties.model`, and
-`properties.channels` right there in the payload. Governance stopped being a
-Copilot-Studio-shaped exception and became one more row type in the platform's
-own inventory.
-
-Portal 360° leans on exactly that for its Copilot Studio dashboard: the agent
-list comes from `microsoft.copilotstudio/agents` inventory rows, then gets
-enriched — best-effort, when the signed-in admin has Dataverse access — with
-`bots` and `conversationtranscripts` for usage counts:
-
-```typescript
-// src/app/api/power-platform/copilot-studio/analytics/route.ts (trimmed)
-const select = [
-  "conversationtranscriptid",
-  "createdon",
-  "conversationstarttime",
-  "content",
-].join(",");
-
-const filter = encodeURIComponent(
-  `_bot_conversationtranscriptid_value eq ${botId} and createdon ge ${cutoff}`
-);
-
-const url =
-  `${instanceUrl}/api/data/v9.2/conversationtranscripts` +
-  `?$select=${select}&$filter=${filter}&$orderby=createdon desc&$top=500`;
-```
-
-That's an honest seam worth naming: agent **governance and inventory** live on
-the Power Platform API now, but agent **content and conversation history**
-still live in Dataverse, because Copilot Studio agents are Dataverse records
-under the hood. The API grew a front door for the tenant-wide questions —
-"which agents exist, who owns them, are they quarantined" — without needing to
-reinvent Dataverse for the questions that were already Dataverse's job.
+## Automation: the same governance an admin console does, as a low-code flow
 
 <Screenshot
-  src={powerPlatform}
-  alt="Portal 360 Power Platform environments page listing environments with capacity, managed-environment, and region badges"
-  caption="Portal 360°'s Power Platform environments view — environment metadata still comes from the legacy BAP surface, capacity increasingly from the newer Power Platform API."
+  src={flowConnections}
+  alt="Portal 360 flow detail panel showing a cloud flow named GitHub Copilot Harness Agent Governance with connections to Power Platform for Admins V2, Microsoft Dataverse, and Office 365 Users"
+  caption="A governance flow built on the Power Platform for Admins V2 connector — the same connector Microsoft's API-first strategy names as a first-class client."
 />
 
-{/* TODO: swap in a Copilot Studio dashboard/agent-analytics screenshot here once captured */}
+<Screenshot
+  src={flowAiAssistant}
+  alt="Portal 360 flow detail page for the same flow with an AI assistant panel explaining each action in plain language"
+  caption="Portal 360's flow-explainer panel narrating the trigger, condition, and quarantine actions in this flow, step by step."
+/>
 
-## Old and new still disagree, and that's normal
+This cloud flow does something a Portal 360° API route could also do over
+REST: it walks environments on a recurrence trigger and quarantines Copilot
+Studio agents that trip a governance rule, using the **Power Platform for
+Admins V2** connector alongside Dataverse and Office 365 Users. That connector
+is the low-code face of the same API-first push — it's
+[Kiota-generated](https://devblogs.microsoft.com/powerplatform/power-platform-api-and-sdks-from-ux-first-to-api-first/)
+from the same OpenAPI description as the C# and Python SDKs, so a citizen
+developer building a flow and a service calling the REST API directly are
+ultimately hitting the same contract.
 
-Growing up hasn't meant a clean cutover. Portal 360°'s capacity page has to
-explain, in its own docs, why the **Tenant Capacity API**
-(`api.powerplatform.com/licensing/tenantCapacity`) and the legacy **BAP
-environments** endpoint report slightly different numbers for the same tenant:
-one is Microsoft's licensing system reporting allocated/billed capacity on a
-daily cycle, the other is per-environment actual consumption updated near
-real-time. Neither is wrong — they answer different questions, and the
-migration from one system of record to another is still visibly in progress.
-That's a more honest picture of "API maturity" than a changelog: the new
-surface earns its keep gradually, feature by feature, while the old one keeps
-answering the questions it always answered.
+## Copilot Studio: no longer a separate universe
 
-## The velocity is the real tell
+<Screenshot
+  src={agentBuilder}
+  alt="Portal 360 Agent Builder wizard configuring a Copilot Studio agent's display name, language, system instructions, and AI model"
+  caption="Agent creation itself is still Dataverse: a `bots` row plus `botcomponents` rows for instructions and topics."
+/>
 
-The clearest evidence the API is still actively growing is the pace of the
-[monthly changelog](https://learn.microsoft.com/en-us/power-platform/admin/programmability-whats-new-changed)
-itself. In a single recent month it picked up environment failback and reset
-endpoints, tenant-wide license-consumption-by-user reporting, and Power Pages
-web application firewall policy management — alongside the routine SDK
-releases for the C# and Python packages and the Power Platform for Admins V2
-connector. Portal 360° runs its own weekly sync job against the upstream
-[inventory API doc](https://github.com/MicrosoftDocs/power-platform/blob/main/power-platform/admin/inventory-api.md)
-and the tenant-settings schema, and opens a pull request whenever either one
-drifts — because this surface doesn't hold still long enough to hardcode.
+Building an agent programmatically means writing directly to Dataverse's
+`bots` table, then adding `botcomponents` rows for the language-model
+configuration and each topic — there's no `api.powerplatform.com` endpoint for
+agent authoring:
+
+```typescript
+// src/app/api/power-platform/copilot-studio/create-agent/route.ts (trimmed)
+const body = {
+  name: cfg.displayName.substring(0, 100),
+  schemaname: toBotSchemaName(prefix, cfg.displayName),
+  language: lcid,
+  authenticationmode: 2, // Integrated (authenticate with Microsoft)
+  runtimeprovider: 0,    // Power Virtual Agents
+  configuration: JSON.stringify({
+    $kind: "BotConfiguration",
+    defaultLocale: cfg.language,
+    settings: { GenerativeActionsEnabled: cfg.enableGenerativeAnswers },
+  }),
+};
+const result = await dataverseRequest(instanceUrl, token, "bots", "POST", body);
+```
+
+<Screenshot
+  src={agentConnectorReport}
+  alt="Portal 360 Agent to Connector Report listing Copilot Studio agents, their connection references, connectors, and owning solutions"
+  caption="Flattened from Dataverse `botcomponents` joined to `connectionreferences` — what each agent is *configured* to reach for, not what it has actually called."
+/>
+
+That's a design-time view, not a usage view: it shows what an agent is wired
+to, with no timestamps at all. It's exactly the join Portal 360°'s own docs
+warn against over-trusting — a connector listed here could have fired ten
+thousand times or never once.
+
+<Screenshot
+  src={copilotDashboardOverview}
+  alt="Portal 360 Copilot Studio Dashboard showing total agent count, active count, published count, environment count, and a distribution donut chart"
+  caption="Agent counts here come from the inventory endpoint, filtered to `type == 'microsoft.copilotstudio/agents'` — the same resourcequery call used for canvas apps."
+/>
+
+<Screenshot
+  src={copilotDashboardDetail}
+  alt="Portal 360 Copilot Studio Dashboard scrolled to show agent generation split between classic and modern, authentication type distribution, and top connectors by agent count"
+  caption="`properties.orchestration`, `properties.authentication`, and connector-capability counts, all read straight off the inventory row."
+/>
+
+This is the detail worth sitting with. Copilot Studio agents used to be
+reachable only through Dataverse — the `bots` table, plus whatever transcript
+JSON you were willing to parse yourself. Today, the same resourcequery call
+that lists a tenant's canvas apps also lists its Copilot Studio agents, with
+orchestration mode, auth mode, and channel data right there in the payload.
+Governance stopped being a Copilot-Studio-shaped exception and became one more
+row type in the platform's own inventory.
+
+<Screenshot
+  src={userPromptReport}
+  alt="Portal 360 User Prompt Report showing prompts per day, distinct users, agents used, and environments over a 30-day window"
+  caption="Built from Dataverse `conversationtranscripts` — the one place agent *content and conversation history* still lives."
+/>
+
+That's the honest seam: agent **governance and inventory** live on the Power
+Platform API now; agent **content and conversation history** still live in
+Dataverse, because a Copilot Studio agent is a Dataverse record under the
+hood. The API grew a front door for the tenant-wide questions — which agents
+exist, who owns them, are they quarantined — without needing to reinvent
+Dataverse for the questions that were already Dataverse's job.
+
+## Licensing and capacity: two APIs that don't quite agree
+
+<Screenshot
+  src={tenantCapacity}
+  alt="Portal 360 Tenant Capacity Details page showing database and file storage capacity, current usage, and rated usage"
+  caption="`GET https://api.powerplatform.com/licensing/tenantCapacity?api-version=2024-10-01` — Microsoft's licensing system's view of allocated and billed capacity."
+/>
+
+<Screenshot
+  src={dataverseStorage}
+  alt="Portal 360 Dataverse Storage page ranking environments by database, file, and log consumption"
+  caption="Per-environment actual consumption, still summed from BAP's `$expand=properties.capacity` on the environments call."
+/>
+
+These two pages can — and do — disagree slightly for the same tenant on the
+same day, and that's normal rather than a bug. The Tenant Capacity API reports
+Microsoft's licensing system's view: what you're allocated and billed for,
+updated on a daily cycle. The Dataverse Storage page sums real-time,
+per-environment consumption straight off BAP's environments call. Neither
+number is wrong; they're two systems of record that sync periodically, not
+continuously, and the migration from one to the other is still visibly a
+work in progress rather than a finished cutover.
+
+## Usage: a third host neither BAP nor `api.powerplatform.com` owns
+
+<Screenshot
+  src={usagePowerAutomate}
+  alt="Portal 360 Usage page showing a Power Automate active-runs and total-actions trend line over a 30-day window"
+  caption="`GET https://{tenant-host}/usage/PowerAutomateTimeSeries?timeGrain=Day&...` — the same endpoint the admin center's own Usage page calls."
+/>
+
+<Screenshot
+  src={usageCopilotStudio}
+  alt="Portal 360 Usage page showing a Copilot Studio active-sessions and active-users trend line over the same window"
+  caption="Same host, same shape, different dataset: `CopilotStudioTimeSeries` instead of `PowerAutomateTimeSeries`."
+/>
+
+This one surprised me. Adoption trends for Power Apps, Power Automate, and
+Copilot Studio don't come from `api.powerplatform.com` or from BAP — they come
+from a **tenant-scoped host** derived from the Entra tenant ID, of the shape
+`https://{tenant-host}/usage/{Dataset}(from=...,to=...)?api-version=1`, authenticated
+with a delegated token for the `api.powerplatform.com` audience even though the
+host itself is different. It's the exact endpoint the Power Platform admin
+center's own Usage pages call — Portal 360° just calls it directly instead of
+going through the UI. `PowerAppsUsage`, `PowerAutomateUsage`, and
+`CopilotStudioUsage` are the per-resource summary datasets; append
+`TimeSeries` for the trend line.
+
+## Recommendations: the Advisor API, still in preview
+
+<Screenshot
+  src={recommendations}
+  alt="Portal 360 Power Platform Recommendations page listing security and governance recommendations with affected resource counts and priority"
+  caption="`GET https://api.powerplatform.com/analytics/advisorRecommendations?api-version=2022-03-01-preview`."
+/>
+
+Advisor-style recommendations — "enable sharing limits on this canvas app,"
+"enable Global Secure Access for agents" — come from the Power Platform API's
+`analytics/advisorRecommendations` endpoint. The api-version Portal 360° calls
+today (`2022-03-01-preview`) is older than the one Microsoft Learn currently
+documents (`2024-10-01`) for the same route, which is a small, honest reminder
+that pinning an api-version means someone has to go back and bump it —
+nothing about "API-first" makes that maintenance optional.
+
+## Known issues: not a Power Platform API at all
+
+<Screenshot
+  src={knownIssues}
+  alt="Portal 360 Power Platform Known Issues page listing service disruptions with severity, impacted services, and publish dates"
+  caption="Sourced from Microsoft Graph service communications, filtered to Power Platform service names — not from api.powerplatform.com or BAP."
+/>
+
+Worth naming precisely because it's the one page in this tour that *isn't*
+Power Platform API-shaped: it's Microsoft Graph's service-communications data,
+filtered client-side to service names like "power apps" and "power automate."
+It sits in the Power Platform section of Portal 360° because that's where an
+admin looks for it, not because Power Platform owns the data behind it.
+
+## What "growing up" adds up to
 
 None of this makes Portal 360° a Microsoft product — it's an independent,
 unaffiliated project I build in my own time, and for anything compliance-
-critical you should still reach for the official admin center. But it's a
-decent stress test: an API that started as one host, one audience, and a
-PowerShell registration step now backs a console with roughly 800 routes,
-scoped RBAC instead of an all-or-nothing trust model, and a query surface that
-treats a Copilot Studio agent the same way it treats a canvas app. That's the
-distance it's covered.
+critical you should still reach for the official admin center. But as a stress
+test, it's a decent one: an API that started as one host, one audience, and a
+PowerShell registration step now backs a console where environments still come
+from BAP, apps and Copilot Studio agents come from one shared query endpoint,
+RBAC replaces an all-or-nothing trust model, and a handful of surfaces —
+Dataverse, a tenant-scoped usage host, Microsoft Graph — still do the jobs
+`api.powerplatform.com` hasn't reached yet. The clearest evidence it's still
+moving is the pace of the
+[monthly changelog](https://learn.microsoft.com/en-us/power-platform/admin/programmability-whats-new-changed)
+itself: a single recent month added environment failback and reset endpoints,
+tenant-wide license-consumption-by-user reporting, and Power Pages web
+application firewall policy management, alongside routine SDK releases for the
+C# and Python packages and the Power Platform for Admins V2 connector. That's
+the distance it's covered, and it isn't done covering ground.
 
-*Last verified: August 2026, against the Power Platform API "what's new"
-changelog, the RBAC role-assignment tutorial, and Portal 360°'s own Power
-Platform integration code.*
+*Last verified: August 2026, against the Power Platform API reference on
+Microsoft Learn, the RBAC role-assignment tutorial, and Portal 360°'s own
+Power Platform integration code.*
