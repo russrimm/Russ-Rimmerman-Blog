@@ -4,7 +4,7 @@ heroImage: ../../assets/blog/find-github-copilot-harness-agents-resource-graph.w
 heroAlt: "Editorial illustration representing Copilot Studio."
 description: "The Power Platform admin center still doesn't flag which Copilot Studio agents run on the GitHub Copilot harness. The isCLIAgent property does, and Microsoft has now published governance guidance built on it."
 pubDate: 2026-08-10
-updatedDate: 2026-08-11
+updatedDate: 2026-08-31
 tags: ["Copilot Studio", "Power Platform", "GitHub Copilot", "Agents", "Azure", "Security"]
 featured: false
 draft: false
@@ -182,6 +182,33 @@ Content-Type: application/json
 Same filter, reachable from a script instead of a portal tab. Swap the resource
 type for `microsoft.powerplatform/environments` and you have the environment
 sweep that belongs next to it.
+
+## The same split in the Dataverse bots table
+
+There's a third place the harness shows itself, and it's the one you'll walk into
+if you're already looking at an environment's data rather than its inventory.
+Copilot Studio agents are rows in the Dataverse `bot` table, which the table
+browser and Advanced Find label **Agents**. That table has a **Template** column,
+logical name `template`, which the
+[schema reference](https://learn.microsoft.com/en-us/power-apps/developer/data-platform/reference/entities/bot#writable-columns-attributes)
+describes as identifying the template and version behind the agent's default
+content. The two harnesses write different values into it:
+
+- GitHub Copilot harness agents show `cliagent-1.0.0`.
+- Classic harness agents, meaning the standard harness rather than the V1 classic
+  chatbots I get to further down, show `default-2.1.0`.
+
+The column is documented; those particular values are what I see in my own
+environments rather than something Microsoft has published a list of. Treat the
+version suffix as a moving part and match on the `cliagent-` prefix rather than
+the exact string, so a future revision doesn't quietly drop agents out of your
+filter.
+
+This is a per-environment view, not a tenant-wide one, so it doesn't replace the
+Resource Graph query. It earns its place for two other things: confirming one
+agent's harness without leaving the environment you're already working in, and
+building the same split into anything that already reads Dataverse, whether
+that's a model-driven view, a FetchXML report, or a flow.
 
 ## What you need to run it
 
