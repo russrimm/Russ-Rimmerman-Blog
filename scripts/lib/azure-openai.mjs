@@ -76,6 +76,15 @@ export async function requestChatJson({
   user,
   temperature = 0.7,
   maxTokens = 800,
+  // GPT-5-era deployments reject `max_tokens` and require
+  // `max_completion_tokens`; older ones only understand `max_tokens`. Some
+  // also pin `temperature` to its default and reject any explicit value.
+  // Start modern and fall back once per incompatibility, rather than pinning
+  // this file to one model generation. Getting it wrong is silent — callers
+  // just see null and quietly use their own fallback, which is how this went
+  // unnoticed.
+  tokenParam = "max_completion_tokens",
+  omitTemperature = false,
 }) {
   if (!cfg?.chatDeployment) return null;
 
@@ -94,14 +103,44 @@ export async function requestChatJson({
             { role: "system", content: system },
             { role: "user", content: user },
           ],
-          temperature,
-          max_tokens: maxTokens,
+          ...(omitTemperature ? {} : { temperature }),
+          [tokenParam]: maxTokens,
         }),
       }
     );
 
     if (!res.ok) {
       const text = await res.text().catch(() => "");
+
+      // Retry once per incompatibility against models with a different
+      // parameter contract.
+      if (
+        tokenParam === "max_completion_tokens" &&
+        /max_completion_tokens/.test(text)
+      ) {
+        return requestChatJson({
+          cfg,
+          system,
+          user,
+          temperature,
+          maxTokens,
+          tokenParam: "max_tokens",
+          omitTemperature,
+        });
+      }
+
+      if (!omitTemperature && /temperature/.test(text)) {
+        return requestChatJson({
+          cfg,
+          system,
+          user,
+          temperature,
+          maxTokens,
+          tokenParam,
+          omitTemperature: true,
+        });
+      }
+
       console.warn(
         `  ! chat model returned ${res.status} ${res.statusText}.\n${text}`
       );

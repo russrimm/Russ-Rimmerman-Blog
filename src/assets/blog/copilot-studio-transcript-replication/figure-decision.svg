@@ -1,0 +1,132 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 760 470"
+  class="sd-root"
+  role="img"
+  aria-labelledby="ctDecisionTitle ctDecisionDesc"
+>
+  <title id="ctDecisionTitle">Choosing a transcript replication option</title>
+  <desc id="ctDecisionDesc">
+    A decision flow with one primary question and one override check. Start by
+    asking whether you already own, or independently need, a Microsoft Fabric
+    capacity. If yes, choose Link to Microsoft Fabric with low-latency sync:
+    about an hour of setup, roughly zero incremental cost, and Microsoft
+    operates it. If no, choose Azure Functions on a timer landing in Azure
+    Storage or Azure SQL: roughly two thousand to ten thousand dollars a year
+    cheaper, but you own it forever. Then apply the override: choose Azure
+    Functions regardless of the first answer if transcripts contain personal
+    data that must be redacted before it lands, if history must outlive the
+    thirty day Dataverse purge, if governance forbids replicating into the
+    managed lake, if change tracking cannot be enabled on the table, or if you
+    need only a narrow slice of agents rather than a full replica.
+  </desc>
+
+  <text x="12" y="26" font-size="19" font-weight="700" class="sd-title">
+    Choosing a transcript replication option
+  </text>
+  <text x="12" y="50" font-size="13" class="sd-muted">
+    One question decides it. One list of exceptions overrides it.
+  </text>
+
+  <!-- Primary question -->
+  <g class="sd-blue">
+    <rect
+      x="12"
+      y="76"
+      width="736"
+      height="56"
+      rx="12"
+      class="sd-tint"
+      stroke-width="1.5"></rect>
+    <text x="32" y="100" font-size="14" font-weight="700" class="sd-fill">
+      Start here
+    </text>
+    <text x="32" y="120" font-size="14" class="sd-body">
+      Do you already own — or independently need — a Microsoft Fabric capacity?
+    </text>
+  </g>
+
+  <!-- Branch connectors -->
+  <path d="M 200 132 L 200 158" class="sd-rule" stroke-width="1.5"></path>
+  <path d="M 560 132 L 560 158" class="sd-rule" stroke-width="1.5"></path>
+  <polygon points="200,166 196,158 204,158" class="sd-arrowhead"></polygon>
+  <polygon points="560,166 556,158 564,158" class="sd-arrowhead"></polygon>
+  <text x="210" y="152" font-size="12" font-weight="700" class="sd-body">
+    Yes
+  </text>
+  <text x="570" y="152" font-size="12" font-weight="700" class="sd-body">
+    No
+  </text>
+
+  <!-- Yes branch -->
+  <g class="sd-green">
+    <rect
+      x="12"
+      y="168"
+      width="356"
+      height="132"
+      rx="12"
+      class="sd-tint"
+      stroke-width="1.5"></rect>
+    <text x="32" y="194" font-size="14" font-weight="700" class="sd-fill">
+      Link to Fabric, low-latency sync
+    </text>
+    <text font-size="13" class="sd-body">
+      <tspan x="32" y="220">~1 hour of setup, no code</tspan>
+      <tspan x="32" y="242">~$0 incremental on existing capacity</tspan>
+      <tspan x="32" y="264">Microsoft operates it, with a support path</tspan>
+      <tspan x="32" y="286">Speed you do not need is free headroom</tspan>
+    </text>
+  </g>
+
+  <!-- No branch -->
+  <g class="sd-purple">
+    <rect
+      x="392"
+      y="168"
+      width="356"
+      height="132"
+      rx="12"
+      class="sd-tint"
+      stroke-width="1.5"></rect>
+    <text x="412" y="194" font-size="14" font-weight="700" class="sd-fill">
+      Azure Functions on a timer
+    </text>
+    <text font-size="13" class="sd-body">
+      <tspan x="412" y="220">Lands in Azure Storage or Azure SQL</tspan>
+      <tspan x="412" y="242">No capacity required to consume it</tspan>
+      <tspan x="412" y="264">Roughly $2K–$10K a year cheaper</tspan>
+      <tspan x="412" y="286">You own it, and every failure in it</tspan>
+    </text>
+  </g>
+
+  <!-- Override -->
+  <g class="sd-amber">
+    <rect
+      x="12"
+      y="322"
+      width="736"
+      height="134"
+      rx="12"
+      class="sd-tint"
+      stroke-width="1.5"></rect>
+    <text x="32" y="348" font-size="14" font-weight="700" class="sd-fill">
+      Override — choose Functions even when a capacity exists, if any apply
+    </text>
+    <text font-size="13" class="sd-body">
+      <tspan x="32" y="374"
+        >Personal data must be redacted before it lands</tspan
+      >
+      <tspan x="32" y="396">History must outlive the 30-day Dataverse purge</tspan
+      >
+      <tspan x="32" y="418">Governance forbids the managed lake</tspan>
+      <tspan x="404" y="374">Change tracking cannot be enabled</tspan>
+      <tspan x="404" y="396">You need a few agents, not a full replica</tspan>
+      <tspan x="404" y="418">You must fan out to more than one target</tspan>
+    </text>
+    <text x="32" y="442" font-size="12" font-style="italic" class="sd-muted">
+      Only in-flight transformation solves the first two. No managed option
+      offers it.
+    </text>
+  </g>
+</svg>

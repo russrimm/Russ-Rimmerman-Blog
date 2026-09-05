@@ -1,0 +1,139 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 760 440"
+  class="sd-root"
+  role="img"
+  aria-labelledby="ctIdentityTitle ctIdentityDesc"
+>
+  <title id="ctIdentityTitle"
+    >The three-leg identity chain, and where each leg fails</title
+  >
+  <desc id="ctIdentityDesc">
+    Reaching Dataverse app-only takes three token exchanges, not one. Leg one:
+    the Function requests a managed identity token whose audience is the token
+    exchange audience api colon slash slash AzureADTokenExchange. Sovereign
+    clouds use a different audience value, and getting it wrong fails at
+    runtime rather than at deployment. Leg two: that token is presented as a
+    client assertion on the app registration's client credentials request,
+    returning an app-only token with no client secret involved. The federated
+    credential's subject must be the managed identity's object or principal ID,
+    not its client ID; Entra accepts the wrong value silently and the failure
+    surfaces later as a failed token exchange. Leg three: the app-only token
+    calls the environment listing API and each environment's Dataverse Web API.
+    The environment listing scope contains a double slash that is not a typo,
+    and the Power Apps Service resource principal must exist in the tenant,
+    which in many tenants it never has been. Below the three legs, one step
+    cannot be automated: a service principal cannot register itself as a Power
+    Platform management application, so one interactive administrator sign-in
+    is required the first time.
+  </desc>
+
+  <text x="12" y="26" font-size="19" font-weight="700" class="sd-title">
+    The identity chain is three parties, not one
+  </text>
+  <text x="12" y="50" font-size="13" class="sd-muted">
+    “Managed identity, so no secrets” is true, and it is not the whole story.
+  </text>
+
+  <!-- Leg 1 -->
+  <g class="sd-blue">
+    <rect
+      x="12"
+      y="76"
+      width="736"
+      height="94"
+      rx="12"
+      class="sd-tint"
+      stroke-width="1.5"></rect>
+    <circle cx="40" cy="104" r="13" class="sd-fill"></circle>
+    <text
+      x="40"
+      y="109"
+      font-size="13"
+      font-weight="700"
+      text-anchor="middle"
+      class="sd-onfill">1</text
+    >
+    <text x="64" y="109" font-size="14" font-weight="700" class="sd-fill">
+      Managed identity → Entra
+    </text>
+    <text x="64" y="132" font-size="13" class="sd-body">
+      The Function requests a managed identity token whose audience is the
+      token-exchange audience.
+    </text>
+    <text x="64" y="155" font-size="12" class="sd-muted">
+      Fails when: a sovereign cloud uses a different audience. Surfaces at
+      runtime, not at deployment.
+    </text>
+  </g>
+
+  <path d="M 380 170 L 380 190" class="sd-rule" stroke-width="1.5"></path>
+  <polygon points="380,198 376,190 384,190" class="sd-arrowhead"></polygon>
+
+  <!-- Leg 2 -->
+  <g class="sd-purple">
+    <rect
+      x="12"
+      y="200"
+      width="736"
+      height="94"
+      rx="12"
+      class="sd-tint"
+      stroke-width="1.5"></rect>
+    <circle cx="40" cy="228" r="13" class="sd-fill"></circle>
+    <text
+      x="40"
+      y="233"
+      font-size="13"
+      font-weight="700"
+      text-anchor="middle"
+      class="sd-onfill">2</text
+    >
+    <text x="64" y="233" font-size="14" font-weight="700" class="sd-fill">
+      Federation onto the app registration
+    </text>
+    <text x="64" y="256" font-size="13" class="sd-body">
+      That token becomes a client assertion, returning an app-only token. No
+      client secret exists anywhere.
+    </text>
+    <text x="64" y="279" font-size="12" class="sd-muted">
+      Fails when: the federated credential's subject is the client ID instead of
+      the object ID. Entra accepts it silently.
+    </text>
+  </g>
+
+  <path d="M 380 294 L 380 314" class="sd-rule" stroke-width="1.5"></path>
+  <polygon points="380,322 376,314 384,314" class="sd-arrowhead"></polygon>
+
+  <!-- Leg 3 -->
+  <g class="sd-teal">
+    <rect
+      x="12"
+      y="324"
+      width="736"
+      height="94"
+      rx="12"
+      class="sd-tint"
+      stroke-width="1.5"></rect>
+    <circle cx="40" cy="352" r="13" class="sd-fill"></circle>
+    <text
+      x="40"
+      y="357"
+      font-size="13"
+      font-weight="700"
+      text-anchor="middle"
+      class="sd-onfill">3</text
+    >
+    <text x="64" y="357" font-size="14" font-weight="700" class="sd-fill">
+      App token → Power Platform and Dataverse
+    </text>
+    <text x="64" y="380" font-size="13" class="sd-body">
+      Lists every environment, then reads each environment's Web API using that
+      organization's URL as the scope.
+    </text>
+    <text x="64" y="403" font-size="12" class="sd-muted">
+      Fails when: the listing scope's double slash is “corrected”, or the Power
+      Apps Service principal was never provisioned.
+    </text>
+  </g>
+</svg>

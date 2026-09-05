@@ -1,0 +1,521 @@
+---
+title: "Getting Copilot Studio transcripts into Power BI: three options and one deciding question"
+heroImage: ../../assets/blog/copilot-studio-transcript-replication.webp
+heroAlt: "Editorial illustration of transcript replication. Copilot Studio streams conversation JSON into Dataverse, where a 30-day clock and a waste bin mark the bulk-delete job. Three numbered paths lead out to Microsoft Fabric, Microsoft Fabric with sync, and Azure Functions, each feeding Power BI. Panels below show a Microsoft Entra to managed identity to Dataverse chain, a shredding stage, and a rising cost scale."
+
+description: "Copilot Studio writes conversation transcripts into Dataverse as a raw JSON blob that a bulk-delete job erases after 30 days. Three ways to replicate it somewhere useful — Link to Fabric, Link to Fabric with low-latency sync, and a timer-triggered Azure Function — with the pros and cons of each, and why at low volume almost every usual differentiator collapses into a single question about what you already own. Plus a deep dive on the Function option from a working tenant-wide build: the three-leg identity chain, why change tracking is the wrong incremental mechanism here, the shredding traps that fail silently, and the destination choice that quietly decides the bill."
+pubDate: 2026-09-04
+tags:
+  [
+    "Copilot Studio",
+    "Dataverse",
+    "Power Platform",
+    "Microsoft Fabric",
+    "Power BI",
+    "Azure",
+    "Azure Functions",
+    "Architecture",
+  ]
+draft: true
+featured: false
+---
+
+import Diagram from "@/components/Diagram.astro";
+import decision from "@/assets/blog/copilot-studio-transcript-replication/figure-decision.svg?raw";
+import architecture from "@/assets/blog/copilot-studio-transcript-replication/figure-architecture.svg?raw";
+import identityChain from "@/assets/blog/copilot-studio-transcript-replication/figure-identity-chain.svg?raw";
+import destinationCost from "@/assets/blog/copilot-studio-transcript-replication/figure-destination-cost.svg?raw";
+
+Copilot Studio records what people said to your agents. It writes those
+conversations into a Dataverse table called `conversationtranscript`, as a raw
+JSON activity log, and then a recurring bulk-delete job removes anything older
+than 30 days.
+
+So if you want to report on agent adoption over a year, you have a replication
+problem before you have a reporting problem. This post covers the three ways to
+solve it, what each one costs you, and the single question that usually settles
+it.
+
+## The short version
+
+At low volume with no need for near-real-time data, almost every criterion that
+normally separates these options stops mattering. Latency stops mattering.
+Throughput stops mattering. Dataverse service protection limits stop mattering.
+Storage cost becomes a rounding error everywhere.
+
+What is left is one financial question and one durable operational one.
+
+<Diagram
+  svg={decision}
+  caption="The primary question, and the exceptions that override it."
+/>
+
+**If you already own a Fabric capacity:** use Link to Microsoft Fabric with
+low-latency sync. It is about an hour of clicking, costs effectively nothing
+incremental, and Microsoft operates it.
+
+**If you do not, and would be buying one purely to report on this table:** a
+timer-triggered Azure Function is meaningfully cheaper — on the order of $2,000
+to $10,000 a year — and AI-assisted development has turned the build from a
+project into a scripted deployment.
+
+The remaining trade-off is not cost or speed. It is who owns the pipeline, and
+who notices when it silently stops.
+
+## What makes this table different, in every option
+
+Several characteristics of `conversationtranscript` survive the low-volume
+assumption entirely, and they apply no matter which transport you pick.
+
+**The `Content` column is a raw JSON activity log.** It holds the full Bot
+Framework activity stream: message, event and trace activities, channel data,
+variable assignments, customer satisfaction ("CSAT") responses, intent
+recognition. None of the three
+options parse this for you. Whichever transport you choose, you still need a
+shredding layer before Power BI is usable — and that is the largest single piece
+of work in the project. It is identical in all three options, which is why it
+never appears as a differentiator and always appears in the schedule.
+
+**There is a 1 MB cap per record.** Larger conversations are split into multiple
+rows sharing the same `Name` and `ConversationStartTime`, distinguished by
+`Metadata.BatchId`. [Microsoft documents the reassembly
+rule](https://learn.microsoft.com/microsoft-copilot-studio/analytics-transcripts-powerapps):
+take all records with the same `Name` and `ConversationStartTime`, then sort by
+`BatchId`. Get it wrong and your longest conversations — the ones actually worth
+analyzing — silently truncate.
+
+**A bulk-delete job purges rows older than 30 days.** This is the single biggest
+trap, and low volume does not soften it. The job is called *Bulk Delete
+Conversation Transcript Records Older Than 1 Month*, and you can cancel it and
+create a replacement with a longer window. Until you do, a replica is not an
+archive: a delete in Dataverse propagates downstream and takes your reporting
+history with it.
+
+**Transcript content is sensitive.** Transcripts can carry user-entered personal
+data, hashed user IDs, variable values and knowledge-source content. Dataverse
+security roles — including the **Bot Transcript Viewer** role — do not follow the
+data into Fabric. Downstream access is governed by Fabric workspace and OneLake
+permissions instead, so the list of people who can read transcripts changes the
+moment you replicate them.
+
+**Rows arrive in bursts.** A transcript row is written after about 30 minutes of
+conversation inactivity. Even at low total volume the arrival pattern is lumpy,
+which is a further argument against caring about instantaneous freshness.
+
+**Some agents produce nothing at all.** Microsoft documents that transcripts are
+not written for Microsoft Dataverse for Teams environments or Microsoft 365
+Copilot agents. Confirm your agents actually produce rows before you build
+anything — and measure per environment rather than assuming which types are
+excluded, because filtering by environment type is a one-line configuration
+change that can
+silently drop data with nothing in the pipeline reporting an error.
+
+## What low volume actually neutralizes
+
+This is the part that changes the shape of the decision, so it is worth being
+explicit.
+
+| Normally a differentiator     | Why it stops mattering here                                                                                                                             |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Sync latency                  | Low-latency sync delivers a roughly two-minute median against about an hour for classic. If the business reads a weekly report, all three are equivalent. |
+| Throughput ceilings           | Published ceilings are orders of magnitude above what this workload generates.                                                                            |
+| Service protection limits     | A paged delta read of a few thousand rows uses a handful of requests per run. The only real exposure is the one-time backfill.                             |
+| Storage cost                  | 2,000 conversations a day at 30 KB is about 22 GB a year. Cents per month, everywhere.                                                                     |
+| Build effort                  | AI-generated code plus infrastructure as code makes the Function a scripted deployment rather than a project.                                              |
+
+And what it promotes:
+
+| Now decisive                     | Why                                                                                                                                                                                     |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Do you already own a capacity?   | Link to Fabric delivers into OneLake, and consuming that requires a Fabric capacity. If you have one, marginal cost is ~$0. If not, you are buying a platform to report on 22 GB a year. |
+| Who owns and monitors it?        | With cost and speed neutralized, operational ownership is the last real difference — and the Function's worst failure mode is a timer that quietly stops firing.                        |
+| Retention beyond 30 days         | Low volume makes long retention cheap and therefore attractive. But replicas propagate deletes, so this has to be answered deliberately in every option.                                  |
+| Data sensitivity                 | Unchanged by volume. If transcripts must never land unredacted, only the Function can transform before persisting.                                                                       |
+
+## Option 1 — Link to Fabric, classic engine
+
+Link to Fabric is built into Power Apps. You select an environment and the tables
+you want, Dataverse replicates them into a Microsoft-managed lake, and Fabric
+surfaces them in a Lakehouse through OneLake shortcuts. The classic engine reads
+from the Dataverse database, serializes to an intermediate CSV, then converts to
+Delta Parquet. You also get a SQL analytics endpoint and a default semantic model.
+
+**Pros.** Zero code and zero infrastructure. No pipeline to babysit and no
+secrets to rotate. It does not consume your Dataverse API entitlement. Microsoft
+operates it, with a real support path. Its slower latency is a non-issue for this
+workload.
+
+**Cons.** It has been superseded — low-latency sync is the same product with a
+better engine and is now what new links get. The three-hop path means more
+failure points and slower recovery. No transformation, so the JSON lands as-is.
+Deletes replicate. Dataverse security roles do not carry into Fabric. Column type
+or precision changes cause permanent sync failure, and the fix is to remove and
+re-add the table.
+
+**Verdict:** not something to choose deliberately in 2026. If your station has
+low-latency sync, use that. If it does not, classic is a perfectly adequate
+placeholder precisely because you do not need the speed.
+
+## Option 2 — Link to Fabric with low-latency sync
+
+Low-latency sync removes the intermediate CSV step entirely: data flows from the
+Dataverse database directly to Delta Parquet. That one architectural change
+delivers both the speed and the reliability benefits.
+
+There is **no opt-in**. The engine rolls out station by station, and once your
+station is enabled, every new link uses it automatically. You can confirm it by
+looking for the **Low-latency mode** flag on the link in the **Link data** list.
+Existing links stay on the previous engine until you unlink and relink, which
+triggers a full initial sync — at this volume, a minor event rather than a
+weekend job.
+
+The benefit that actually matters here is not speed. It is that removing a hop
+eliminates a whole class of transient I/O, encoding and throttling errors, and
+shortens recovery. Reliability, not latency, is what you are buying.
+
+Leave **Change Data Feed** off. It gives you roughly 24 hours of row-level change
+events, and Microsoft notes it is memory- and compute-intensive and can increase
+overall latency. It solves a problem this workload does not have.
+
+**Pros.** The lowest total effort of the three: an hour of clicking, then
+Microsoft runs it forever. Effectively zero incremental cost if a capacity
+already exists. More reliable than classic. Consumes no Dataverse API
+entitlement. Strategically aligned, since it is the default for new links.
+
+**Cons.** It requires a Fabric capacity to consume — and that is the whole
+decision if you do not have one. Availability is station-dependent. No
+transformation, so personal data cannot be redacted before it lands. Deletes
+still propagate. Row-level security still does not carry through. Timestamps are
+written as INT64 rather than INT96, which breaks downstream readers that assume
+otherwise. Published latency figures are indicative telemetry, explicitly not a
+service-level agreement ("SLA").
+
+**Verdict:** the default choice, provided a capacity already exists. If it does
+not, this option carries a four-figure annual platform cost for a workload
+producing a couple of gigabytes a year.
+
+## Option 3 — Azure Functions on a timer
+
+This is the option worth explaining properly, because the one-paragraph version
+of it is misleading in several specific ways. What follows comes from a working
+tenant-wide reference implementation that I built, tore down, and rebuilt end to
+end — so the traps below are ones that actually fired, not ones I anticipated on
+paper.
+
+The headline claim survives: a competent timer-triggered sync is now a scripted
+deployment rather than a project. Several things it implies do not.
+
+### The shape of it
+
+<Diagram
+  svg={architecture}
+  caption="Four stages. The ordering in stage four is the part people get wrong."
+/>
+
+A timer-triggered Function runs every 30 minutes. It authenticates to Dataverse
+using a user-assigned managed identity federated onto a secretless Entra app
+registration, whose client ID is registered as a Dataverse application user. It
+keeps a `createdon` high-water mark per environment, reassembles multi-part
+records, optionally redacts, then appends to the destination.
+
+Two details in that diagram are load-bearing:
+
+**30 minutes is not arbitrary.** Dataverse writes a transcript only after 30
+minutes of conversation inactivity, so a tighter schedule adds request pressure
+without adding freshness. Also worth knowing: the timer binding reads its
+schedule when the host starts, so changing it needs a restart — and you should
+verify the next fire time rather than assuming.
+
+**The HTTP trigger is not optional in practice.** It is how you run the initial
+backfill, prove a fix, and recover a missed window without waiting for the next
+tick. Leaving it out is a decision you will regret the first time something goes
+wrong at 4pm on a Friday.
+
+A useful property falls out of the tenant-wide shape: because discovery is
+tenant-wide and application users are provisioned on the fly, one deployment
+covers every environment and picks up newly created ones without manual work.
+Link to Fabric is configured per environment, so a tenant with a long tail of
+environments is a genuine point in the Function's favor. It is also a reason to
+be careful, for reasons in the privilege section below.
+
+### The identity chain is three parties, not one
+
+"Managed identity, so no secrets" is true, and it is not the whole story.
+Reaching Dataverse app-only takes a three-legged exchange, and each leg has a
+failure mode that does not announce itself.
+
+<Diagram
+  svg={identityChain}
+  caption="Each leg fails differently, and two of the three fail silently."
+/>
+
+The managed identity **cannot** be the Dataverse application user. Power Platform
+binds application users to an Entra app registration's client ID, and tenant-wide
+environment listing only works for an app registered as a Power Platform
+management application. A managed identity is neither of those things.
+
+Two of these cost me real time:
+
+- The federated credential's subject must be the managed identity's **object
+  (principal) ID**, not its client ID. Entra accepts the wrong value without
+  complaint, and the failure surfaces much later as a token exchange that fails
+  with nothing useful attached.
+- The environment-listing scope contains a double slash that looks like a typo
+  and is not. "Fixing" it breaks the token request.
+
+**One step cannot be automated.** A service principal cannot register itself as a
+Power Platform management application, by design. Whatever else you script, one
+interactive administrator sign-in is required the first time. The bootstrap is
+also circular: the infrastructure needs the app registration's client ID, and the
+federated credential needs the managed identity's principal ID, which only exists
+after the infrastructure is deployed. That is scriptable, but it is not one
+template you hand to a pipeline and forget.
+
+### Change tracking is the wrong incremental mechanism here
+
+Dataverse change tracking with delta links is the obvious mechanism, and it is
+the wrong one for this table. This is worth stating plainly because it is the
+design decision most likely to be made by reflex — including by an AI assistant
+generating the code, which will reach for it confidently.
+
+- **Delta links propagate deletes.** The 30-day bulk-delete job would erase the
+  archive the pipeline exists to build. A delete-aware sync is precisely what you
+  do not want.
+- **`$filter`, `$orderby`, `$top` and `$expand` are rejected** when the change
+  tracking header is present. No way to bound a run, order it deterministically,
+  or resume after a failure.
+- **Delta tokens expire**, defaulting to seven days. An outage longer than that
+  forces a full reseed — and at that point there is nothing older than 30 days
+  left in Dataverse to reseed from.
+
+What works instead: a per-environment high-water mark on `createdon`, a
+deliberate overlap window replayed on every run, and deduplication at the
+destination keyed on the transcript ID. The overlap exists because transcripts
+are written only after a period of inactivity and can land slightly out of order
+relative to a strictly advancing watermark. Duplicates are produced on purpose
+and removed downstream. A second run that returns a few rows rather than zero is
+correct behavior, not a bug.
+
+The same delete-propagation trap applies to Link to Fabric and to Azure Synapse
+Link. This is not really an argument for the Function so much as a reminder that
+the retention question has to be answered explicitly in whichever option you
+pick.
+
+### The shredding traps that fail silently
+
+Microsoft documents the activity fields well. What is less obvious is the
+top-level shape of the payload, and every trap below fails quietly — no
+exception, no parse error, just wrong numbers in a report someone will act on.
+
+| Trap                                   | What goes wrong                                                                                                                                                                 |
+| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Content` has more than one encoding   | I found three: a bare array of activities, an object with an `activities` property, and a double-encoded object whose `text` property is itself a JSON string. Handling only one yields zero activities, which reads as an empty conversation rather than a bug. |
+| The speaker role is numeric            | `from.role` is `0` for the agent and `1` for the user. This *is* documented — but `role` is a string elsewhere in the Bot Framework schema, so it is easy to invert. Getting it backwards does not fail; it silently attributes every agent utterance to the customer. |
+| Timestamps have more than one format   | Documented as epoch seconds, and that is what I mostly saw — but epoch milliseconds and ISO 8601 also occur. Turns land in 1970 or thousands of years in the future.              |
+| The 1 MB cap splits conversations      | Order by `BatchId` before pairing prompts with responses, or your longest conversations truncate.                                                                                |
+| Two bot identifiers exist              | The agent ID in `Metadata` and the Dataverse `bot` table key are different ID spaces. Only the second joins to the `bot` table; joining on the wrong one returns nothing at all. The agent name in `Metadata` is the schema name, not the display name. |
+| `Name` is a composite                  | It is the conversation ID, an underscore, then the bot ID — and a conversation ID can itself contain underscores. Splitting on the separator corrupts it; trim the known suffix instead. |
+| User identity is hashed                | `from.id` is hashed and cannot be resolved to a person. Authenticated channels also carry the real Entra object ID, and only that one is resolvable.                              |
+
+One more, which is documented but easy to miss and changes what your reporting
+means: when SharePoint is used as a knowledge source, the agent's *answer* is not
+included in the transcript. It is marked `REDACTED`. You get the question and the
+source content, not the response.
+
+And one that reframes every adoption number you produce: `ConversationInfo`
+carries an `isDesignMode` flag marking test-pane traffic — a maker testing their
+own agent. In my build, **28 of 33 sessions were design mode**. If you do not
+filter it out, you are reporting on your own team.
+
+### The privilege problem
+
+"Least privilege on the application user" is achievable, but not on the path that
+makes this option attractive.
+
+The endpoint that provisions Dataverse application users across environments
+always grants **System Administrator**, and offers no way to choose a role. That
+behavior is exactly what makes automatic, self-healing coverage of new
+environments possible. It is also far more privilege than reading two tables
+requires, in every environment in the tenant.
+
+The mitigation is real and it costs you the automation: turn auto-provisioning
+off, ship a custom security role granting Read at organization scope on the agent
+and transcript tables in a small solution, and assign application users yourself
+per environment. You trade self-healing discovery for least privilege, and you
+own keeping the role deployed as environments are created.
+
+Worth raising in design rather than in review: Link to Fabric needs no
+tenant-wide application user at all. If your security review is going to object
+to a broadly privileged application identity across every environment, that
+objection lands on this option alone.
+
+### The destination decides the bill
+
+This is the part most cost comparisons get wrong, including the one I started
+from.
+
+<Diagram
+  svg={destinationCost}
+  caption="The code is nearly free. The destination is not."
+/>
+
+My reference build landed in Azure Data Explorer, which is genuinely the nicest
+technical fit for this data: native dynamic JSON parsing in Kusto Query Language
+("KQL"), update policies
+to shred activities on ingest, per-table retention, materialized views for
+deduplication. It is also the version that quietly costs the most, because even
+the cheapest development tier is a standing hourly charge for a single instance
+with no SLA — and that charge dwarfs a couple of gigabytes a year.
+
+Two further items are routinely left out of Function estimates:
+
+- **Private endpoints are billed per endpoint.** Hardening the storage account
+  typically means blob, queue and table endpoints, each with its own hourly
+  charge plus data processing. That is material against a $10 baseline. Worth
+  noting that the Flex Consumption plan supports virtual network integration
+  natively, so networking no longer forces you onto a Premium plan — the
+  endpoints are the cost, not the plan.
+- **Observability is small but not zero**, and it is the last component you
+  should economize on. The dominant risk at low volume is a timer that quietly
+  stops firing, which produces no exception for logging to catch — so alert on
+  the *absence* of new rows rather than on errors, and track coverage per
+  environment rather than a single tenant-wide count.
+
+If cost is the reason you are considering this option at all: land the raw JSON
+in Blob or Azure Data Lake Storage ("ADLS"), build the shredded turn-level table
+there, and serve a Power BI
+Pro scheduled import. Choose a Kusto-style destination when the KQL shredding,
+retention policies and materialized views are worth paying for on their own
+merits — not as a default.
+
+### Effort, stated honestly
+
+AI-assisted development genuinely collapses the build. It is worth being precise
+about what it does and does not cover, because the gap is where projects overrun.
+
+**Covered:** Function code — authentication, paging, throttling, watermarking,
+retries. Infrastructure as code and deployment scripts. Destination schema and
+ingestion mapping. A first pass at shredding and pairing logic. Draft
+documentation.
+
+**Not covered:** The interactive administrator step. Validating the undocumented
+content shapes against *your* transcripts. Deciding the privilege trade-off and
+living with it. Monitoring, alerting, a runbook, disaster recovery and change
+control. Knowing, a year later, why any of it works.
+
+A fair summary: about half an hour to a running pipeline, and about a day to a
+pipeline you would be willing to leave unattended for a year. The second number
+is the one that belongs in the comparison — and it is still small, which is
+exactly why the deciding factor is ownership rather than effort.
+
+## A fourth option worth knowing about
+
+Low volume and relaxed freshness make one more approach viable that would be
+indefensible at scale: a Power BI dataflow or semantic model connecting directly
+to Dataverse on a scheduled refresh, with no replication layer at all. No Azure
+resources, no Fabric capacity, no code.
+
+Know the trade-offs before taking it. Power Query is a poor tool for parsing
+large JSON blobs and will be slow and brittle against a 1 MB `Content` column.
+Refreshes consume Dataverse API entitlement. Power BI Pro is limited to eight
+scheduled refreshes a day. And it does nothing to preserve history unless you
+configure incremental refresh carefully, so the 30-day purge remains live. Treat
+it as a prototyping route or a genuinely minimal need, not as a platform.
+
+## Cost, at a realistic volume
+
+Assume 2,000 conversations a day at 30 KB average — roughly 1.8 GB a month, 22 GB
+a year of raw JSON. Every option handles that without breathing hard.
+
+| Scenario                          | Approach                                        | Indicative annual cost                                    |
+| --------------------------------- | ----------------------------------------------- | --------------------------------------------------------- |
+| Capacity already owned            | Link to Fabric with low-latency sync            | ~$0 incremental, plus a few dollars of OneLake storage     |
+| No capacity, buy one for this     | Purchase F2 or larger purely to enable the link | Roughly $3,150 a year pay-as-you-go for F2, more for a usable reporting size |
+| No capacity, build instead        | Function on a timer into Blob/ADLS or Azure SQL, Power BI Pro import | Under $120 a year in cloud spend                          |
+
+The F2 figure is arithmetic rather than a quote: Fabric capacity bills at $0.18
+per capacity-unit-hour pay-as-you-go, F2 is 2 CUs, and 2 × $0.18 × 730 hours is
+$262.80 a month. Reserved pricing is materially lower. Check the [Azure pricing
+calculator](https://azure.microsoft.com/pricing/calculator/) and your own
+agreement before budgeting — these are list-price estimates for relative
+comparison, not quotes.
+
+The gap between the second and third rows is the whole argument. Everything else
+in this post is a tiebreaker.
+
+## Before you decide
+
+Confirm these in the target environment. Several have changed the answer on real
+projects.
+
+1. **Do you already own a Fabric capacity, and at what size?** This is the primary
+   determinant. Everything else is a tiebreaker.
+2. **Are transcripts actually being written?** Confirm rows exist and recording
+   is not disabled by policy — and measure per environment rather than assuming
+   which types are excluded.
+3. **What is the actual daily row count and average `Content` size?** This
+   confirms the low-volume assumption everything above rests on.
+4. **How stale can the report be before anyone complains?** Get a number. If the
+   honest answer is minutes, the analysis changes.
+5. **What is the current bulk-delete retention, and what does the business need?**
+   This decides whether you need an append-only archive at all — and it is the
+   decision most projects get wrong by deferring it.
+6. **How many transcripts exceed 1 MB and split across batches?** Tells you how
+   much reassembly logic you need, and how wrong naive reporting would be.
+7. **Do transcripts contain regulated personal data?** If yes, this may force the
+   Function regardless of capacity.
+8. **Who is allowed to see transcript content, and does Fabric workspace access
+   match that list?** The Bot Transcript Viewer role does not follow the data.
+9. **Has your station received low-latency sync?** Look for the Low-latency mode
+   flag.
+10. **Who owns this pipeline in three years, and who is on call when it silently
+    stops firing?** Build effort is now trivial. Ownership is the real question,
+    and this is the one that settles the debate.
+
+## Implementation order, either path
+
+Whichever option you land on, do these in this order:
+
+1. **Decide retention at the source first.** If you need more than 30 days,
+   cancel the default bulk-delete job and create a replacement, or plan an
+   append-only archive. Before anything else.
+2. **Stand up the transport.** Enable the link and confirm the Low-latency mode
+   flag, or deploy the Function and register its identity.
+3. **Land raw first.** Keep an untouched copy of the JSON in cheap storage. It
+   costs almost nothing and it saves you when the shredding logic turns out to be
+   wrong — which it will, at least once.
+4. **Shred the JSON.** Reassemble multi-part records, then explode the activity
+   array into a turn-level fact table with outcome, CSAT, topic, channel and turn
+   counts.
+5. **Model for Power BI.** Serve conversation-level and turn-level aggregates.
+   Never point Power BI at raw JSON.
+6. **Add a freshness alert.** Alert on the absence of new rows rather than on
+   errors. This is the failure mode that actually happens.
+7. **Restrict access deliberately.** Dataverse roles do not follow the data.
+
+## The one-line version
+
+If you have a Fabric capacity, use low-latency sync and spend your time on the
+shredding layer instead. If you do not, build the Function — but budget for the
+day of hardening rather than the half hour of scaffolding, and put the freshness
+alert in before you put it into production.
+
+---
+
+**References**
+
+- [Understand downloaded conversation transcripts from Power
+  Apps](https://learn.microsoft.com/microsoft-copilot-studio/analytics-transcripts-powerapps)
+  — the `Content` schema, the 1 MB split rule, and how to change the retention job
+- [Link to Microsoft
+  Fabric](https://learn.microsoft.com/power-apps/maker/data-platform/fabric-link-to-data-platform)
+  — including low-latency sync and Change Data Feed
+- [Plan your latency for Link to
+  Fabric](https://learn.microsoft.com/power-apps/maker/data-platform/fabric-link-plan-latency)
+- [Service protection API
+  limits](https://learn.microsoft.com/power-apps/developer/data-platform/api-limits)
+- [Control transcript
+  access](https://learn.microsoft.com/microsoft-copilot-studio/admin-transcript-controls)
+
+Latency, throughput and pricing figures here are point-in-time, indicative, and
+explicitly not service-level agreements. Revalidate before making commitments.

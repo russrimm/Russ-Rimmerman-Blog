@@ -1,0 +1,163 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 760 430"
+  class="sd-root"
+  role="img"
+  aria-labelledby="ctDestTitle ctDestDesc"
+>
+  <title id="ctDestTitle"
+    >Destination choice, and what it does to the running cost</title
+  >
+  <desc id="ctDestDesc">
+    Three destination options for the same Function pipeline, ordered by cost.
+    Azure Storage or Azure SQL is the cheapest: a few dollars a month, no
+    capacity required, and Power BI Pro can import on a schedule, but you own
+    the schema and the query layer. Fabric Lakehouse costs roughly zero
+    incrementally if you already hold a capacity and lets you land a curated
+    redacted schema, but it requires that capacity, and if you have one then
+    Link to Fabric already gives you most of this with no code. Azure Data
+    Explorer or Fabric Eventhouse is technically the best fit for the data
+    shape, with native JSON parsing in KQL, update policies, retention policies
+    and materialized views, but even the cheapest development tier is a
+    standing hourly charge that dwarfs a couple of gigabytes a year. Below
+    these, two costs are routinely left out of Function estimates: private
+    endpoints are billed per endpoint, roughly twenty to twenty-five dollars a
+    month for the three a hardened storage account typically needs, and
+    Application Insights adds a few dollars a month. The conclusion is that the
+    destination, not the code, decides whether the under ten dollars a month
+    claim survives.
+  </desc>
+
+  <text x="12" y="26" font-size="19" font-weight="700" class="sd-title">
+    The destination decides the bill, not the code
+  </text>
+  <text x="12" y="50" font-size="13" class="sd-muted">
+    Same pipeline, same volume, three very different monthly invoices.
+  </text>
+
+  <!-- Cheapest -->
+  <g class="sd-green">
+    <rect
+      x="12"
+      y="76"
+      width="238"
+      height="182"
+      rx="12"
+      class="sd-tint"
+      stroke-width="1.5"></rect>
+    <text x="30" y="102" font-size="14" font-weight="700" class="sd-fill">
+      Azure Storage or Azure SQL
+    </text>
+    <text x="30" y="124" font-size="13" font-weight="700" class="sd-body">
+      A few dollars a month
+    </text>
+    <text font-size="12" class="sd-body">
+      <tspan x="30" y="150">No capacity required at all</tspan>
+      <tspan x="30" y="170">Power BI Pro scheduled import</tspan>
+      <tspan x="30" y="190">Cents per month for the data</tspan>
+    </text>
+    <text font-size="12" class="sd-muted">
+      <tspan x="30" y="216">You own the schema and the</tspan>
+      <tspan x="30" y="234">query layer on top of it</tspan>
+    </text>
+  </g>
+
+  <!-- Middle -->
+  <g class="sd-amber">
+    <rect
+      x="261"
+      y="76"
+      width="238"
+      height="182"
+      rx="12"
+      class="sd-tint"
+      stroke-width="1.5"></rect>
+    <text x="279" y="102" font-size="14" font-weight="700" class="sd-fill">
+      Fabric Lakehouse
+    </text>
+    <text x="279" y="124" font-size="13" font-weight="700" class="sd-body">
+      ~$0 more, if you hold a capacity
+    </text>
+    <text font-size="12" class="sd-body">
+      <tspan x="279" y="150">Land a curated, redacted schema</tspan>
+      <tspan x="279" y="170">rather than a raw replica</tspan>
+    </text>
+    <text font-size="12" class="sd-muted">
+      <tspan x="279" y="196">But if you already have the</tspan>
+      <tspan x="279" y="214">capacity, Link to Fabric gives</tspan>
+      <tspan x="279" y="232">you most of this with no code</tspan>
+    </text>
+  </g>
+
+  <!-- Most expensive -->
+  <g class="sd-red">
+    <rect
+      x="510"
+      y="76"
+      width="238"
+      height="182"
+      rx="12"
+      class="sd-tint"
+      stroke-width="1.5"></rect>
+    <text x="528" y="102" font-size="14" font-weight="700" class="sd-fill">
+      Data Explorer / Eventhouse
+    </text>
+    <text x="528" y="124" font-size="13" font-weight="700" class="sd-body">
+      Standing hourly charge
+    </text>
+    <text font-size="12" class="sd-body">
+      <tspan x="528" y="150">Best technical fit: native JSON</tspan>
+      <tspan x="528" y="170">in KQL, update and retention</tspan>
+      <tspan x="528" y="190">policies, materialized views</tspan>
+    </text>
+    <text font-size="12" class="sd-muted">
+      <tspan x="528" y="216">Even the dev tier dwarfs a</tspan>
+      <tspan x="528" y="234">couple of gigabytes a year</tspan>
+    </text>
+  </g>
+
+  <!-- Hidden costs -->
+  <g class="sd-purple">
+    <rect
+      x="12"
+      y="280"
+      width="736"
+      height="136"
+      rx="12"
+      class="sd-tint"
+      stroke-width="1.5"></rect>
+    <text x="32" y="306" font-size="14" font-weight="700" class="sd-fill">
+      Two costs routinely left out of the Function estimate
+    </text>
+    <rect
+      x="32"
+      y="318"
+      width="344"
+      height="82"
+      rx="8"
+      class="sd-card"
+      stroke-width="1"></rect>
+    <text x="48" y="342" font-size="13" font-weight="700" class="sd-body">
+      Private endpoints
+    </text>
+    <text font-size="12" class="sd-muted">
+      <tspan x="48" y="364">Billed per endpoint. Hardening storage</tspan>
+      <tspan x="48" y="384">typically needs three of them.</tspan>
+    </text>
+    <rect
+      x="392"
+      y="318"
+      width="344"
+      height="82"
+      rx="8"
+      class="sd-card"
+      stroke-width="1"></rect>
+    <text x="408" y="342" font-size="13" font-weight="700" class="sd-body">
+      Application Insights
+    </text>
+    <text font-size="12" class="sd-muted">
+      <tspan x="408" y="364">Small, but the last thing to economize</tspan>
+      <tspan x="408" y="384">on — it is how you see silent failure.</tspan>
+    </text>
+  </g>
+</svg>

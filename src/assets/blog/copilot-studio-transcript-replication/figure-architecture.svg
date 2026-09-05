@@ -1,0 +1,275 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 760 500"
+  class="sd-root"
+  role="img"
+  aria-labelledby="ctArchTitle ctArchDesc"
+>
+  <title id="ctArchTitle">Timer-triggered transcript sync architecture</title>
+  <desc id="ctArchDesc">
+    A left-to-right pipeline in four stages. Stage one, triggers: a timer
+    trigger runs every thirty minutes and an HTTP trigger runs the same sync on
+    demand for backfills and recovery. Stage two, the Function app: it holds a
+    user-assigned managed identity, which is the only credential in the system.
+    Stage three, Power Platform: the identity federates onto a secretless Entra
+    app registration, which is registered as a Power Platform management
+    application, calls the BAP admin endpoint to list every environment in the
+    tenant, then calls each environment's Dataverse Web API to page
+    conversationtranscript rows oldest first. Stage four, persistence: rows are
+    appended to the destination, then a per-environment high-water mark is
+    written to Table Storage only after that append succeeds, so an ingestion
+    failure cannot silently skip a window. Application Insights records a
+    per-environment run report throughout. Power BI or a dashboard reads from
+    the destination, never from Dataverse directly.
+  </desc>
+
+  <text x="12" y="26" font-size="19" font-weight="700" class="sd-title">
+    Timer-triggered transcript sync
+  </text>
+  <text x="12" y="50" font-size="13" class="sd-muted">
+    One deployment covers every environment in the tenant, including ones
+    created later.
+  </text>
+
+  <!-- Stage 1: triggers -->
+  <g class="sd-blue">
+    <rect
+      x="12"
+      y="76"
+      width="150"
+      height="150"
+      rx="12"
+      class="sd-tint"
+      stroke-width="1.5"></rect>
+    <text x="28" y="100" font-size="13" font-weight="700" class="sd-fill">
+      Triggers
+    </text>
+    <rect
+      x="28"
+      y="112"
+      width="118"
+      height="46"
+      rx="8"
+      class="sd-card"
+      stroke-width="1"></rect>
+    <text x="40" y="132" font-size="12" font-weight="700" class="sd-body">
+      Timer
+    </text>
+    <text x="40" y="149" font-size="11" class="sd-muted">every 30 min</text>
+    <rect
+      x="28"
+      y="166"
+      width="118"
+      height="46"
+      rx="8"
+      class="sd-card"
+      stroke-width="1"></rect>
+    <text x="40" y="186" font-size="12" font-weight="700" class="sd-body">
+      HTTP
+    </text>
+    <text x="40" y="203" font-size="11" class="sd-muted">backfill, recovery</text>
+  </g>
+
+  <path d="M 162 151 L 196 151" class="sd-rule" stroke-width="1.5"></path>
+  <polygon points="204,151 196,147 196,155" class="sd-arrowhead"></polygon>
+
+  <!-- Stage 2: function -->
+  <g class="sd-purple">
+    <rect
+      x="206"
+      y="76"
+      width="164"
+      height="150"
+      rx="12"
+      class="sd-tint"
+      stroke-width="1.5"></rect>
+    <text x="222" y="100" font-size="13" font-weight="700" class="sd-fill">
+      Function app
+    </text>
+    <rect
+      x="222"
+      y="112"
+      width="132"
+      height="64"
+      rx="8"
+      class="sd-card"
+      stroke-width="1"></rect>
+    <text x="234" y="132" font-size="12" font-weight="700" class="sd-body">
+      User-assigned
+    </text>
+    <text x="234" y="148" font-size="12" font-weight="700" class="sd-body">
+      managed identity
+    </text>
+    <text x="234" y="166" font-size="11" class="sd-muted">
+      the only credential
+    </text>
+    <text x="222" y="196" font-size="11" class="sd-muted">
+      Paging, throttling,
+    </text>
+    <text x="222" y="212" font-size="11" class="sd-muted">
+      retries, reassembly
+    </text>
+  </g>
+
+  <path d="M 370 151 L 404 151" class="sd-rule" stroke-width="1.5"></path>
+  <polygon points="412,151 404,147 404,155" class="sd-arrowhead"></polygon>
+
+  <!-- Stage 3: power platform -->
+  <g class="sd-teal">
+    <rect
+      x="414"
+      y="76"
+      width="334"
+      height="150"
+      rx="12"
+      class="sd-tint"
+      stroke-width="1.5"></rect>
+    <text x="430" y="100" font-size="13" font-weight="700" class="sd-fill">
+      Power Platform
+    </text>
+    <rect
+      x="430"
+      y="112"
+      width="146"
+      height="46"
+      rx="8"
+      class="sd-card"
+      stroke-width="1"></rect>
+    <text x="442" y="132" font-size="12" font-weight="700" class="sd-body">
+      Entra app registration
+    </text>
+    <text x="442" y="149" font-size="11" class="sd-muted">no secret, federated</text>
+    <rect
+      x="586"
+      y="112"
+      width="146"
+      height="46"
+      rx="8"
+      class="sd-card"
+      stroke-width="1"></rect>
+    <text x="598" y="132" font-size="12" font-weight="700" class="sd-body">
+      BAP admin endpoint
+    </text>
+    <text x="598" y="149" font-size="11" class="sd-muted">lists all environments</text>
+    <rect
+      x="430"
+      y="166"
+      width="302"
+      height="46"
+      rx="8"
+      class="sd-card"
+      stroke-width="1"></rect>
+    <text x="442" y="186" font-size="12" font-weight="700" class="sd-body">
+      Dataverse Web API, once per environment
+    </text>
+    <text x="442" y="203" font-size="11" class="sd-muted">
+      conversationtranscript, paged oldest first
+    </text>
+  </g>
+
+  <!-- Down arrow to persistence -->
+  <path d="M 581 226 L 581 262" class="sd-rule" stroke-width="1.5"></path>
+  <polygon points="581,270 577,262 585,262" class="sd-arrowhead"></polygon>
+
+  <!-- Stage 4: persistence -->
+  <g class="sd-green">
+    <rect
+      x="206"
+      y="272"
+      width="542"
+      height="112"
+      rx="12"
+      class="sd-tint"
+      stroke-width="1.5"></rect>
+    <text x="222" y="296" font-size="13" font-weight="700" class="sd-fill">
+      Persistence — order matters
+    </text>
+    <rect
+      x="222"
+      y="308"
+      width="230"
+      height="60"
+      rx="8"
+      class="sd-card"
+      stroke-width="1"></rect>
+    <circle cx="242" cy="330" r="9" class="sd-fill"></circle>
+    <text
+      x="242"
+      y="334"
+      font-size="11"
+      font-weight="700"
+      text-anchor="middle"
+      class="sd-onfill">1</text
+    >
+    <text x="260" y="334" font-size="12" font-weight="700" class="sd-body">
+      Append to destination
+    </text>
+    <text x="234" y="356" font-size="11" class="sd-muted">
+      raw JSON kept untouched
+    </text>
+    <rect
+      x="470"
+      y="308"
+      width="262"
+      height="60"
+      rx="8"
+      class="sd-card"
+      stroke-width="1"></rect>
+    <circle cx="490" cy="330" r="9" class="sd-fill"></circle>
+    <text
+      x="490"
+      y="334"
+      font-size="11"
+      font-weight="700"
+      text-anchor="middle"
+      class="sd-onfill">2</text
+    >
+    <text x="508" y="334" font-size="12" font-weight="700" class="sd-body">
+      Advance watermark
+    </text>
+    <text x="482" y="356" font-size="11" class="sd-muted">
+      only after the append succeeds
+    </text>
+  </g>
+
+  <!-- Observability -->
+  <g class="sd-amber">
+    <rect
+      x="12"
+      y="272"
+      width="164"
+      height="112"
+      rx="12"
+      class="sd-tint"
+      stroke-width="1.5"></rect>
+    <text x="28" y="296" font-size="13" font-weight="700" class="sd-fill">
+      Application Insights
+    </text>
+    <text font-size="11" class="sd-body">
+      <tspan x="28" y="320">Rows read per environment</tspan>
+      <tspan x="28" y="338">Environments skipped</tspan>
+      <tspan x="28" y="356">Environments failed, why</tspan>
+      <tspan x="28" y="374">Parse errors, counted</tspan>
+    </text>
+  </g>
+
+  <!-- Consumption -->
+  <path d="M 477 384 L 477 414" class="sd-rule" stroke-width="1.5"></path>
+  <polygon points="477,422 473,414 481,414" class="sd-arrowhead"></polygon>
+  <g class="sd-blue">
+    <rect
+      x="206"
+      y="424"
+      width="542"
+      height="56"
+      rx="12"
+      class="sd-tint"
+      stroke-width="1.5"></rect>
+    <text x="222" y="448" font-size="13" font-weight="700" class="sd-fill">
+      Reporting reads the shredded table, never the raw JSON
+    </text>
+    <text x="222" y="468" font-size="12" class="sd-body">
+      Power BI scheduled import, or a dashboard over the analytics store
+    </text>
+  </g>
+</svg>
