@@ -1,0 +1,289 @@
+---
+title: "ServiceHealth.Read.All Isn't Enough for Graph Service Health"
+description: "Why app-only calls to Graph service health return an empty 403 even after consent, and which Entra directory role actually unblocks them."
+pubDate: 2026-08-17
+tags: ["Microsoft Graph", "Identity", "Security", "Microsoft 365", "Entra"]
+featured: false
+draft: false
+---
+
+import Explain from "@/components/Explain.astro";
+
+I was wiring up a service health monitor: one app registration, client credentials,
+two application permissions, both admin-consented with the reassuring green checks
+in the API permissions blade. `ServiceMessage.Read.All` for Message Center,
+`ServiceHealth.Read.All` for service health.
+
+Message Center came back with hundreds of messages. Service health, from the same
+process and the same cached token, came back like this:
+
+```text
+GET /v1.0/admin/serviceAnnouncement/messages         → 200
+GET /v1.0/admin/serviceAnnouncement/healthOverviews  → 403
+GET /v1.0/admin/serviceAnnouncement/issues           → 403
+```
+
+And the 403 body was this:
+
+```json
+{
+  "error": {
+    "code": "UnknownError",
+    "message": "",
+    "innerError": {
+      "date": "2026-08-14T15:22:41",
+      "request-id": "00000000-0000-0000-0000-000000000000",
+      "client-request-id": "00000000-0000-0000-0000-000000000000"
+    }
+  }
+}
+```
+
+`UnknownError`. Empty message. No `innerError` detail beyond correlation IDs. I
+re-granted consent three times before I accepted that consent was never the problem.
+
+Here's the short version, so you don't lose the afternoon I did:
+
+> **`ServiceHealth.Read.All` gets your app through the front door. It does not get
+> it into service health.** The calling service principal also needs an Entra
+> directory role that carries `microsoft.office365.serviceHealth/allEntities/allTasks`.
+
+## Why the error sends you the wrong way
+
+Two signals conspire here, and both of them point away from the real cause.
+
+The first is the error itself. A `403` with an empty message reads like a consent
+problem, because that's what a consent problem usually looks like. There's nothing
+in the response that says "you're missing a directory role," so every instinct sends
+you back to the API permissions blade to stare at checkmarks that are already correct.
+
+The second is worse: Message Center still works. That single 200 seems to prove the
+app registration, the client secret, the tenant, and the consent grant are all fine.
+Which narrows the problem to the service health permission specifically. Which is
+exactly wrong, and it's the reason I spent an hour re-reading a permission that was
+already granted.
+
+<Explain title="Why does one endpoint work and its neighbor 403?">
+  `admin/serviceAnnouncement/messages` and
+  `admin/serviceAnnouncement/healthOverviews` sit next to each other in the Graph
+  URL space, but they're fronting different Microsoft 365 admin surfaces with
+  different authorization behind them. Message Center is satisfied by the Graph
+  application permission on its own. Service health also checks whether the calling
+  principal holds a directory role granting the Microsoft 365 service health action.
+  Same token, same service principal, two different gates.
+</Explain>
+
+## The real requirement
+
+The [List healthOverviews reference](https://learn.microsoft.com/en-us/graph/api/serviceannouncement-list-healthoverviews?view=graph-rest-1.0)
+lists `ServiceHealth.Read.All` as the least privileged permission for both delegated
+and application, and explicitly says "Not available" for higher privileged options.
+Read at face value, that's the whole requirement. It isn't.
+
+| Layer | What it is | Where you grant it |
+| --- | --- | --- |
+| Graph application permission | `ServiceHealth.Read.All`, admin-consented | App registration → API permissions |
+| Entra directory role | A role carrying `microsoft.office365.serviceHealth/allEntities/allTasks` | Entra ID → Roles and administrators |
+
+You need both. Message Center only needs the first, which is why it kept working
+and kept lying to me.
+
+Microsoft's own [RBAC overview](https://learn.microsoft.com/en-us/entra/identity/role-based-access-control/custom-overview)
+describes the evaluation flow as: a user *or service principal* acquires a token,
+and Entra then evaluates role memberships based on the `wids` claim in that access
+token. The wording is written around users, so treat the app-only mechanism as
+inference rather than documented fact. The behavior, though, is not inference. Hold
+that thought until the "restart" section below, because it explains the last trap.
+
+## Message Center Reader is the wrong answer
+
+Search this error and you'll land on advice to assign **Message Center Reader**. Don't.
+
+That role carries exactly two actions:
+
+```text
+microsoft.office365.messageCenter/messages/read
+microsoft.office365.webPortal/allEntities/standard/read
+```
+
+No service health action anywhere in it. It will not fix a service health 403, and
+if you assign it and restart, you'll have burned a cycle proving that.
+
+The advice isn't malicious, it's just answering a different question. It comes from
+delegated-permission threads where a *signed-in user* couldn't read Message Center
+and needed a role. That's a real fix for a real problem. It just isn't this one.
+
+## Which roles actually carry the action
+
+I pulled every built-in role definition from the Entra permissions reference and
+grepped for `microsoft.office365.serviceHealth/allEntities/allTasks`. Fifty-two
+built-in roles carry it, including most product administrator roles. That's not a
+least-privilege menu, it's a haystack, so the real question is which one grants the
+least *else*.
+
+Two are worth your attention:
+
+**Service Support Administrator** (`f023fd81-a637-4b56-95fd-791ac0226033`) has six
+actions total:
+
+```text
+microsoft.azure.serviceHealth/allEntities/allTasks
+microsoft.azure.supportTickets/allEntities/allTasks
+microsoft.office365.network/performance/allProperties/read
+microsoft.office365.serviceHealth/allEntities/allTasks
+microsoft.office365.supportTickets/allEntities/allTasks
+microsoft.office365.webPortal/allEntities/standard/read
+```
+
+**Global Reader** carries the same service health action inside a 99-action,
+read-only role. It can't write anything, anywhere, but it reads nearly everything
+in the tenant.
+
+So the honest trade-off is: Service Support Administrator is scoped tightly to
+service health and support, but it can *create and manage support tickets* on your
+tenant's behalf. Global Reader can't write at all, but it can read your whole
+directory. Neither is "read-only service health," because no built-in role is.
+
+<Explain title="Which one should a monitoring app get?">
+  For a service health dashboard I'd take Service Support Administrator, because a
+  narrow role with one unwanted write capability is easier to reason about and audit
+  than a tenant-wide read. But say the quiet part out loud in your design review:
+  this identity can open support tickets with Microsoft. If your threat model can't
+  accept that, Global Reader is the alternative, and you're trading write capability
+  for read breadth. Whichever you pick, give it to a dedicated service principal
+  that does nothing else.
+</Explain>
+
+## Assigning the role
+
+In the portal: **Microsoft Entra ID** → **Roles and administrators** → pick the role
+→ **Add assignments** → select your app registration → **Add**. Service principals
+show up in that picker alongside users; you're searching for the app registration's
+display name.
+
+Through Graph, it's a `unifiedRoleAssignment`. This call needs
+`RoleManagement.ReadWrite.Directory`, which is a privileged permission, so make it
+from an admin context and not from the app you're fixing:
+
+```http
+POST https://graph.microsoft.com/v1.0/roleManagement/directory/roleAssignments
+Content-Type: application/json
+
+{
+  "@odata.type": "#microsoft.graph.unifiedRoleAssignment",
+  "roleDefinitionId": "f023fd81-a637-4b56-95fd-791ac0226033",
+  "principalId": "<service principal object ID>",
+  "directoryScopeId": "/"
+}
+```
+
+Or with Microsoft Graph PowerShell:
+
+```powershell
+Connect-MgGraph -Scopes "RoleManagement.ReadWrite.Directory"
+
+$sp = Get-MgServicePrincipal -Filter "displayName eq 'my-service-health-monitor'"
+
+New-MgRoleManagementDirectoryRoleAssignment `
+  -RoleDefinitionId "f023fd81-a637-4b56-95fd-791ac0226033" `
+  -PrincipalId $sp.Id `
+  -DirectoryScopeId "/"
+```
+
+Two things trip people up here. `principalId` is the **service principal** object ID,
+not the application (client) ID and not the app registration's object ID. Grab it
+from **Enterprise applications**, or from the `Get-MgServicePrincipal` call above.
+And for built-in roles, the `roleDefinitionId` is the role template ID, which is why
+you can paste `f023fd81-…` straight in.
+
+For a managed identity, nothing changes except how you find the principal. A managed
+identity has a service principal in the tenant like any other workload identity, so
+you assign the directory role to *that* object ID. Granting the managed identity the
+`ServiceHealth.Read.All` app role is still only half of it. This is the part that
+catches people moving a working local app onto an Azure resource with a managed
+identity: the app role assignment gets migrated, the directory role gets forgotten,
+and the 403 comes back looking brand new.
+
+## The gotcha right after the fix
+
+You assign the role. You re-run the call. Still 403.
+
+Directory role membership appears to be resolved when the app-only token is issued,
+not on every call. Assigning the role does nothing for a token that already exists,
+and almost every Graph client caches its token until expiry. So the app that has been
+running while you fixed this will keep returning 403 with the same empty error for up
+to an hour.
+
+Restart the process, or force a fresh token acquisition, before you conclude the fix
+didn't work. That timing is cruel: it makes the correct answer look like another
+dead end at the exact moment you finally found it.
+
+## The other trap in the same API
+
+While you're in here, there's a second thing that looks like it should work.
+
+`serviceHealthIssue` has a `posts` collection holding the running updates for an
+incident. It reads like something you'd expand:
+
+```http
+GET /v1.0/admin/serviceAnnouncement/issues?$expand=posts
+```
+
+That fails the **entire** request:
+
+```text
+Parsing OData Select and Expand failed: Property 'posts' on type
+'microsoft.graph.serviceHealthIssue' is not a navigation property or complex
+property. Only navigation properties can be expanded.
+```
+
+Meanwhile this is valid, and it's in the docs as an official example:
+
+```http
+GET /v1.0/admin/serviceAnnouncement/healthOverviews?$expand=issues
+```
+
+Same API surface, two different rules. The tell is in the resource type reference:
+[`serviceHealthIssue`](https://learn.microsoft.com/en-us/graph/api/resources/servicehealthissue?view=graph-rest-1.0)
+lists `posts` under **Properties** as a `Collection(serviceHealthIssuePost)`, and its
+**Relationships** section says "None." Complex-type collections come back by default
+and can't be expanded. Navigation properties are the ones under Relationships, and
+`serviceHealth` genuinely has `issues` there.
+
+<Explain title="How to tell before you write the query">
+  Open the resource type page and read two sections. If the thing you want appears
+  under **Relationships**, it's a navigation property and `$expand` works. If it
+  appears only under **Properties** with a `Collection(...)` type, it's a complex
+  type: it's already in the default response, and asking to expand it fails the whole
+  request rather than being ignored. `posts` is already there in the `issues`
+  response. You never needed the `$expand`.
+</Explain>
+
+## The checklist
+
+When an app-only Graph call 403s with nothing useful in the body:
+
+1. Confirm the application permission is granted **and** admin-consented, then stop
+   looking at it. One green check is one gate.
+2. Check whether the target surface enforces its own RBAC behind Graph. Service
+   health does. Intune does. Message Center doesn't.
+3. Find the specific action, not the role. Search the built-in role definitions for
+   `microsoft.office365.serviceHealth/allEntities/allTasks` rather than trusting a
+   role name that sounds right.
+4. Assign the directory role to the **service principal** object ID, at `/` scope.
+5. Restart the app so it acquires a new token. The old one will never work.
+6. Write down which write capabilities came along with the role, because
+   least privilege is a claim you should be able to defend.
+
+If step 2 feels familiar, it should. This is the same shape as the Intune 403 I wrote
+about in [The Intune Permission Trap](/blog/intune-graph-scope-is-only-half-the-permission/):
+the Graph scope proves your app is allowed to ask, and something behind Graph decides
+whether it's allowed to know. The details change per service. The trap doesn't.
+
+More permission and identity field notes live in the
+[Security & Identity topic](/topics/security-and-identity/).
+
+---
+
+*Last verified: August 2026, against Microsoft Graph v1.0 and the Microsoft Entra
+built-in role definitions as published in the permissions reference.*
