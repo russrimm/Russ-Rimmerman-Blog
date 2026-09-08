@@ -1,0 +1,158 @@
+---
+title: "Estimating Copilot Studio Agent Costs Through Rollout"
+description: "Estimate Copilot Studio agent costs from creation through rollout using Copilot Agent Kit evidence, repeatable validation, and task-based budget assumptions."
+pubDate: 2026-09-08
+tags: ["Copilot Studio", "Copilot Agent Kit", "Power Platform", "GitHub Copilot", "Agents"]
+draft: true
+---
+
+Estimating Copilot Studio agent costs starts before anyone uses the published agent. If you're building with the GitHub Copilot harness, creating and testing it can consume Copilot Credits too. A harness is the software that coordinates the model's work and the tools an agent uses. A monthly usage estimate covers only part of the work.
+
+I'd use the Copilot Agent Kit's Agent Review Tool to connect that estimate to evidence: inspect available activity, investigate a finding, validate a change, then budget for rollout. What I like about this direction is that it turns cost planning into an evidence-and-validation exercise, not just a calculator.
+
+Sources checked September 8, 2026. This draft follows public documentation and the [September 2026 kit release](https://github.com/microsoft/Power-CAT-Copilot-Studio-Kit/releases/tag/CopilotAgentKit-September2026), not a recorded walkthrough of a live installation. Agent Review Tool and agent evaluation are preview.
+
+## Know which activities consume credits
+
+This post concerns GitHub Copilot harness-based agents built in Copilot Studio, not GitHub's separate coding-agent products.
+
+Microsoft's [harness usage guidance](https://learn.microsoft.com/en-us/power-platform/admin/manage-usage-github-copilot-harness) says creating, testing, evaluating, and running these agents consumes Copilot Credits regardless of the user's Microsoft 365 Copilot license.
+
+The standard harness, often called Classic in this comparison, has different coverage: qualifying authenticated employee use in Microsoft 365 channels can be included for licensed users, subject to fair use and identity/channel restrictions. Workflows and prompts invoked inside that standard-harness agent by a qualifying licensed user can be covered; other cases are billed. Computer use isn't included. A licensed maker doesn't establish coverage for everyone who uses the agent.
+
+For the GitHub Copilot harness, the [billing overview](https://learn.microsoft.com/en-us/microsoft-copilot-studio/agents-experience/billing-credit-overview) identifies large language model ("LLM") tokens, tool use, and harness processing as consumption factors. Tokens are pieces of text the model processes or generates. Tools include knowledge retrieval and connections to other services.
+
+There isn't a fixed billed rate per message or task to borrow from standard-harness pricing. Natural-language creation, where you describe changes in everyday language, can consume credits, as can previewing, testing, and generating evaluations. Manual configuration that doesn't use an LLM does not, according to the [September Copilot Credits Guide](https://go.microsoft.com/fwlink/?linkid=2368800).
+
+## Budget the work before rollout
+
+I'd give the project three budget lines before opening the agent builder:
+
+| Phase | Include in the estimate |
+| --- | --- |
+| Initial creation | Natural-language authoring, previews, and early tests |
+| Validation and controlled pilot | Evaluation runs, failed attempts, retries, kit reviews, and pilot usage |
+| Ongoing operation | User and autonomous tasks, continued refinement, and repeat validation |
+
+Autonomous tasks start from events or schedules rather than a person asking. Keep those in the forecast even if the expected user count is small.
+
+The initial build is a one-time project allowance. Continued changes belong in the recurring monthly allowance. Power Platform environments are workspaces holding agents, apps, and their data. Choosing a development or trial environment doesn't mean zero consumption under the [current billing rules](https://learn.microsoft.com/en-us/power-platform/admin/manage-usage-github-copilot-harness).
+
+Running the kit's artificial intelligence ("AI")-supported review stages can [consume credits too](https://github.com/microsoft/Power-CAT-Copilot-Studio-Kit/blob/main/AGENTREVIEWTOOL_REFERENCE_GUIDE.md), including reruns. Keep an allowance for those outside runtime, meaning the agent doing its users' or scheduled work.
+
+To size the creation allowance, start with a funded, limited building exercise. Compare the agent's reported consumption before and after the exercise once reporting catches up, account for other activity, and use several representative exercises to estimate the remaining work. Don't treat one prompt as a fixed-price unit.
+
+## Open a live-agent review
+
+Start with an administrator who can prepare the kit environment. The [prerequisites](https://github.com/microsoft/Power-CAT-Copilot-Studio-Kit/blob/main/PREREQUISITES.md) include Dataverse, Microsoft's business data service; an installer with System Administrator access; Creator Kit; and enabled code components and Code Apps, which support the kit's controls and code-based apps. Confirm rights to run the Power Apps app and Premium Power Automate flows, the kit's automated workflows, plus applicable AI capacity and permitted connections.
+
+Install the current release's main managed solution, the package containing the kit, using the [installation instructions](https://github.com/microsoft/Power-CAT-Copilot-Studio-Kit/blob/main/INSTALLATION_INSTRUCTIONS.md). Limit reviewers' access to the agents and conversation transcripts they need. Transcripts are saved conversation records. Broad read permissions can expose sensitive conversations; don't export them into uncontrolled spreadsheets.
+
+To reach the cost review, follow the [Agent Review Tool guide](https://github.com/microsoft/Power-CAT-Copilot-Studio-Kit/blob/main/AGENTREVIEWTOOL_REFERENCE_GUIDE.md):
+
+1. Open **Setup Wizard**, follow its link to **Copilot Agent Kit Installer**, and select **Set up Agent Review**.
+2. Wait for **Agents connection**, **Dataverse connection**, **Workflow connections**, and **Review workflow** to show **Ready**.
+3. In the Makers app, open **Agent Review Tool > Copilot Studio Agents** and select the source environment.
+4. Find the agent, select **Review**, and keep the page open until processing and saving finish.
+5. Open the saved result, confirm **Powered by: GitHub Copilot**, and select **Cost & efficiency**.
+
+The tool selects the review mode automatically. It reads the source agent without editing it and saves results in the kit environment, which may be different. Use a live-agent review here; an uploaded agent package has no live conversation transcripts to inspect.
+
+## Read the evidence before prioritizing changes
+
+The first section, **What did we observe?**, uses available conversation transcripts from the last 30 days. Its statuses are **Observed**, **Not observed in the window**, and **Not attributable**. These describe evidence, not spending.
+
+Before choosing an improvement, check whether the window is complete. Permissions, retention settings, or the transcript-reading page limit can leave gaps. With partial evidence, an apparently unobserved capability might appear in conversations the tool couldn't read.
+
+“Not attributable” also needs care: a signal associated with a group of capabilities doesn't confirm which individual tool ran. Built-in harness actions, including running shell commands and reading or writing files, are excluded from this view. Shell commands are text instructions for the agent's computing environment. These limitations are described in the [reference guide](https://github.com/microsoft/Power-CAT-Copilot-Studio-Kit/blob/main/AGENTREVIEWTOOL_REFERENCE_GUIDE.md) and [September release package](https://github.com/microsoft/Power-CAT-Copilot-Studio-Kit/releases/tag/CopilotAgentKit-September2026).
+
+I'd record the date window and any missing evidence beside the finding. Counts of observed calls aren't tokens, credits, or dollars. For a new agent with little activity, collect representative evidence during the controlled pilot before drawing conclusions. An unobserved capability isn't automatically unused or wasteful.
+
+## Turn one finding into a testable change
+
+**What should I improve?** connects configuration evidence to recommendations, including overlapping capabilities and unclear tool descriptions. The [September tool](https://github.com/microsoft/Power-CAT-Copilot-Studio-Kit/releases/tag/CopilotAgentKit-September2026) attaches evidence, a recommendation, quality risk, and a validation plan. It doesn't promise savings.
+
+Suppose a review flags two tools that look like duplicate searches. A connector operation is an action exposed by a connection to another service. Two tools can use the same operation but different connections or business rules, so I'd check those differences before removing either.
+
+If both tools are intentional, a useful first change might be clearer descriptions of when to select each one. I'd test whether that reduces unnecessary searches while preserving access to the correct information.
+
+Save the original settings, record the proposed change and its quality risk, and define what success looks like. I'd start with one change so the next evaluation has a clear comparison. Don't delete a capability solely because the transcript window didn't show it.
+
+## Validate outcomes and record consumption
+
+In **How do I validate it?**, the September release's **Plan one evaluation pass** displays **Consumption varies**. Saved case count alone cannot determine credits: one case can involve multiple interactions and tasks. Use this section to plan validation, not calculate a test-run price from the number of cases. See the [September release](https://github.com/microsoft/Power-CAT-Copilot-Studio-Kit/releases/tag/CopilotAgentKit-September2026).
+
+For the overlapping-search example, I'd:
+
+1. Save cases covering each intended search, an ambiguous request, and restricted information.
+2. Run those cases before changing descriptions to establish a baseline, a record of current behavior. Use safe test data and only the required permissions. For actions that change records, use connections to an isolated test environment.
+3. Make the change in Copilot Studio and rerun the same cases with the same test method and authenticated user profile. Record which agent version each pass tested. Repeat enough to see variation.
+4. Check answer quality, expected tool selection, and any actual record changes before comparing consumption.
+
+Copilot Studio's preview [agent evaluation](https://learn.microsoft.com/en-us/microsoft-copilot-studio/agents-experience/analytics-agent-evaluation-intro) is available through **Evaluate**. Its **General quality** score doesn't compare responses with expected answers. Manually verify required outcomes and restricted-data behavior beyond that score. The review tool doesn't apply changes or execute this validation for you.
+
+During unpublished authoring, use the [Power Platform admin center's Licensing > Copilot Studio reports](https://learn.microsoft.com/en-us/power-platform/admin/manage-copilot-studio-copilot-credits-capacity) for agent and environment totals. Compare matching time windows after reporting catches up, documenting unrelated activity. These aren't per-run or per-user billing reports.
+
+For a useful cost-per-success measure, divide the relevant recorded credits by successful completed tasks. Include credits from failures and retries in the numerator. Keep quality results beside that figure so a cheaper but less reliable change doesn't pass.
+
+## Build a monthly Copilot Studio cost estimate
+
+**How do I plan a budget?** takes **Monthly agent tasks** and a **Runtime scenario**. Include user and autonomous tasks; one conversation can contain several. Don't count every tool call as another task.
+
+The kit's [planning bands](https://github.com/microsoft/Power-CAT-Copilot-Studio-Kit/blob/main/AGENTREVIEWTOOL_REFERENCE_GUIDE.md) are:
+
+| Scenario | Workload assumption | Credits per task |
+| --- | --- | --- |
+| Light | Few sources, light reasoning, one output at most | 100–300 |
+| Medium | Many sources, structured reasoning, multiple outputs | 300–500 |
+| Heavy | Broad aggregation, deep reasoning, many outputs | More than 500; no fixed upper bound |
+
+You select the scenario; the tool doesn't infer complexity from transcripts. The estimate is explicitly **Not agent-specific**: identical inputs produce identical estimates. These are planning scenarios based on selected assumptions, not actual spend, billing telemetry, or guaranteed savings. Authoring, previews, testing, evaluation, and AI-supported kit reviews need separate allowances.
+
+Here's a synthetic monthly example for one agent with 500 people granted access but 100 expected active users:
+
+| Planning group | Tasks per month | Selected scenario | Runtime credits |
+| --- | --- | --- | --- |
+| 80 occasional users | 80 × 5 = 400 | Light | 40,000–120,000 |
+| 20 frequent users | 20 × 20 = 400 | Medium | 120,000–200,000 |
+| Total | 800 | Combined | 160,000–320,000 |
+
+Assume occasional users want a short answer from a few approved sources. Frequent users want a comparison across several sources plus a written summary. Those task types justify the Light and Medium choices, not frequency or license ownership alone.
+
+These groups are planning assumptions, not individually metered billing categories. Run the Light and Medium portions separately in the kit, then combine them in your own planning worksheet; the kit accepts one scenario at a time.
+
+For this example, add 10,000 credits for monthly natural-language refinement and 5,000 for combined testing, evaluation, and kit reviews. Both are placeholders, not observations or Microsoft recommendations. They're recurring allowances, separate from the initial build budget.
+
+For a smaller pilot or broader rollout, change active users and tasks per user, then revisit the task mix. If a new group needs deeper research or more outputs, increasing volume alone won't capture that change.
+
+With a team-selected 20% reserve:
+
+```text
+Monthly credits = (runtime credits + 10,000 + 5,000) × 1.20
+Low estimate    = (160,000 + 15,000) × 1.20 = 210,000
+High estimate   = (320,000 + 15,000) × 1.20 = 402,000
+```
+
+Using the [published $0.01 per Copilot Credit](https://go.microsoft.com/fwlink/?linkid=2368800) as a manufacturer's suggested retail price ("MSRP") baseline, runtime alone is $1,600–$3,200. With allowances and reserve, it's **$2,100–$4,020 in United States dollars per month at MSRP**. Those figures give us a common reference, not the customer's contracted price.
+
+**I'd start with pay-as-you-go.** [Link the environment to an Azure billing plan](https://learn.microsoft.com/en-us/microsoft-copilot-studio/agents-experience/billing-manage-buy-credits) and pay for the credits consumed, rather than purchasing prepaid credit packs and allocating them across environments. That removes the pack-purchasing and allocation work and avoids paying upfront for capacity you might not use. Billing setup, ownership, and usage controls still need attention.
+
+Where the customer's agreement provides applicable discounts, the effective pay-as-you-go rate can be lower than MSRP. Get that rate from the customer's billing or procurement team and substitute it in the forecast; enabling pay-as-you-go doesn't itself guarantee a discount.
+
+```text
+Monthly budget = planned Copilot Credits × customer's applicable pay-as-you-go rate
+```
+
+Keep the credit forecast and the price assumption separate so a pricing change doesn't require rebuilding the usage estimate. If the organization already has prepaid commitments, account for those when comparing incremental cash spend.
+
+The reserve isn't a spending cap, and this finite range doesn't bound Heavy tasks. Add event-driven work separately if applicable, then replace assumptions with pilot evidence. Repeat this method per agent before combining budgets. Budget external services, storage, and reviewer labor separately under their own terms without counting the same credits twice.
+
+## Hand off the budget with rollout controls
+
+Publish to a controlled pilot before broad rollout. The agent's [Monitor experience](https://learn.microsoft.com/en-us/microsoft-copilot-studio/agents-experience/analytics-overview) becomes available only after publishing and shows credits, sessions, and tool use; data can lag by up to an hour. Use it alongside admin-center reports, which distinguish billed and nonbilled consumption. For pay-as-you-go monetary charges, reconcile with Azure Cost Management after reporting delays.
+
+Before expanding access, confirm the billing plan and applicable per-credit rate. Name the person who reviews consumption, the owner who approves a higher budget or usage limit, and who responds if the agent stops. Record the accepted quality checks and the next forecast review date.
+
+In the admin center, [Licensing > Copilot Studio > Manage Agents > Set limit](https://learn.microsoft.com/en-us/power-platform/admin/manage-usage-github-copilot-harness) provides the agent limit, notification threshold, and **Stop usage** control. Agree on those settings with the service owner. An environment allocation alone isn't a cap if it can draw from the organization's shared credit pool or pay-as-you-go. Azure budget alerts aren't hard stops.
+
+I'd begin with one agent and one representative task set. Save the review evidence, validate one change, and use recorded consumption to revise the next month's assumptions. That gives the rollout owner a budget they can explain and a specific point at which to revisit it.
