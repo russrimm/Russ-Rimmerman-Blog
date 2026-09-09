@@ -5,6 +5,7 @@ heroAlt: "Editorial illustration of transcript replication. Copilot Studio strea
 
 description: "Copilot Studio writes conversation transcripts into Dataverse as a raw JSON blob that a bulk-delete job erases after 30 days. Three ways to replicate it somewhere useful — Link to Fabric, Link to Fabric with low-latency sync, and a timer-triggered Azure Function — with the pros and cons of each, and why at low volume almost every usual differentiator collapses into a single question about what you already own. Plus a deep dive on the Function option from a working tenant-wide build: the three-leg identity chain, why change tracking is the wrong incremental mechanism here, the shredding traps that fail silently, and the destination choice that quietly decides the bill."
 pubDate: 2026-09-04
+updatedDate: 2026-09-08
 tags:
   [
     "Copilot Studio",
@@ -55,9 +56,8 @@ low-latency sync. It is about an hour of clicking, costs effectively nothing
 incremental, and Microsoft manages it (SaaS).
 
 **If you do not, and would be buying one purely to report on this table:** a
-timer-triggered Azure Function is meaningfully cheaper — on the order of $2,000
-to $10,000 a year — and AI-assisted development has turned the build from a
-project into a scripted deployment.
+timer-triggered Azure Function is meaningfully cheaper and AI-assisted
+development has turned the build from a project into a scripted deployment.
 
 The remaining trade-off is not cost or speed. It is who owns the pipeline, and
 who notices when it silently stops.
