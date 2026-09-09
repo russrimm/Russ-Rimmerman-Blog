@@ -7,28 +7,21 @@
 >
   <title id="ctArchTitle">Timer-triggered transcript sync architecture</title>
   <desc id="ctArchDesc">
-    A left-to-right pipeline in four stages. Stage one, triggers: a timer
-    trigger runs every thirty minutes and an HTTP trigger runs the same sync on
-    demand for backfills and recovery. Stage two, the Function app: it holds a
-    user-assigned managed identity, which is the only credential in the system.
-    Stage three, Power Platform: the identity federates onto a secretless Entra
-    app registration, which is registered as a Power Platform management
-    application, calls the BAP admin endpoint to list every environment in the
-    tenant, then calls each environment's Dataverse Web API to page
-    conversationtranscript rows oldest first. Stage four, persistence: rows are
-    appended to the destination, then a per-environment high-water mark is
-    written to Table Storage only after that append succeeds, so an ingestion
-    failure cannot silently skip a window. Application Insights records a
-    per-environment run report throughout. Power BI or a dashboard reads from
-    the destination, never from Dataverse directly.
+    An example collector with a thirty-minute timer and authorized manual
+    invocation for recovery. The Function uses a user-assigned managed identity
+    registered as a read-only Dataverse application user in approved
+    environments. It pages transcript records, applies the required redaction,
+    and writes idempotently to the destination. It advances the per-environment
+    checkpoint only after the extraction window is durably stored. Monitoring
+    records completion, errors, and checkpoints even when no new rows arrive.
+    Power BI reads a curated reporting model.
   </desc>
 
   <text x="12" y="26" font-size="19" font-weight="700" class="sd-title">
     Timer-triggered transcript sync
   </text>
   <text x="12" y="50" font-size="13" class="sd-muted">
-    One deployment covers every environment in the tenant, including ones
-    created later.
+    Onboard each approved environment before the collector reads its data.
   </text>
 
   <!-- Stage 1: triggers -->
@@ -40,7 +33,8 @@
       height="150"
       rx="12"
       class="sd-tint"
-      stroke-width="1.5"></rect>
+      stroke-width="1.5"
+    ></rect>
     <text x="28" y="100" font-size="13" font-weight="700" class="sd-fill">
       Triggers
     </text>
@@ -51,11 +45,12 @@
       height="46"
       rx="8"
       class="sd-card"
-      stroke-width="1"></rect>
+      stroke-width="1"
+    ></rect>
     <text x="40" y="132" font-size="12" font-weight="700" class="sd-body">
       Timer
     </text>
-    <text x="40" y="149" font-size="11" class="sd-muted">every 30 min</text>
+    <text x="40" y="149" font-size="11" class="sd-muted">example: 30 min</text>
     <rect
       x="28"
       y="166"
@@ -63,11 +58,12 @@
       height="46"
       rx="8"
       class="sd-card"
-      stroke-width="1"></rect>
+      stroke-width="1"
+    ></rect>
     <text x="40" y="186" font-size="12" font-weight="700" class="sd-body">
-      HTTP
+      Manual run
     </text>
-    <text x="40" y="203" font-size="11" class="sd-muted">backfill, recovery</text>
+    <text x="40" y="203" font-size="11" class="sd-muted">authorized only</text>
   </g>
 
   <path d="M 162 151 L 196 151" class="sd-rule" stroke-width="1.5"></path>
@@ -82,7 +78,8 @@
       height="150"
       rx="12"
       class="sd-tint"
-      stroke-width="1.5"></rect>
+      stroke-width="1.5"
+    ></rect>
     <text x="222" y="100" font-size="13" font-weight="700" class="sd-fill">
       Function app
     </text>
@@ -93,7 +90,8 @@
       height="64"
       rx="8"
       class="sd-card"
-      stroke-width="1"></rect>
+      stroke-width="1"
+    ></rect>
     <text x="234" y="132" font-size="12" font-weight="700" class="sd-body">
       User-assigned
     </text>
@@ -101,7 +99,7 @@
       managed identity
     </text>
     <text x="234" y="166" font-size="11" class="sd-muted">
-      the only credential
+      no client secret
     </text>
     <text x="222" y="196" font-size="11" class="sd-muted">
       Paging, throttling,
@@ -123,7 +121,8 @@
       height="150"
       rx="12"
       class="sd-tint"
-      stroke-width="1.5"></rect>
+      stroke-width="1.5"
+    ></rect>
     <text x="430" y="100" font-size="13" font-weight="700" class="sd-fill">
       Power Platform
     </text>
@@ -134,11 +133,12 @@
       height="46"
       rx="8"
       class="sd-card"
-      stroke-width="1"></rect>
+      stroke-width="1"
+    ></rect>
     <text x="442" y="132" font-size="12" font-weight="700" class="sd-body">
-      Entra app registration
+      Application user
     </text>
-    <text x="442" y="149" font-size="11" class="sd-muted">no secret, federated</text>
+    <text x="442" y="149" font-size="11" class="sd-muted">read-only role</text>
     <rect
       x="586"
       y="112"
@@ -146,11 +146,14 @@
       height="46"
       rx="8"
       class="sd-card"
-      stroke-width="1"></rect>
+      stroke-width="1"
+    ></rect>
     <text x="598" y="132" font-size="12" font-weight="700" class="sd-body">
-      BAP admin endpoint
+      Approved scope
     </text>
-    <text x="598" y="149" font-size="11" class="sd-muted">lists all environments</text>
+    <text x="598" y="149" font-size="11" class="sd-muted">
+      onboard separately
+    </text>
     <rect
       x="430"
       y="166"
@@ -158,7 +161,8 @@
       height="46"
       rx="8"
       class="sd-card"
-      stroke-width="1"></rect>
+      stroke-width="1"
+    ></rect>
     <text x="442" y="186" font-size="12" font-weight="700" class="sd-body">
       Dataverse Web API, once per environment
     </text>
@@ -180,7 +184,8 @@
       height="112"
       rx="12"
       class="sd-tint"
-      stroke-width="1.5"></rect>
+      stroke-width="1.5"
+    ></rect>
     <text x="222" y="296" font-size="13" font-weight="700" class="sd-fill">
       Persistence — order matters
     </text>
@@ -191,7 +196,8 @@
       height="60"
       rx="8"
       class="sd-card"
-      stroke-width="1"></rect>
+      stroke-width="1"
+    ></rect>
     <circle cx="242" cy="330" r="9" class="sd-fill"></circle>
     <text
       x="242"
@@ -199,13 +205,15 @@
       font-size="11"
       font-weight="700"
       text-anchor="middle"
-      class="sd-onfill">1</text
+      class="sd-onfill"
     >
+      1
+    </text>
     <text x="260" y="334" font-size="12" font-weight="700" class="sd-body">
-      Append to destination
+      Persist idempotently
     </text>
     <text x="234" y="356" font-size="11" class="sd-muted">
-      raw JSON kept untouched
+      redact first if policy requires
     </text>
     <rect
       x="470"
@@ -214,7 +222,8 @@
       height="60"
       rx="8"
       class="sd-card"
-      stroke-width="1"></rect>
+      stroke-width="1"
+    ></rect>
     <circle cx="490" cy="330" r="9" class="sd-fill"></circle>
     <text
       x="490"
@@ -222,13 +231,15 @@
       font-size="11"
       font-weight="700"
       text-anchor="middle"
-      class="sd-onfill">2</text
+      class="sd-onfill"
     >
+      2
+    </text>
     <text x="508" y="334" font-size="12" font-weight="700" class="sd-body">
       Advance watermark
     </text>
     <text x="482" y="356" font-size="11" class="sd-muted">
-      only after the append succeeds
+      after the full window is durable
     </text>
   </g>
 
@@ -241,14 +252,15 @@
       height="112"
       rx="12"
       class="sd-tint"
-      stroke-width="1.5"></rect>
+      stroke-width="1.5"
+    ></rect>
     <text x="28" y="296" font-size="13" font-weight="700" class="sd-fill">
       Application Insights
     </text>
     <text font-size="11" class="sd-body">
-      <tspan x="28" y="320">Rows read per environment</tspan>
-      <tspan x="28" y="338">Environments skipped</tspan>
-      <tspan x="28" y="356">Environments failed, why</tspan>
+      <tspan x="28" y="320">Completion per environment</tspan>
+      <tspan x="28" y="338">Checkpoint and lag</tspan>
+      <tspan x="28" y="356">Errors and skipped scope</tspan>
       <tspan x="28" y="374">Parse errors, counted</tspan>
     </text>
   </g>
@@ -264,9 +276,10 @@
       height="56"
       rx="12"
       class="sd-tint"
-      stroke-width="1.5"></rect>
+      stroke-width="1.5"
+    ></rect>
     <text x="222" y="448" font-size="13" font-weight="700" class="sd-fill">
-      Reporting reads the shredded table, never the raw JSON
+      Reporting uses curated conversation and activity tables
     </text>
     <text x="222" y="468" font-size="12" class="sd-body">
       Power BI scheduled import, or a dashboard over the analytics store

@@ -5,34 +5,25 @@
   role="img"
   aria-labelledby="ctIdentityTitle ctIdentityDesc"
 >
-  <title id="ctIdentityTitle"
-    >The three-leg identity chain, and where each leg fails</title
-  >
+  <title id="ctIdentityTitle">
+    Direct managed-identity access to Dataverse
+  </title>
   <desc id="ctIdentityDesc">
-    Reaching Dataverse app-only takes three token exchanges, not one. Leg one:
-    the Function requests a managed identity token whose audience is the token
-    exchange audience api colon slash slash AzureADTokenExchange. Sovereign
-    clouds use a different audience value, and getting it wrong fails at
-    runtime rather than at deployment. Leg two: that token is presented as a
-    client assertion on the app registration's client credentials request,
-    returning an app-only token with no client secret involved. The federated
-    credential's subject must be the managed identity's object or principal ID,
-    not its client ID; Entra accepts the wrong value silently and the failure
-    surfaces later as a failed token exchange. Leg three: the app-only token
-    calls the environment listing API and each environment's Dataverse Web API.
-    The environment listing scope contains a double slash that is not a typo,
-    and the Power Apps Service resource principal must exist in the tenant,
-    which in many tenants it never has been. Below the three legs, one step
-    cannot be automated: a service principal cannot register itself as a Power
-    Platform management application, so one interactive administrator sign-in
-    is required the first time.
+    Three setup and access steps, not three required token exchanges. First, an
+    authorized administrator or deployment process registers the user-assigned
+    managed identity's Application ID as a Dataverse application user with a
+    custom read-only role in each approved environment. Second, the Function
+    requests a token for the target Dataverse environment using that managed
+    identity. Third, Dataverse authorizes reads through the application user's
+    security roles. Federation through a separate app registration and
+    tenant-wide discovery are optional, separate designs.
   </desc>
 
   <text x="12" y="26" font-size="19" font-weight="700" class="sd-title">
-    The identity chain is three parties, not one
+    Direct managed-identity access to Dataverse
   </text>
   <text x="12" y="50" font-size="13" class="sd-muted">
-    “Managed identity, so no secrets” is true, and it is not the whole story.
+    Onboard permissions first. Keep privileged setup separate from collection.
   </text>
 
   <!-- Leg 1 -->
@@ -44,7 +35,8 @@
       height="94"
       rx="12"
       class="sd-tint"
-      stroke-width="1.5"></rect>
+      stroke-width="1.5"
+    ></rect>
     <circle cx="40" cy="104" r="13" class="sd-fill"></circle>
     <text
       x="40"
@@ -52,18 +44,20 @@
       font-size="13"
       font-weight="700"
       text-anchor="middle"
-      class="sd-onfill">1</text
+      class="sd-onfill"
     >
+      1
+    </text>
     <text x="64" y="109" font-size="14" font-weight="700" class="sd-fill">
-      Managed identity → Entra
+      Onboard the managed identity
     </text>
     <text x="64" y="132" font-size="13" class="sd-body">
-      The Function requests a managed identity token whose audience is the
-      token-exchange audience.
+      Register its Application ID as an application user in each approved
+      environment.
     </text>
     <text x="64" y="155" font-size="12" class="sd-muted">
-      Fails when: a sovereign cloud uses a different audience. Surfaces at
-      runtime, not at deployment.
+      Assign a custom read-only role. Use an authorized administrator or
+      deployment process.
     </text>
   </g>
 
@@ -79,7 +73,8 @@
       height="94"
       rx="12"
       class="sd-tint"
-      stroke-width="1.5"></rect>
+      stroke-width="1.5"
+    ></rect>
     <circle cx="40" cy="228" r="13" class="sd-fill"></circle>
     <text
       x="40"
@@ -87,18 +82,19 @@
       font-size="13"
       font-weight="700"
       text-anchor="middle"
-      class="sd-onfill">2</text
+      class="sd-onfill"
     >
+      2
+    </text>
     <text x="64" y="233" font-size="14" font-weight="700" class="sd-fill">
-      Federation onto the app registration
+      Request a Dataverse token
     </text>
     <text x="64" y="256" font-size="13" class="sd-body">
-      That token becomes a client assertion, returning an app-only token. No
-      client secret exists anywhere.
+      The Function authenticates with its user-assigned managed identity.
     </text>
     <text x="64" y="279" font-size="12" class="sd-muted">
-      Fails when: the federated credential's subject is the client ID instead of
-      the object ID. Entra accepts it silently.
+      Target the correct Dataverse environment. A separate federated app is not
+      required.
     </text>
   </g>
 
@@ -114,7 +110,8 @@
       height="94"
       rx="12"
       class="sd-tint"
-      stroke-width="1.5"></rect>
+      stroke-width="1.5"
+    ></rect>
     <circle cx="40" cy="352" r="13" class="sd-fill"></circle>
     <text
       x="40"
@@ -122,18 +119,20 @@
       font-size="13"
       font-weight="700"
       text-anchor="middle"
-      class="sd-onfill">3</text
+      class="sd-onfill"
     >
+      3
+    </text>
     <text x="64" y="357" font-size="14" font-weight="700" class="sd-fill">
-      App token → Power Platform and Dataverse
+      Read the approved tables
     </text>
     <text x="64" y="380" font-size="13" class="sd-body">
-      Lists every environment, then reads each environment's Web API using that
-      organization's URL as the scope.
+      Dataverse applies the application user's security roles to transcript and
+      metadata reads.
     </text>
     <text x="64" y="403" font-size="12" class="sd-muted">
-      Fails when: the listing scope's double slash is “corrected”, or the Power
-      Apps Service principal was never provisioned.
+      Tenant-wide discovery and environment onboarding are separate permissions
+      and workflows.
     </text>
   </g>
 </svg>
