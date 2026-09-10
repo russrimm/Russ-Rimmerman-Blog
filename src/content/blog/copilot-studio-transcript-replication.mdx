@@ -175,6 +175,13 @@ storage, selective extraction, or an archive outside Fabric. It reads through
 the Dataverse Web API. You own its code and operations, so compare that
 responsibility with any infrastructure savings.
 
+You can find my collector in the
+[russrimm/copilot-transcript-sync GitHub repository](https://github.com/russrimm/copilot-transcript-sync).
+It syncs Copilot Studio conversation transcripts across Power Platform
+environments into a single Azure Data Explorer database, using workload identity
+federation instead of stored secrets. Start with the repository's setup
+instructions, then review environment access and retention for your deployment.
+
 <Diagram
   svg={architecture}
   caption="An example collector: read approved environments, persist safely, then advance the checkpoint."
