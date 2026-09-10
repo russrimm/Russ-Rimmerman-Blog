@@ -206,7 +206,7 @@ Keep privileged onboarding separate from collection. The legacy
 [`addAppUser` endpoint](https://learn.microsoft.com/power-platform/admin/create-dataverseapplicationuser),
 documented as preview, always assigns System Administrator. That isn't a reason
 to give a collector tenant-wide administrator permissions: the
-[Power Platform command-line interface ("CLI")](https://learn.microsoft.com/power-platform/developer/cli/reference/admin#pac-admin-assign-user)
+[Power Platform CLI (aka pac cli)](https://learn.microsoft.com/power-platform/developer/cli/reference/admin#pac-admin-assign-user)
 supports assigning application users with a specified role.
 
 ### Choose an incremental strategy deliberately
@@ -262,7 +262,7 @@ conversation count. Count parsing failures explicitly; if you quarantine failed
 payloads, apply the same access and retention controls as the archive.
 
 Before writing all the aggregation logic yourself, evaluate the Copilot Agent
-Kit for conversation key performance indicators ("KPIs"). Its
+Kit for conversation KPIs. Its
 [Conversation KPIs feature](https://learn.microsoft.com/microsoft-copilot-studio/guidance/kit-conversation-kpi)
 parses transcripts into Dataverse aggregates and includes sample Power BI
 reports. Review its deployment, storage, and support requirements against your
@@ -282,8 +282,8 @@ new conversations can be normal; it isn't sufficient evidence of a failed timer.
 
 ## The destination and operating model decide the cost
 
-For sizing, 2,000 conversations a day at an assumed 30 kilobytes ("KB") each is
-about 1.8 gigabytes ("GB") per 30-day month and 21.9 GB per 365-day year, using
+For sizing, 2,000 conversations a day at an assumed 30KB each is
+about 1.8GB per 30-day month and 21.9 GB per 365-day year, using
 decimal units. That's raw payload arithmetic, not a storage bill or a Power BI
 model-size estimate. Parsed tables, indexes, replicas, logs, and retention add
 their own footprint.
