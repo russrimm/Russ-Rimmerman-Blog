@@ -26,12 +26,10 @@ import architecture from "@/assets/blog/copilot-studio-transcript-replication/fi
 import identityChain from "@/assets/blog/copilot-studio-transcript-replication/figure-identity-chain.svg?raw";
 import destinationCost from "@/assets/blog/copilot-studio-transcript-replication/figure-destination-cost.svg?raw";
 
-Copilot Studio can save agent conversations in the Dataverse
-`conversationtranscript` table. Its `Content` column contains a JavaScript Object
-Notation ("JSON") activity log, and a default bulk-delete job removes transcripts
-older than 30 days.
+If you want one report across Copilot Studio agents in multiple environments,
+you need a way to bring their conversation history together.
 
-If you want a year of reporting, decide how to keep that history before building
+For a year of reporting, decide how to keep that history before building
 the report. You can extend approved source retention, maintain a separate
 archive, or retain only the aggregates your reporting needs.
 
@@ -61,6 +59,11 @@ Low volume can reduce storage and processing costs, but it doesn't remove
 request limits, licensing requirements, or the work of operating a pipeline.
 
 ## What matters about Copilot Studio transcripts
+
+Copilot Studio can save agent conversations in the Dataverse
+`conversationtranscript` table. Its `Content` column contains a JavaScript Object
+Notation ("JSON") activity log, and a default bulk-delete job removes transcripts
+older than 30 days.
 
 The [transcript documentation](https://learn.microsoft.com/microsoft-copilot-studio/analytics-transcripts-powerapps)
 establishes several rules that affect every option.
