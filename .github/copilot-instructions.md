@@ -58,6 +58,9 @@ section. Use official product names and capitalization exactly — Microsoft Ent
 ID, Microsoft Intune, Microsoft Foundry, Copilot Studio, Power Platform,
 Microsoft 365, GitHub Copilot.
 
+**Exception: API is always API**, including on first mention. Never spell out
+the term or put API in quotes in prose. Use Dataverse Web API.
+
 ## Field notes, not an architecture deep-dive
 
 The positioning in `PRODUCT.md` is practical field notes for practitioners. Keep
