@@ -4,7 +4,7 @@ heroImage: ../../assets/blog/vibe-code-your-blog-part-1-setup.webp
 heroAlt: "Cinematic enterprise hero image representing Vibe Coding as an AI innovation lab bathed in soft volumetric light."
 description: "A beginner-friendly setup guide for building your first project with AI: the terminal, a GitHub account, Git, Node.js, Python, Azure, GitHub Copilot, agents, and reusable skills."
 pubDate: 2026-07-15
-updatedDate: 2026-08-16
+updatedDate: 2026-09-09
 tags: ["Vibe Coding", "AI", "GitHub Copilot", "Azure"]
 featured: false
 draft: false
@@ -628,66 +628,106 @@ net you'll be glad exists the first time something breaks.
 
 ## Scaffold a home for your agents and skills
 
-This is the step that separates "AI autocomplete" from actually *vibe coding*.
-Skills and agents are reusable instructions you give the AI so it stops guessing
-and starts working the way you want. You'll want two homes for them.
+You shouldn't have to explain your blog's writing rules every time you start a
+session. Instructions give Copilot that standing guidance; agents give it a
+specialized role, like an editor; skills give it a repeatable task, like drafting
+a post.
 
-Per-project customization lives inside each repository, in a `.github`
-folder. This travels with the project, so anyone who clones it (including future
-you) gets the same AI behavior:
+Where you save those files decides where they're available. **Use the project's
+`.github` folder for guidance that belongs with the blog. Use `.copilot` in your
+user home folder for personal guidance you want across projects.** They are not
+interchangeable folder names.
+
+### Project-specific: `.github` inside your blog folder
+
+Put `.github` at the **repository root**, the top-level folder of your project,
+not inside `src` or your posts folder. For example, if your blog lives at
+`C:\projects\your-blog`, its project guidance goes in
+`C:\projects\your-blog\.github`:
 
 ```text
-your-blog/
-└── .github/
+your-blog\
+└── .github\
     ├── copilot-instructions.md   # always-on context about THIS project
-    ├── instructions/             # rules scoped to certain files
-    ├── prompts/                  # reusable /slash-command prompts
-    ├── agents/                   # custom agents (*.agent.md)
-    └── skills/                   # project-specific skills (SKILL.md)
+    ├── instructions\            # rules scoped to certain files
+    ├── agents\                  # custom agents (*.agent.md)
+    └── skills\                  # one folder per skill, each with SKILL.md
 ```
 
-Your personal, portable library lives in your home folder and follows you
-across every project:
+This is where your blog's tone, build commands, editor agent, and publishing
+checklist belong. Commit and push these files with the project so someone who
+clones it (downloads a working copy) gets the same guidance. A different project
+gets its own `.github` folder; this one doesn't set rules for every repository
+on your machine.
+
+`.github` isn't only for Copilot. It also holds GitHub features such as
+`.github\workflows`, the automated jobs we'll use to publish in Part 2.
+
+### Personal across projects: `.copilot` inside your home folder
+
+Your home folder is separate from the blog. The default personal Copilot folder
+is `~/.copilot`, which on Windows is typically
+`C:\Users\yourname\.copilot`:
 
 ```text
-~/.agents/
-└── skills/
-    └── my-skill/
+C:\Users\yourname\.copilot\
+├── copilot-instructions.md      # your preferences across projects
+├── agents\                     # your reusable personal agents
+└── skills\
+    └── my-skill\
         └── SKILL.md
 ```
 
 <Explain title="What does `~` mean?">
-  `~` is shorthand for your **user home directory**. On macOS and Linux that's
-  something like `/home/yourname`. On Windows it's `C:\Users\yourname`, where
-  `yourname` is typically your Entra ID (work or school account) without the
-  `@domain.com` part, so `russ@contoso.com` becomes `C:\Users\russ`. So
-  `~/.agents/skills` just means the `.agents\skills` folder inside your home
-  directory.
+  `~` means your **user home folder**, not the project you currently have open.
+  On Windows, run `$HOME` in PowerShell to see the actual path; don't guess it
+  from your email address. On macOS it's usually `/Users/yourname`, and on Linux
+  `/home/yourname`. Documentation often uses forward slashes, so
+  `~/.copilot/agents` means the `agents` folder inside your personal `.copilot`
+  folder.
 </Explain>
 
-<Explain title="Why two separate locations?">
-  The `.github` folder is team- and project-scoped. It ships with the repo so
-  the customization is guaranteed to be there. Your `~/.agents/skills` folder is
-  personal and portable: reusable skills you want on hand no matter what
-  you're building. GitHub Copilot reads both, so you get project-specific rules
-  and your own toolkit at the same time.
+Use this for preferences like "explain commands before running them" or an agent
+you want available for every project. **Global here means your user account on
+this machine**, not every user, every computer, or everyone who opens your repo.
+These files don't travel with a Git push, and GitHub Copilot cloud agent won't
+automatically receive files from your home folder.
+
+GitHub documents these personal and project locations for
+[instructions](https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-custom-instructions),
+[agents](https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/create-custom-agents-for-cli),
+and [skills](https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-skills)
+in GitHub Copilot CLI. Other Copilot surfaces can differ in what they load.
+The CLI combines applicable personal and project instructions; don't rely on
+one file overriding a conflicting rule in the other.
+
+Don't create `your-blog\.copilot` as a substitute for the project's `.github`
+folder, or copy your whole home `.copilot` folder into the repo. It can also
+contain local settings and session data that don't belong in source control.
+
+<Explain title="Where does `~/.agents/skills` fit?">
+  It's another supported personal skills location in GitHub Copilot CLI, useful
+  if you also use tools that recognize it. You can use either
+  `~/.copilot/skills` or `~/.agents/skills`; you don't need a copy in both.
+  If you already set up `~/.agents/skills`, keep it. The leading `~` matters:
+  `.agents/skills` inside a repository is project-specific, not global.
 </Explain>
 
 You don't need to author anything elaborate yet, and you don't need to create
-the folders by hand either. This is a perfect first taste of vibe coding: **let
-the AI scaffold it for you.** Start a session in the GitHub Copilot app and paste
-a prompt like this:
+the folders by hand either. Start a session in the GitHub Copilot app and ask it
+to scaffold (create the starting folder structure) for you:
 
 ```text
-Create my portable skills library at ~/.agents/skills. Just create the
-empty folder structure — don't add any files yet. Show me the command
-before you run it so I can approve it.
+Find my actual user home folder. Create personal agents and skills folders
+at ~/.copilot/agents and ~/.copilot/skills, not inside the current project.
+If I already have ~/.agents/skills, keep using that for skills instead.
+Create only missing folders; don't change existing files or add any yet.
+Show me the full paths and the command for my operating system, then wait
+for my approval before running it.
 ```
 
-The AI will propose a command (it'll be something like `mkdir -p
-~/.agents/skills`), wait for you to approve it, and then run it in the terminal.
-Reading and approving that command *before* it runs is exactly the safe habit
-you'll rely on for the rest of this series.
+Check that the proposed paths start with your home folder, not your blog folder.
+Approve the command only after you've read it.
 
 <Explain title="Why did I have to ask it to show me the command first?">
   Because I wanted you to see the approval step at least once. Agents can be
@@ -697,13 +737,15 @@ you'll rely on for the rest of this series.
   a few seconds and teaches you to read what's about to happen to your machine.
 </Explain>
 
-That's the portable library ready. The project-scoped `.github` files come to
+That's the personal library ready. The project-scoped `.github` files come to
 life in Part 2, once your blog repository actually exists. There's no point
 writing project instructions before there's a project to describe.
 
 <Explain title="Where do NEW skills go later?">
-  Author your own skills under `~/.agents/skills/<name>/SKILL.md` (portable) or a
-  project's `.github/skills/` (ships with that repo). Avoid editing any
+  Use `~/.copilot/skills/my-skill/SKILL.md` (or your existing
+  `~/.agents/skills/my-skill/SKILL.md`) for a personal skill. Use
+  `your-blog\.github\skills\my-skill\SKILL.md` for one that belongs with the blog.
+  A blog-specific publishing checklist belongs in the latter. Avoid editing any
   tool-managed or "bundled" skill folders. Those get overwritten when the tool
   updates.
 </Explain>
@@ -827,9 +869,10 @@ control, XSS, CSRF, secrets, SSRF, file uploads, SQL injection, JWTs, and the
 AI-specific risks above, and tells the AI to **treat security as the highest
 priority** and fail closed when it's unsure.
 
-Drop a copy into your own project's `.github/skills/` (or your portable
-`~/.agents/skills/`), and the AI will apply it whenever you're building a web app
-or ask for a security review. No re-explaining required.
+Put the whole `vibesec-skill` folder, including its `SKILL.md`, in your project's
+`.github/skills/` to share it with that repo. Use `~/.copilot/skills/` or
+`~/.agents/skills/` to keep it personal across projects. Ask Copilot to use
+`vibesec-skill` when building a web app or reviewing its security.
 
 <Explain title="Do I have to write that skill myself?">
   No. That's the whole point of skills being portable files: grab an existing one,
@@ -849,7 +892,8 @@ them:
 - ✅ The GitHub Copilot app installed, signed in, and responding.
 - ✅ `node`, `npm`, `git`, `gh`, and `python` (Windows) or `python3` (macOS/Linux) all return versions in a fresh terminal.
 - ✅ An Azure account created, `az version` returns a version, and `az account show` names your subscription.
-- ✅ A `~/.agents/skills` folder ready for your portable skills.
+- ✅ A personal agents folder at `~/.copilot/agents` and a skills folder at `~/.copilot/skills` (or `~/.agents/skills`), outside the blog project.
+- ✅ You know that `.github` belongs inside each project, while your home `.copilot` folder is personal across projects on this machine.
 - ✅ You understand the safety basics: commit often, branch for risk, no secrets.
 - ✅ You know how to make security the AI's default: ground it in the Azure and
   MS Learn MCPs, and lead every instruction, skill, and agent with security first.
