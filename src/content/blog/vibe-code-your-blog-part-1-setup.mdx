@@ -2,9 +2,9 @@
 title: "Vibe Coding 99-101 for non-coders"
 heroImage: ../../assets/blog/vibe-code-your-blog-part-1-setup.webp
 heroAlt: "Cinematic enterprise hero image representing Vibe Coding as an AI innovation lab bathed in soft volumetric light."
-description: "A beginner-friendly setup guide for building your first project with AI: the terminal, a GitHub account, Git, Node.js, Python, Azure, GitHub Copilot, agents, and reusable skills."
+description: "Set up GitHub Copilot to vibe code a blog, an app, or your own project. Learn the tools, agents, and skills; install Astro only for the blog example."
 pubDate: 2026-07-15
-updatedDate: 2026-09-09
+updatedDate: 2026-09-10
 tags: ["Vibe Coding", "AI", "GitHub Copilot", "Azure"]
 featured: false
 draft: false
@@ -17,12 +17,22 @@ Here's the part most "build an app with AI" tutorials skip: before the magic
 happens, you have to install a small pile of tools and get them talking to each
 other.
 
-So this post is the unglamorous, deeply important half: the setup. By the end
-you'll have everything a non-developer needs to sit down and vibe code a real,
-publishable blog: accounts, tools, a working command line, and an AI assistant
-wired up with the right agents and skills.
-[Part 2](/blog/vibe-code-your-blog-part-2-deploy/) picks up where this leaves
-off and actually builds the site.
+This post gets you ready to vibe code your blog, an app, a tool that handles a
+repetitive task, or whatever else you want to build. You'll set up the accounts
+and tools, learn your way around the command line, and give your AI assistant
+reusable guidance so you don't have to explain everything again each session.
+
+I'll use a blog as the worked example, not as a requirement.
+[Part 2](/blog/vibe-code-your-blog-part-2-deploy/) follows that example through
+building and publishing a site. The setup and habits here apply beyond it.
+
+<Explain title="Not building a blog? Skip Astro.">
+  Astro is the website-building tool used for the blog example in Part 2.
+  You can skip installing Astro and creating its blog template if you don't want
+  a blog. Start with your own project idea instead, and ask Copilot which tools
+  it needs before installing anything project-specific. The GitHub, Git,
+  Copilot, agents, and skills guidance here still applies.
+</Explain>
 
 This is written for someone who has never written a line of code. If you can
 install an app and follow a numbered list, you can do this. I'll define every
@@ -40,11 +50,10 @@ requests, without a separate editor in the mix. The
 [GitHub Copilot CLI](https://docs.github.com/en/copilot/how-tos/copilot-cli/cli-getting-started)
 is worth a look too if you'd rather live in a terminal.
 
-<Explain title="Do I need to read this if I already have a blog?">
-  No. If you already have a working project and dev environment, skip straight to
-  the agent and skills scaffolding section near the end. That part is
-  project-agnostic and worth doing regardless of what you're building. Everything
-  before it is for people starting from a blank machine.
+<Explain title="Already have a working project?">
+  If your tools are already installed and working, skip to "Scaffold a home for
+  your agents and skills" near the end. That section shows you where to keep
+  reusable guidance, whether you're building a blog or something else.
 </Explain>
 
 ## What "vibe coding" is (and isn't)
@@ -61,21 +70,21 @@ knowing when the AI has wandered off. Read that for the *why*. This post is the
 
 ## Before you install anything: the plan
 
-You're going to set up seven things, in this order, because each one builds on the
-last:
+The walkthrough covers seven things. Start with the first four for working with
+GitHub Copilot; the rest depend on what you're building:
 
 1. A GitHub account: your home base for code, history, and hosting.
 2. Git: the tool that actually tracks your changes locally.
 3. The GitHub CLI (`gh`): the tool that introduces your local Git to your
    GitHub account, so pushing your work just works.
 4. The GitHub Copilot app: where you'll do the actual vibe coding.
-5. Node LTS + npm: the engine that runs a modern website.
-6. Python (latest): not strictly required to run the blog, but so much of the
-   vibe-coding ecosystem (scripts, tools, MCP servers, AI helpers) assumes it's
-   there that you'll save yourself pain by installing it now.
-7. An Azure account and the Azure CLI (`az`): where the finished blog actually
-   gets published in Part 2. Installing it now means Part 2 is a clean run
-   instead of a detour.
+5. Node.js Long-Term Support ("LTS") + npm: tools used to build and preview the
+   blog, and many other web projects. Install them if your project needs them.
+6. Python (latest): a programming language used by many helper tools and small
+   programs that automate tasks. Install it if your project or a tool needs it;
+   the blog itself doesn't.
+7. An Azure account and the Azure CLI (`az`): needed for the publishing steps in
+   Part 2. Skip these if you aren't using Azure.
 
 Then you'll scaffold a home for your agents and skills so the AI works *with*
 you instead of guessing. Let's go.
@@ -153,9 +162,10 @@ before you test.
   use them interchangeably, and this post does.
 </Explain>
 
-## Install the seven tools
+## Install the tools your project needs
 
-Work through these in order. Each one assumes the previous is done.
+Work through Steps 1–4 in order. Steps 5–7 explain the additional tools; use the
+plan above to decide which ones you need.
 
 ### Step 1: Create a GitHub account
 
@@ -164,7 +174,7 @@ be embarrassed by later. It shows up in your project URLs. Verify the
 confirmation email before you close the tab; an unverified account can't push
 code or use GitHub Copilot.
 
-<Explain title="Why do I need GitHub for a blog?">
+<Explain title="Why use GitHub for my project?">
   Three reasons. First, it's a backup: your writing and code live safely in the
   cloud, not just on one laptop. Second, it's a time machine: every change is
   versioned, so you can undo anything, even a week later. Third, it's free
@@ -337,8 +347,10 @@ the GitHub Copilot app, and it's on a Pro plan or better.
 
 ### Step 5: Install Node.js (LTS) and confirm npm works
 
-A modern blog is built and previewed by **Node.js**, and Node ships with
-**npm**, the tool that installs the building blocks your site depends on.
+**Node.js** runs code on your computer and is used to build and preview many web
+projects, including the blog in Part 2. Node ships with **npm**, the tool that
+installs the building blocks your project depends on. If your project doesn't
+use Node.js, you can skip this step.
 
 Install the **LTS** version, not "Current," from
 [nodejs.org](https://nodejs.org).
@@ -388,10 +400,9 @@ Node yet.
 
 ### Step 6: Install Python (latest)
 
-You won't write Python to build the blog itself, but the rest of the vibe-coding
-world assumes you have it. Half the helper scripts, dev tools, and MCP servers
-you'll bump into over the next few months start with "just run this Python
-script." Install it now and you'll never think about it again.
+Python is useful for automation and for tools that help your AI assistant work.
+You don't need it for the blog itself. Follow this step if your project or a
+helper tool uses Python; otherwise, you can come back when you need it.
 
 Grab the **latest** stable release, 3.14 as I write this, not an old 3.9 or
 3.10, from [python.org/downloads](https://www.python.org/downloads/).
@@ -447,8 +458,10 @@ instead. Reopen the terminal before changing PATH by hand.
 
 Part 2 publishes your finished blog to
 [Azure Static Web Apps](https://learn.microsoft.com/azure/static-web-apps/overview),
-so you need two things: an Azure account, and the command-line tool that talks to
-it. Doing both now means Part 2 runs start to finish without a detour.
+so that walkthrough needs an Azure account and the command-line tool that talks
+to it. If you're building something else, follow this step only if you plan to
+use Azure. A project that runs only on your computer doesn't need an Azure
+account.
 
 First, the account. Sign up at
 [azure.microsoft.com/free](https://azure.microsoft.com/en-us/free/).
@@ -518,22 +531,23 @@ code you type at [aka.ms/devicelogin](https://aka.ms/devicelogin) on any device.
 
 ## Verify everything before you build
 
-Run this quick checklist in a **fresh** terminal. Each command should print a
-version or a success message, with no errors:
+Run this checklist in a **fresh** terminal, using only the commands for tools you
+chose to install. Each should print a version or a success message, with no
+errors:
 
 ```bash
 git --version          # e.g. git version 2.53.x
 gh --version           # e.g. gh version 2.9x.x
 gh auth status         # should name your GitHub account
-node --version         # e.g. v24.x.x
-npm --version          # e.g. 11.x.x
-python --version       # e.g. Python 3.14.x  (try 'python3' on macOS/Linux)
-az version             # e.g. "azure-cli": "2.89.x"
-az account show        # should name your Azure subscription
+node --version         # if using Node.js; e.g. v24.x.x
+npm --version          # if using Node.js; e.g. 11.x.x
+python --version       # if using Python; try 'python3' on macOS/Linux
+az version             # if using Azure; e.g. "azure-cli": "2.89.x"
+az account show        # if using Azure; should name your subscription
 ```
 
-If any line errors out, fix that tool before moving on. Every later step assumes
-these all work.
+If a tool your project needs reports an error, fix it before moving on. You don't
+need to install an optional tool just to complete this checklist.
 
 > **On the version numbers:** these were current as of August 2026. Yours will
 > almost certainly be higher, and that's fine. What matters is that each command
@@ -616,10 +630,10 @@ review can weigh in if you're on a paid plan.
 </Explain>
 
 <Explain title="Can I see the history of one specific file?">
-  Yes, and it's genuinely useful for a blog. `git log --follow -p path/to/post.mdx`
-  walks every change ever made to that one file, newest first, with the diffs
-  inline. Or skip the flags and ask: *"show me every change to this post and
-  summarize what moved."*
+  Yes. For a blog post, `git log --follow -p path/to/post.mdx` walks the saved
+  changes to that file, newest first, with the diffs inline. Replace the path
+  with any file in your project. Or ask: *"show me every change to this file and
+  summarize what changed."*
 </Explain>
 
 Between the agent writing the code and Git recording every step, source control
@@ -628,25 +642,25 @@ net you'll be glad exists the first time something breaks.
 
 ## Scaffold a home for your agents and skills
 
-You shouldn't have to explain your blog's writing rules every time you start a
+You shouldn't have to explain your project's rules every time you start a
 session. Instructions give Copilot that standing guidance; agents give it a
-specialized role, like an editor; skills give it a repeatable task, like drafting
-a post.
+specialized role, like a code reviewer or blog editor; skills give it a
+repeatable task, like checking a change or drafting a post.
 
 Where you save those files decides where they're available. **Use the project's
-`.github` folder for guidance that belongs with the blog. Use `.copilot` in your
+`.github` folder for guidance that belongs with the project. Use `.copilot` in your
 user home folder for personal guidance you want across projects.** They are not
 interchangeable folder names.
 
-### Project-specific: `.github` inside your blog folder
+### Project-specific: `.github` inside your project folder
 
 Put `.github` at the **repository root**, the top-level folder of your project,
-not inside `src` or your posts folder. For example, if your blog lives at
-`C:\projects\your-blog`, its project guidance goes in
-`C:\projects\your-blog\.github`:
+not inside a folder of code or content. For example, if your project lives at
+`C:\projects\your-project`, its project guidance goes in
+`C:\projects\your-project\.github`:
 
 ```text
-your-blog\
+your-project\
 └── .github\
     ├── copilot-instructions.md   # always-on context about THIS project
     ├── instructions\            # rules scoped to certain files
@@ -654,9 +668,10 @@ your-blog\
     └── skills\                  # one folder per skill, each with SKILL.md
 ```
 
-This is where your blog's tone, build commands, editor agent, and publishing
-checklist belong. Commit and push these files with the project so someone who
-clones it (downloads a working copy) gets the same guidance. A different project
+This is where project rules, commands for checking your work, and specialized
+agents belong. For a blog, that includes tone and a publishing checklist.
+Commit and push these files with the project so someone who clones it (downloads
+a working copy) gets the same guidance. A different project
 gets its own `.github` folder; this one doesn't set rules for every repository
 on your machine.
 
@@ -665,7 +680,7 @@ on your machine.
 
 ### Personal across projects: `.copilot` inside your home folder
 
-Your home folder is separate from the blog. The default personal Copilot folder
+Your home folder is separate from the project. The default personal Copilot folder
 is `~/.copilot`, which on Windows is typically
 `C:\Users\yourname\.copilot`:
 
@@ -701,7 +716,7 @@ in GitHub Copilot CLI. Other Copilot surfaces can differ in what they load.
 The CLI combines applicable personal and project instructions; don't rely on
 one file overriding a conflicting rule in the other.
 
-Don't create `your-blog\.copilot` as a substitute for the project's `.github`
+Don't create `your-project\.copilot` as a substitute for the project's `.github`
 folder, or copy your whole home `.copilot` folder into the repo. It can also
 contain local settings and session data that don't belong in source control.
 
@@ -726,7 +741,7 @@ Show me the full paths and the command for my operating system, then wait
 for my approval before running it.
 ```
 
-Check that the proposed paths start with your home folder, not your blog folder.
+Check that the proposed paths start with your home folder, not your project folder.
 Approve the command only after you've read it.
 
 <Explain title="Why did I have to ask it to show me the command first?">
@@ -737,24 +752,25 @@ Approve the command only after you've read it.
   a few seconds and teaches you to read what's about to happen to your machine.
 </Explain>
 
-That's the personal library ready. The project-scoped `.github` files come to
-life in Part 2, once your blog repository actually exists. There's no point
-writing project instructions before there's a project to describe.
+That's the personal library ready. Create the project-scoped `.github` files
+once you have a project to describe. Part 2 shows this for the blog; for another
+project, ask Copilot to read its files and draft instructions that fit what
+you're building.
 
 <Explain title="Where do NEW skills go later?">
   Use `~/.copilot/skills/my-skill/SKILL.md` (or your existing
   `~/.agents/skills/my-skill/SKILL.md`) for a personal skill. Use
-  `your-blog\.github\skills\my-skill\SKILL.md` for one that belongs with the blog.
-  A blog-specific publishing checklist belongs in the latter. Avoid editing any
-  tool-managed or "bundled" skill folders. Those get overwritten when the tool
-  updates.
+  `your-project\.github\skills\my-skill\SKILL.md` for one that belongs with a
+  project. A blog-specific publishing checklist belongs in the latter. Avoid
+  editing any tool-managed or "bundled" skill folders. Those get overwritten when
+  the tool updates.
 </Explain>
 
 If you want to go deeper on plan mode, picking a model, and how skills change the
 way you work, that's all in [the vibe coding lessons
 post](/blog/vibe-coding-lessons/).
 
-## Vibe coding safely (read this before Part 2)
+## Vibe coding safely (whatever you're building)
 
 AI will happily run terminal commands and rewrite files for you. That's powerful
 and occasionally dangerous. A few habits keep you out of trouble:
@@ -769,10 +785,10 @@ and occasionally dangerous. A few habits keep you out of trouble:
   environment variables or a secrets store, never committed to the repo, which
   may become public.
 
-<Explain title="Why does this matter for a simple blog?">
-  Because the habits you build now carry into everything you vibe code later. A
-  blog is low-stakes: the perfect place to learn to commit often, use branches,
-  and review what the AI does *before* it matters on a real project.
+<Explain title="Why does this matter for a small personal project?">
+  Even a blog or a small tool can expose a password or delete a file you need.
+  Start with something small and practice saving changes, using branches, and
+  reviewing what the AI does. Those habits carry into your next project.
 </Explain>
 
 ### Make security the AI's default, not an afterthought
@@ -788,7 +804,7 @@ You set that bar by **grounding the AI in real security guidance and making that
 guidance the highest priority** in every instruction, skill, and agent you use.
 Three levers do most of the work:
 
-- Wire up the Azure MCP and use its Azure best-practices tool. The
+- If you're using Azure, wire up the Azure MCP and use its best-practices tool. The
   [Azure MCP server](https://github.com/Azure/azure-mcp) ships a built-in Azure
   best-practices capability the AI can call before it writes or deploys anything
   that touches Azure. It returns secure, production-grade guidance: managed
@@ -801,7 +817,7 @@ Three levers do most of the work:
   straight from the current official docs, including Entra ID, Defender, and
   Azure security baselines, instead of stale training data.
 - Lead with security in your own instructions, skills, and agents. When you
-  scaffold the `.github` files in Part 2, put security *first* in
+  create your project's `.github` files, put security *first* in
   `copilot-instructions.md`: least privilege, no secrets in code, managed
   identities, input validation, secure defaults. A short, explicit
   "security comes first" rule at the top of your instructions steers every
@@ -851,13 +867,13 @@ modes of its own. These are the ones I'd burn into your habits from day one:
   something the AI *read* trigger something risky it then *does* without you
   confirming it.
 
-<Explain title="What's 'slopsquatting' and why should I care for a blog?">
+<Explain title="What's 'slopsquatting' and why should I care?">
   When an AI invents a package name that doesn't exist, an attacker can register
   that exact name and fill it with malicious code, so the next person who trusts
   the AI's suggestion installs malware. It's a real, growing supply-chain attack.
   The fix is cheap: don't install anything you haven't confirmed is the genuine,
-  maintained package. Building that reflex on a low-stakes blog means you'll have
-  it when the stakes are real.
+  maintained package. That applies whether you're building a blog, an app, or a
+  small tool for yourself.
 </Explain>
 
 ### Steal a ready-made security skill
@@ -883,36 +899,43 @@ Put the whole `vibesec-skill` folder, including its `SKILL.md`, in your project'
 
 ## What you should have right now
 
-Before moving on, make sure all of this is true. Part 2 assumes every one of
-them:
+Before building, check the essentials below. The Node.js and Azure items are
+needed for the blog walkthrough in Part 2; Python depends on your chosen tools.
 
 - ✅ A GitHub account with a verified email and 2FA enabled, and your recovery codes saved somewhere safe.
 - ✅ Git installed and configured with your name, email, and `init.defaultBranch` set to `main`.
 - ✅ `gh auth status` reports you're logged in, and Git is set to reuse those credentials.
 - ✅ The GitHub Copilot app installed, signed in, and responding.
-- ✅ `node`, `npm`, `git`, `gh`, and `python` (Windows) or `python3` (macOS/Linux) all return versions in a fresh terminal.
-- ✅ An Azure account created, `az version` returns a version, and `az account show` names your subscription.
-- ✅ A personal agents folder at `~/.copilot/agents` and a skills folder at `~/.copilot/skills` (or `~/.agents/skills`), outside the blog project.
+- ✅ The tools your project needs return versions in a fresh terminal: `git` and `gh`, plus `node` and `npm` if using Node.js, and `python` (Windows) or `python3` (macOS/Linux) if using Python.
+- ✅ If using Azure: an account created, `az version` returns a version, and `az account show` names your subscription.
+- ✅ A personal agents folder at `~/.copilot/agents` and a skills folder at `~/.copilot/skills` (or `~/.agents/skills`), outside your project.
 - ✅ You know that `.github` belongs inside each project, while your home `.copilot` folder is personal across projects on this machine.
 - ✅ You understand the safety basics: commit often, branch for risk, no secrets.
-- ✅ You know how to make security the AI's default: ground it in the Azure and
-  MS Learn MCPs, and lead every instruction, skill, and agent with security first.
+- ✅ Your project guidance puts security first, with Azure and Microsoft Learn
+  documentation available to the AI if you're using those services.
 - ✅ You've internalized the vibe-coding risks: review what you can't explain,
   verify every dependency before installing, and let a scanner watch your back.
 
-If any box is unchecked, sort it now. A shaky foundation turns Part 2 into a
-frustrating detour hunt instead of the fun part.
+If something your project needs isn't ready, sort it out before building.
+Leave the optional tools for when you need them.
 
 ## Next: actually building the thing
 
-That's the setup: the part nobody warns you about, now behind you. In
-[Part 2](/blog/vibe-code-your-blog-part-2-deploy/),
-we put it all to work: scaffolding the blog with Astro, writing a
-`copilot-instructions.md` so the AI understands your project, steering it through
-your first real feature with plan mode, and deploying the finished site to the
-internet with a live URL to share.
+If you want a blog, follow
+[Part 2](/blog/vibe-code-your-blog-part-2-deploy/) to create it with Astro, give
+Copilot project instructions, and publish it to Azure.
 
-Your homework before Part 2: run the verification checklist one more time and
-make sure every command comes back clean. Then
-subscribe to the [RSS feed](/rss.xml) so you don't miss the build, or if you get
-stuck on setup, the [contact page](/contact/) is the fastest way to reach me.
+If you want to build something else, skip installing Astro and the blog template.
+The later publishing commands in Part 2 are specific to that blog setup, not
+universal instructions for every app. Open your own project in Copilot and start
+with a small, concrete request:
+
+```text
+I want to build [describe your idea] for [who will use it].
+Help me plan the smallest useful version. Ask about anything unclear,
+explain which tools it needs and why, and put security first.
+Don't install anything or change files until I've reviewed the plan.
+```
+
+Replace the brackets with your idea. Start with one thing you can try yourself,
+then review what Copilot made before asking for the next change.
