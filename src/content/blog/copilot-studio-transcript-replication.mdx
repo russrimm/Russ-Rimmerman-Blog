@@ -269,11 +269,15 @@ conversation count. Count parsing failures explicitly; if you quarantine failed
 payloads, apply the same access and retention controls as the archive.
 
 Before writing all the aggregation logic yourself, evaluate the Copilot Agent
-Kit for conversation KPIs. Its
+Kit for conversation key performance indicators ("KPIs"). Its
 [Conversation KPIs feature](https://learn.microsoft.com/microsoft-copilot-studio/guidance/kit-conversation-kpi)
 parses transcripts into Dataverse aggregates and includes sample Power BI
-reports. Review its deployment, storage, and support requirements against your
-needs; custom parsing isn't the only route.
+reports. You must
+[configure each agent in the kit](https://learn.microsoft.com/en-us/microsoft-copilot-studio/guidance/kit-configure-agents#configure-a-new-agent-for-conversation-kpis)
+before it can sync that agent's conversation telemetry. For each agent, select
+**Conversation KPIs** in its Agent Configuration record and supply its Dataverse
+URL and Agent ID. Review the kit's deployment, storage, and support requirements
+against your needs; custom parsing isn't the only route.
 
 ### Store only what you're allowed to keep
 
