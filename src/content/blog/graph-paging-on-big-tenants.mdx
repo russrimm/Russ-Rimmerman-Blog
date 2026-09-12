@@ -90,10 +90,9 @@ page = await graph<Page<Device>>(
 ```
 
 That holds until the call moves to the beta endpoint. A beta `nextLink` starts
-with `https://graph.microsoft.com/beta`, the literal doesn't match, nothing is
-replaced, and the absolute URL goes back through the same concatenation. The
-route is broken again, and the paging fix is still sitting there in the diff
-looking done.
+with `https://graph.microsoft.com/beta`, the literal doesn't match, the trim is
+a no-op, and the absolute URL goes back through the same concatenation. The
+route regresses even though the paging fix is present in the file.
 
 Trimming harder isn't the answer either. Strip `beta` off the front and the
 wrapper glues the v1.0 base back on, so a beta route quietly starts reading v1.0
