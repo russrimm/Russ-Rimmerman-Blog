@@ -54,7 +54,8 @@ while (page["@odata.nextLink"]) {
 ```
 
 <Explain title="The official SDK already handles this">
-  If you're using `@microsoft/microsoft-graph-client`, `client.api()` parses an
+  If you're using the Microsoft Graph JavaScript software development kit
+  ("SDK"), `@microsoft/microsoft-graph-client`, `client.api()` parses an
   absolute URL, keeps the host, and replaces the version segment instead of
   stacking a second one — so `client.api(nextLink)` builds the right URL for
   both `v1.0` and `beta`. The SDK also ships `PageIterator` for exactly this
