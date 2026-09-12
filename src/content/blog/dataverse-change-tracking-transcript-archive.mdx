@@ -1,0 +1,242 @@
+---
+title: "For Copilot Studio Transcript Archives, Prefer a Watermark Over Change Tracking"
+description: "Dataverse change tracking is useful for synchronization, but Copilot Studio transcript archives need retention behavior that ignores routine source deletes."
+pubDate: 2026-09-12
+tags: ["Copilot Studio", "Dataverse", "Power Platform", "Azure Synapse Link", "Architecture"]
+draft: true
+featured: false
+---
+
+import Explain from "@/components/Explain.astro";
+
+I ran into this while designing a tenant-wide archive for Copilot Studio
+conversation transcripts: the most natural Dataverse design can give you the
+wrong retention behavior.
+
+Dataverse change tracking is built for synchronization. You ask for changes,
+store the delta link, and replay that link on the next run. That is exactly the
+shape you want when the destination should match the source. A transcript archive
+has a different job: keep a durable copy after the source's normal retention
+window has passed.
+
+That difference matters because Copilot Studio can store transcripts in the
+Dataverse `conversationtranscript` table, and Microsoft documents a default bulk
+delete job that removes transcript records older than 30 days. If your archive
+blindly mirrors Dataverse deletes, the archive inherits the source's 30-day
+retention window.
+
+The safer pattern is usually simpler: keep a `createdon` high-water mark per
+Power Platform environment, replay each run with a small overlap, and make the
+downstream write idempotent. For transcripts, duplicates are easier to handle
+than accidental deletions.
+
+## Start with the retention requirement
+
+Before choosing an extraction mechanism, write down what the destination is
+supposed to be.
+
+A **sync** keeps another store aligned with Dataverse. If Dataverse creates,
+updates, or deletes a row, the destination follows. That is useful for an
+operational replica, cache, or integration surface where matching the current
+source state is the point.
+
+An **archive** preserves records under its own retention policy. It may still
+support privacy deletion, legal hold, redaction, and expiry. Those are deliberate
+archive policies, not automatic echoes of source maintenance jobs.
+
+<Explain title="Why transcript archives are different from table mirrors">
+  Copilot Studio transcript records are written after a conversation becomes
+  available for reporting. For archive purposes, the important event is usually
+  row creation. Routine deletion from the source is not evidence that the
+  destination should delete its retained copy.
+</Explain>
+
+That distinction sounds obvious once you name it. It is easy to miss when the
+first implementation question is, "How do I incrementally read Dataverse?" The
+documented answer is change tracking, and change tracking is a good answer for
+synchronization. It just is not automatically the right answer for an archive.
+
+## Why Dataverse change tracking looks right
+
+Dataverse change tracking is designed to synchronize data with external systems.
+The first request includes the `Prefer: odata.track-changes` header. Dataverse
+returns the requested data and eventually provides an `@odata.deltaLink`. The
+next run follows that delta link to retrieve what changed since the previous
+checkpoint.
+
+That model is attractive for a transcript collector:
+
+- It avoids scanning the whole table every time.
+- It gives you a service-issued continuation point.
+- It fits the mental model of "bring my reporting store up to date."
+- It is documented and supported for this kind of incremental movement.
+
+If the destination is meant to be a mirror, that is a strong starting point. If
+the destination is meant to outlive the source, inspect the delete behavior before
+committing to it.
+
+## Delta responses include deletes
+
+A Dataverse delta response can include deleted rows. In the Open Data Protocol
+("OData") payload, those show up as deleted entities, for example:
+
+```json
+{
+  "@odata.context": ".../$deletedEntity",
+  "id": "00000000-0000-0000-0000-000000000000",
+  "reason": "deleted"
+}
+```
+
+A faithful synchronization process applies that delete to the destination. For a
+normal replica, that is correct.
+
+For a Copilot Studio transcript archive, the routine source delete may come from
+the enabled bulk-delete job named **Bulk Delete Conversation Transcript Records
+Older Than 1 Month**. When that job removes old source rows, change tracking can
+tell your archive to remove the same rows. Nothing has to fail for the retention
+outcome to be wrong. The pipeline can be healthy, the delta token can be current,
+and the destination can still end up with only the same rolling window the source
+keeps.
+
+That is the key design check: if the destination's value is longer retention,
+source deletes need separate policy handling. They should not automatically mean
+"delete from the archive."
+
+## Synapse Link has the same decision point
+
+Microsoft's custom analytics guidance points practitioners toward Azure Synapse
+Link for Dataverse. That can be a good managed path when the capacity, data
+access, table support, and reporting model fit the requirement.
+
+It still has the same retention decision. A linked replica can reflect source
+deletes unless you choose an append-only export mode. In append-only mode,
+Dataverse changes are appended as new records instead of updating or removing the
+previous exported copy in place.
+
+That setting is easy to treat as an implementation detail, but for transcript
+retention it is an architecture decision. If the data store is an archive, choose
+an export mode and downstream processing model that preserves historical rows
+according to the archive's policy.
+
+## Change tracking also limits how you bound a run
+
+Here is the second operational catch: the query shape changes.
+
+Dataverse rejects common query options on requests that include the
+track-changes preference. In particular, you cannot combine that request with
+`$filter`, `$orderby`, `$top`, or `$expand`.
+
+Those constraints matter during operations:
+
+- You cannot make the initial extract a clean `createdon` window by adding a
+  filter to the tracking request.
+- You cannot cap a run with `$top` while keeping the same change-tracking shape.
+- You cannot order the stream to make a backfill boundary easier to reason about.
+- You cannot expand related entities inline and keep the same request pattern.
+
+Change tracking still supports paging, so this is not a statement that it cannot
+handle large data sets. It is a statement about control. For an archive job, I
+want first-run backfills, reruns, and recovery windows to be deliberately
+bounded.
+
+## Delta tokens expire
+
+Dataverse also has a change-retention window for delta tokens. The default is
+seven days. If the collector is offline longer than the valid token window, the
+next run needs a full reseed or another recovery path.
+
+That may be acceptable for a sync. A full reseed can rebuild a mirror from the
+current source state.
+
+For an archive, a full reseed from the current source cannot recover transcript
+rows that the source has already deleted. The missed interval matters most
+precisely when the archive was supposed to cover it.
+
+That does not make managed sync features a poor choice. It means the recovery
+path has to match the retention requirement.
+
+## Use a createdon watermark for transcript collection
+
+For transcript archives, I usually prefer a timestamp watermark over a delta
+link. Keep a checkpoint per environment, query rows by `createdon`, overlap each
+run, and write idempotently to the destination.
+
+A simple run looks like this:
+
+1. Read the last committed checkpoint for the source environment.
+2. Move the query start backward by a small overlap window, such as 30 or 60
+   minutes.
+3. Query `conversationtranscript` rows where `createdon` is greater than or equal
+   to that start and less than the planned end of the run.
+4. Follow every page returned by Dataverse.
+5. Upsert into the archive using a stable key, usually source environment plus
+   transcript row ID.
+6. Advance the checkpoint only after the whole window is durably stored.
+
+The overlap is intentional. It protects you from boundary timing, clock skew in
+your own scheduler, and a retry that starts just after the previous checkpoint.
+Because the destination write is idempotent, replaying the overlap creates no
+logical duplicate.
+
+The tradeoff is straightforward: you may read a few records twice, and you must
+make deduplication a first-class part of the design. That is usually cheaper and
+safer than treating a source maintenance delete as an archive delete.
+
+## Keep privacy deletes separate from retention deletes
+
+Ignoring source deletes does not mean keeping everything forever. It means the
+archive needs its own deletion rules.
+
+At minimum, document how you will handle these cases:
+
+| Source event | Archive behavior to design deliberately |
+| --- | --- |
+| Routine 30-day transcript cleanup | Usually keep the archived copy until the archive retention period expires |
+| An approved privacy or compliance deletion | Delete or redact the archived copy according to policy |
+| A source environment removed from collection | Stop future collection, then apply the approved archive retention rule |
+| A failed or missed collector run | Alert, recover from the last safe checkpoint, and verify the gap |
+
+This is where an archive becomes more than an export script. You need ownership,
+access review, retention approval, and proof that the destination behaves the way
+the business expects.
+
+## When change tracking is still useful
+
+Change tracking is still useful when your downstream store should reflect
+Dataverse state and delete propagation is part of that contract.
+
+It can also be part of a more careful archive design if you explicitly ignore
+routine delete markers, handle privacy deletions through a separate approved
+path, and have a reseed strategy that does not lose already-purged source data.
+At that point, though, you have already decided that the archive policy is not a
+plain mirror.
+
+For Copilot Studio transcripts, the simpler watermark usually makes that
+contract clearer.
+
+## The decision rule
+
+Ask one question before choosing the transport:
+
+> If Dataverse deletes this transcript tomorrow as part of normal source
+> retention, should my destination delete it too?
+
+If the answer is yes, you are building a sync. Dataverse change tracking or a
+managed replica may fit well.
+
+If the answer is no, you are building an archive. Use a design that treats source
+creation as the collection signal, source cleanup as expected behavior, and
+archive deletion as its own governed action.
+
+That is the rare case where the less sophisticated mechanism is the safer one.
+A `createdon` high-water mark, a deliberate overlap window, and downstream
+deduplication do not sound as elegant as delta tokens. For transcript retention,
+they line up with the requirement.
+
+## References
+
+- [Use change tracking to synchronize data with external systems](https://learn.microsoft.com/power-apps/developer/data-platform/use-change-tracking-synchronize-data-external-systems)
+- [Understand downloaded conversation transcripts](https://learn.microsoft.com/microsoft-copilot-studio/analytics-transcripts-powerapps)
+- [Custom analytics strategy](https://learn.microsoft.com/microsoft-copilot-studio/guidance/custom-analytics-strategy)
+- [Azure Synapse Link advanced configuration: in-place updates vs append-only writes](https://learn.microsoft.com/power-apps/maker/data-platform/azure-synapse-link-advanced-configuration#in-place-updates-vs-append-only-writes)
