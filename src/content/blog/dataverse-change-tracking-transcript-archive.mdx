@@ -190,12 +190,14 @@ archive needs its own deletion rules.
 
 At minimum, document how you will handle these cases:
 
-| Source event | Archive behavior to design deliberately |
-| --- | --- |
-| Routine 30-day transcript cleanup | Usually keep the archived copy until the archive retention period expires |
-| An approved privacy or compliance deletion | Delete or redact the archived copy according to policy |
-| A source environment removed from collection | Stop future collection, then apply the approved archive retention rule |
-| A failed or missed collector run | Alert, recover from the last safe checkpoint, and verify the gap |
+- **Routine 30-day transcript cleanup:** Usually keep the archived copy until
+  the archive retention period expires.
+- **An approved privacy or compliance deletion:** Delete or redact the archived
+  copy according to policy.
+- **A source environment removed from collection:** Stop future collection, then
+  apply the approved archive retention rule.
+- **A failed or missed collector run:** Alert, recover from the last safe
+  checkpoint, and verify the gap.
 
 This is where an archive becomes more than an export script. You need ownership,
 access review, retention approval, and proof that the destination behaves the way
