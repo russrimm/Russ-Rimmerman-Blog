@@ -98,10 +98,10 @@ Strip any version segment rather than one spelling of it, and do it in the
 wrapper so no call site has to remember:
 
 ```ts
-const GRAPH_URL = /^https:\/\/graph\.microsoft\.com\/(v1\.0|beta)/;
+const GRAPH_PREFIX = /^https:\/\/graph\.microsoft\.com\/(v1\.0|beta)/;
 
 async function graph<T>(pathOrUrl: string): Promise<T> {
-  const path = pathOrUrl.replace(GRAPH_URL, "");
+  const path = pathOrUrl.replace(GRAPH_PREFIX, "");
   // ...unchanged from here
 }
 ```
@@ -131,11 +131,13 @@ interface Page<T> {
   "@odata.nextLink"?: string;
 }
 
+// Page one is always fetched; maxPages caps the total, minimum of one.
 export async function fetchAllPages<T>(
   path: string,
-  { maxPages = 10 } = {},
+  { maxPages = 10, pageSize = 999 } = {},
 ): Promise<{ value: T[]; complete: boolean }> {
-  let page = await graph<Page<T>>(path);
+  const separator = path.includes("?") ? "&" : "?";
+  let page = await graph<Page<T>>(`${path}${separator}$top=${pageSize}`);
   const value = [...page.value];
   let pages = 1;
 
@@ -150,10 +152,11 @@ export async function fetchAllPages<T>(
 ```
 
 `complete: false` rides along with the data to the route, and the route renders
-a line above the table: *showing the first 9,990 results*. That one boolean
-keeps the property both other options destroy — the admin knows what they're
-looking at. When they need the real total, the honest answer is a `$count`
-request or an export path, not a longer loop behind a page render.
+a line above the table: *showing the first 9,990 results*, which is ten pages at
+`$top=999`. That one boolean keeps the property both other options destroy —
+the admin knows what they're looking at. When they need the real total, the
+honest answer is a `$count` request or an export path, not a longer loop behind
+a page render.
 
 <Explain title="Picking a cap you can defend">
   Ten pages at `$top=999` is roughly 10,000 objects: more than anyone reads on a
