@@ -94,15 +94,18 @@ replaced, and the absolute URL goes back through the same concatenation. The
 route is broken again, and the paging fix is still sitting there in the diff
 looking done.
 
-Strip any version segment rather than one spelling of it, and do it in the
-wrapper so no call site has to remember:
+Trimming harder isn't the answer either. Strip `beta` off the front and the
+wrapper glues the v1.0 base back on, so a beta route quietly starts reading v1.0
+data — a wrong answer instead of a 404, which is worse. A `nextLink` is already
+a complete URL with the right version in it, so recognize it and leave it alone.
+Do that in the wrapper, and no call site has to remember:
 
 ```ts
-const GRAPH_PREFIX = /^https:\/\/graph\.microsoft\.com\/(v1\.0|beta)/;
+const GRAPH_URL = /^https:\/\/graph\.microsoft\.com\/(v1\.0|beta)\//;
 
 async function graph<T>(pathOrUrl: string): Promise<T> {
-  const path = pathOrUrl.replace(GRAPH_PREFIX, "");
-  // ...unchanged from here
+  const url = GRAPH_URL.test(pathOrUrl) ? pathOrUrl : `${BASE}${pathOrUrl}`;
+  // ...unchanged from here, with fetch(url)
 }
 ```
 
@@ -131,7 +134,7 @@ interface Page<T> {
   "@odata.nextLink"?: string;
 }
 
-// Page one is always fetched; maxPages caps the total, minimum of one.
+// Page one is always fetched; maxPages caps how many pages in total.
 export async function fetchAllPages<T>(
   path: string,
   { maxPages = 10, pageSize = 999 } = {},
@@ -209,7 +212,8 @@ Three things to take with you if you're wiring up Graph now:
 
 1. Know whether your client normalizes `@odata.nextLink`. The official
    JavaScript SDK does. Your own `fetch` wrapper doesn't until you make it, and
-   when you do, handle `beta` as well as `v1.0`.
+   the safe rule there is to pass a Graph URL through untouched rather than
+   trim a prefix and rebuild it.
 2. Return a `complete` flag with every paged result and render it. Truncation
    the reader can see is a limitation. Truncation they can't see is a wrong
    number.
