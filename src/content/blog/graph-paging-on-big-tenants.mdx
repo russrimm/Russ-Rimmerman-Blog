@@ -1,0 +1,225 @@
+---
+title: "The Microsoft Graph Paging Bug That Only Shows Up on Big Tenants"
+description: "Why a hand-rolled Graph fetch wrapper doubles the version segment on page 2, why the usual .replace() fix misses beta, and how to page with a cap plus a complete flag."
+pubDate: 2026-09-12
+tags: ["Microsoft Graph", "APIs", "TypeScript", "Intune", "Identity"]
+draft: true
+featured: false
+---
+
+import Explain from "@/components/Explain.astro";
+
+A device page in my admin portal looked right for months. Tiles rendered, counts
+had numbers next to them, nothing threw. Then I pointed it at a tenant with tens
+of thousands of devices and the second page of results came back as a 404 —
+against a URL I had never printed anywhere.
+
+Two reasonable things had met in the middle. Microsoft Graph returns
+`@odata.nextLink` as an **absolute** URL, prefix and all:
+
+```json
+{
+  "@odata.nextLink": "https://graph.microsoft.com/v1.0/deviceManagement/managedDevices?$skiptoken=..."
+}
+```
+
+And the little fetch wrapper every portal ends up with builds its URL by
+concatenation:
+
+```ts
+const BASE = "https://graph.microsoft.com/v1.0";
+
+async function graph<T>(path: string): Promise<T> {
+  const res = await fetch(`${BASE}${path}`, {
+    headers: { Authorization: await authorizationHeader() },
+  });
+  if (!res.ok) throw new Error(`Graph ${res.status}`);
+  return res.json();
+}
+```
+
+Pass one to the other and you get
+`https://graph.microsoft.com/v1.0/v1.0/deviceManagement/managedDevices?...`.
+That resource doesn't exist, so Graph answers 404.
+
+```ts
+// Reads fine in review. Only fails once there's a page 2.
+let page = await graph<Page<Device>>("/deviceManagement/managedDevices?$top=999");
+const devices = [...page.value];
+
+while (page["@odata.nextLink"]) {
+  page = await graph<Page<Device>>(page["@odata.nextLink"]); // → /v1.0/v1.0/...
+  devices.push(...page.value);
+}
+```
+
+<Explain title="The official SDK already handles this">
+  If you're using `@microsoft/microsoft-graph-client`, `client.api()` parses an
+  absolute URL, keeps the host, and replaces the version segment instead of
+  stacking a second one — so `client.api(nextLink)` builds the right URL for
+  both `v1.0` and `beta`. The SDK also ships `PageIterator` for exactly this
+  job. The bug in this post belongs to the hand-rolled wrapper, which is what
+  you tend to have in a Backend-for-Frontend route where you already hold the
+  token and don't want another dependency in the bundle. Worth knowing which
+  one you're on before you go fixing call sites.
+</Explain>
+
+## Page one is what makes this expensive
+
+If this failed on the first call it would be a five-minute fix. It doesn't. Page
+one comes back complete and correct, so the code passes review, passes a demo,
+and passes a small test tenant. It surfaces only on tenants large enough to
+page, which are the tenants where the numbers matter most.
+
+The 404 sends you the wrong way too. A 404 from Graph reads like a permissions
+or endpoint problem, so the first hour goes into app registrations and consent
+instead of string concatenation. I've written about
+[how much Intune access lives behind the Graph scope](/blog/intune-graph-scope-is-only-half-the-permission/),
+and that instinct is usually right. It just isn't right here. Log the URL you
+actually requested and the diagnosis takes seconds.
+
+## The `.replace()` fix that covers half the endpoints
+
+The workaround that shows up in most codebases is a string trim:
+
+```ts
+page = await graph<Page<Device>>(
+  page["@odata.nextLink"].replace("https://graph.microsoft.com/v1.0", ""),
+);
+```
+
+That holds until the call moves to the beta endpoint. A beta `nextLink` starts
+with `https://graph.microsoft.com/beta`, the literal doesn't match, nothing is
+replaced, and the absolute URL goes back through the same concatenation. The
+route is broken again, and the paging fix is still sitting there in the diff
+looking done.
+
+Strip any version segment rather than one spelling of it, and do it in the
+wrapper so no call site has to remember:
+
+```ts
+const GRAPH_URL = /^https:\/\/graph\.microsoft\.com\/(v1\.0|beta)/;
+
+async function graph<T>(pathOrUrl: string): Promise<T> {
+  const path = pathOrUrl.replace(GRAPH_URL, "");
+  // ...unchanged from here
+}
+```
+
+## Both obvious paging defaults are wrong for admin data
+
+Once paging works, you have to decide how far to walk. The two answers that come
+naturally each cost you something real.
+
+**Stop at page one.** A directory of 40,000 users renders as 999, and every
+count derived from it is wrong with nothing on screen to say so. "Only 12
+devices are non-compliant" off a truncated sample is exactly the sort of number
+someone acts on.
+
+**Loop until `nextLink` is empty.** Correctness is fine now and availability
+isn't. A large tenant turns one page view into hundreds of sequential calls: a
+request timeout, memory pressure on the server, and a burst of traffic against
+[Graph throttling limits](https://learn.microsoft.com/graph/throttling) that
+lands on every other feature in the app.
+
+What I settled on is a third option: **cap the walk, and make "I stopped early"
+a value the user interface can render.**
+
+```ts
+interface Page<T> {
+  value: T[];
+  "@odata.nextLink"?: string;
+}
+
+export async function fetchAllPages<T>(
+  path: string,
+  { maxPages = 10 } = {},
+): Promise<{ value: T[]; complete: boolean }> {
+  let page = await graph<Page<T>>(path);
+  const value = [...page.value];
+  let pages = 1;
+
+  while (page["@odata.nextLink"] && pages < maxPages) {
+    page = await graph<Page<T>>(page["@odata.nextLink"]);
+    value.push(...page.value);
+    pages += 1;
+  }
+
+  return { value, complete: !page["@odata.nextLink"] };
+}
+```
+
+`complete: false` rides along with the data to the route, and the route renders
+a line above the table: *showing the first 9,990 results*. That one boolean
+keeps the property both other options destroy — the admin knows what they're
+looking at. When they need the real total, the honest answer is a `$count`
+request or an export path, not a longer loop behind a page render.
+
+<Explain title="Picking a cap you can defend">
+  Ten pages at `$top=999` is roughly 10,000 objects: more than anyone reads on a
+  dashboard, and few enough calls to finish inside a normal request timeout. Set
+  it per route rather than globally. A tenant-wide rollup on a background
+  refresh can afford a deeper walk than a table rendering while an admin waits.
+  Whatever number you choose, write it down next to the reason, because the next
+  person to look will want to raise it.
+</Explain>
+
+## The part a code review can't catch
+
+Here's what took me longest to accept. Every instance of this is locally
+reasonable. Nobody was careless; they wrote `graph(page["@odata.nextLink"])`,
+which is what the variable name suggests. Reviewing harder doesn't catch the
+next one, because there's nothing in the diff to react to. The same is true of
+the truncation: a loop with no `nextLink` handling at all looks like a finished
+function.
+
+What works is making the correct path the shortest path. One exported helper,
+imported everywhere, so that hand-rolling a `while (nextLink)` loop is more
+typing than not hand-rolling one. Then add a guard so a new one can't land
+quietly.
+
+A grep for `@odata.nextLink` is not that guard. It flags every
+`interface Page { "@odata.nextLink"?: string }` and every type definition in the
+repository, and a check with that many false positives gets muted or bypassed
+inside a week. Parse the file with the TypeScript compiler API instead and
+report only *loops whose condition or body reads the property*. Walking the
+abstract syntax tree ("AST") for `WhileStatement` and `DoStatement` nodes and
+checking whether the property access appears in the condition or body is maybe
+sixty lines, and it's the difference between a check people trust and one they
+route around with `--no-verify`.
+
+Record the starting point as a **ratchet**, not an exemption list: store the
+per-file count of known violations, fail when a count goes up, and fail again
+when a file improves without re-recording the lower number. An exemption list
+quietly becomes permanent. A ratchet moves one direction, and it makes cleaning
+up a file the path of least resistance.
+
+## What I'd do differently
+
+Write the helper before the second call site. The first hand-rolled paging loop
+is fine. The second is where the copies start, and by the fifth the variations
+have drifted far enough that consolidating them is its own project with its own
+review. The fix was mechanical once the helper existed, which is the whole
+argument for writing it first.
+
+Three things to take with you if you're wiring up Graph now:
+
+1. Know whether your client normalizes `@odata.nextLink`. The official
+   JavaScript SDK does. Your own `fetch` wrapper doesn't until you make it, and
+   when you do, handle `beta` as well as `v1.0`.
+2. Return a `complete` flag with every paged result and render it. Truncation
+   the reader can see is a limitation. Truncation they can't see is a wrong
+   number.
+3. Read [the Graph paging docs](https://learn.microsoft.com/graph/paging) in
+   full once. The absolute-URL detail is right there, and it reads very
+   differently after you've chased the 404.
+
+More on the portal this came out of in
+[the Portal 360° deep dive](/blog/portal-of-portals-deep-dive/), and other Graph
+field notes live in the
+[Security & Identity topic](/topics/security-and-identity/).
+
+---
+
+*Last verified: September 2026, against `@microsoft/microsoft-graph-client` 3.0.7
+and the Graph paging documentation.*
