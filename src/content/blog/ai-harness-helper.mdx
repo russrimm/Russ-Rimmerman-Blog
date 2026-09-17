@@ -3,14 +3,20 @@ title: "I Had 27 MCP Servers and Four Doing the Same Job. So I Built AI Harness 
 heroImage: ../../assets/blog/ai-harness-helper.webp
 heroAlt: "Editorial illustration representing GitHub Copilot."
 description: "AI Harness Helper scans every agentic coding config on your machine, prices what it costs you in tokens on every request, and names the duplicates worth deleting."
-pubDate: 2026-08-22
+pubDate: 2026-09-17
+updatedDate: 2026-09-17
 tags: ["GitHub Copilot", "MCP", "Vibe Coding", "AI", "Agents", "VS Code"]
 draft: false
 featured: false
 ---
 
 import Explain from "@/components/Explain.astro";
+import Screenshot from "@/components/Screenshot.astro";
 import Term from "@/components/Term.astro";
+import overview from "@/assets/blog/ai-harness-helper/overview.webp";
+import contextBudget from "@/assets/blog/ai-harness-helper/context-budget.webp";
+import review from "@/assets/blog/ai-harness-helper/review.webp";
+import mcpOverlap from "@/assets/blog/ai-harness-helper/mcp-overlap.webp";
 
 I ran a scan of my own machine last week and got a number I did not enjoy: 27
 <Term def="A small helper program that gives an AI extra abilities, like searching documentation or reading your GitHub issues. MCP stands for Model Context Protocol, the shared standard these helpers speak.">MCP servers</Term>
@@ -27,12 +33,21 @@ of the others are doing. So I built a tool that finds all of it and puts a price
 tag on it. It's called
 [AI Harness Helper](https://github.com/russrimm/ai-harness-helper).
 
+The screenshots use sample configuration in version 0.1.1, not my personal
+files. Their counts differ from the scan described below.
+
+<Screenshot
+  src={overview}
+  alt="AI Harness Helper Overview showing four detected tools, ten configuration files, and one duplicate."
+  caption="The Overview screen brings the inventory and health findings into one view. Sample configuration."
+/>
+
 A note on who this is for: you don't need to be a developer. I'll define the
 jargon as it comes up, and anything with a dotted underline is a word you can
 hover over (or tap on a phone) for a plain-language definition. Try it:
 <Term def="The written instructions that tell a computer what to do. It lives in ordinary text files.">code</Term>.
 
-## What a "harness" is, and why yours is a mess
+## What a "harness" is, and why yours might be a mess
 
 Your harness is everything you've configured around the AI that isn't the AI
 itself. Instruction files telling it how you like things done. MCP servers giving
@@ -94,6 +109,12 @@ loaded when something actually needs it.
 
 If I'd only seen one combined number, I'd have deleted the wrong thing.
 
+<Screenshot
+  src={contextBudget}
+  alt="Context budget showing always-loaded, conditional, and on-demand totals, with a per-file breakdown for GitHub Copilot CLI."
+  caption="Look at when the content loads, not just its size. The sample includes instructions read on every request and a skill loaded when selected."
+/>
+
 <Explain title="Why 'roughly'?">
 Token counts here are an approximation at four bytes per token. Getting it exact
 would mean shipping a separate counting library for every AI vendor, which is a
@@ -146,6 +167,12 @@ and learns nothing.
 
 None of those would have shown up on their own. That last one is the kind of
 thing that never produces an error message. It just silently doesn't work.
+
+<Screenshot
+  src={review}
+  alt="Review showing a sample score of 93 out of 100 and fixes for a skill missing its description and an unpinned Playwright package."
+  caption="Review groups issues by file and gives each one a fix. These sample files illustrate a missing skill description and an unpinned package."
+/>
 
 ## Installing it
 
@@ -213,6 +240,12 @@ Four screens, in this order:
    because "same launch command" is certainty and "sounds like it covers the same
    area" is a hunch, and conflating those would make you distrust both.
 4. **Context budget** — what all of it costs you, split three ways.
+
+<Screenshot
+  src={mcpOverlap}
+  alt="MCP servers grouped by shared launch targets and documentation capabilities, with confidence levels and source files."
+  caption="The MCP view shows the evidence behind each overlap. These examples use placeholder addresses; matching targets and a shared capability area carry different confidence levels."
+/>
 
 Then do these three things:
 
