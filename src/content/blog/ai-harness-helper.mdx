@@ -2,9 +2,9 @@
 title: "I Had 27 MCP Servers and Four Doing the Same Job. So I Built AI Harness Helper"
 heroImage: ../../assets/blog/ai-harness-helper.webp
 heroAlt: "Editorial illustration representing GitHub Copilot."
-description: "AI Harness Helper scans every agentic coding config on your machine, prices what it costs you in tokens on every request, and names the duplicates worth deleting."
+description: "AI Harness Helper brings your coding tool settings into one view, finds duplicate MCP servers, and estimates how much context your instruction files use."
 pubDate: 2026-09-17
-updatedDate: 2026-09-17
+updatedDate: 2026-09-18
 tags: ["GitHub Copilot", "MCP", "Vibe Coding", "AI", "Agents", "VS Code"]
 draft: false
 featured: false
@@ -18,19 +18,18 @@ import contextBudget from "@/assets/blog/ai-harness-helper/context-budget.webp";
 import review from "@/assets/blog/ai-harness-helper/review.webp";
 import mcpOverlap from "@/assets/blog/ai-harness-helper/mcp-overlap.webp";
 
-I ran a scan of my own machine last week and got a number I did not enjoy: 27
-<Term def="A small helper program that gives an AI extra abilities, like searching documentation or reading your GitHub issues. MCP stands for Model Context Protocol, the shared standard these helpers speak.">MCP servers</Term>
-spread across 18 directories, four of which all do documentation lookup, and two
-of which point at the exact same web address under two different names.
+I scanned my own machine last week and found 27 Model Context Protocol ("MCP")
+<Term def="Small helper programs that give a coding assistant extra abilities, like searching documentation or reading your GitHub issues.">servers</Term>
+spread across 18 folders. Four do documentation lookup, and two point at the
+same web address under different names.
 
-I did not install 27 of anything on purpose. Nobody does. You add one useful
-thing a month for two years and this is where you end up.
+I did not set out to install 27. I'd added tools over time without keeping track
+of the combined setup.
 
-The reason it went unnoticed for so long is that there is no single place to
-look. Your <Term def="Software that doesn't just suggest code, but goes and does things: reads your files, edits them, runs commands, and checks its own work.">agentic coding tools</Term>
-each keep their settings somewhere different, and none of them show you what any
-of the others are doing. So I built a tool that finds all of it and puts a price
-tag on it. It's called
+The settings are spread across several places. Your
+<Term def="Software that can read files, edit code, run commands, and check its own work, rather than only suggest changes.">agentic coding tools</Term>
+each keep their own files. I wanted one view of what I'd configured, where it
+overlapped, and how much context the instruction files used. So I built
 [AI Harness Helper](https://github.com/russrimm/ai-harness-helper).
 
 The screenshots use sample configuration in version 0.1.1, not my personal
@@ -47,58 +46,54 @@ jargon as it comes up, and anything with a dotted underline is a word you can
 hover over (or tap on a phone) for a plain-language definition. Try it:
 <Term def="The written instructions that tell a computer what to do. It lives in ordinary text files.">code</Term>.
 
-## What a "harness" is, and why yours might be a mess
+## What a harness includes
 
-Your harness is everything you've configured around the AI that isn't the AI
-itself. Instruction files telling it how you like things done. MCP servers giving
+Your harness is the configuration around an artificial intelligence ("AI")
+model. Instruction files telling it how you like things done. MCP servers giving
 it extra abilities. <Term def="A reusable set of instructions you write once and the AI pulls in whenever it's relevant, like a recipe card it can reach for.">Skills</Term>
 and custom agents. Permission rules deciding what it's allowed to run without
 asking.
 
-All of that is real configuration with real consequences, and every tool stores
-it in its own private corner:
+Each tool has its own place for that configuration:
 
-- GitHub Copilot CLI uses `~/.copilot`
+- GitHub Copilot's command-line interface ("CLI"), which you use by typing
+  commands, uses `~/.copilot`
 - Claude Code uses `~/.claude`
 - Visual Studio Code has a `settings.json` and an `mcp.json`, and a *second* copy
   of both if you also run Insiders
 - Cursor, Codex CLI, Windsurf, Gemini CLI, Docker, and Zed each have their own
-- Then every project you've ever cloned may add its own `AGENTS.md`,
+- Projects you've copied to your machine may also have an `AGENTS.md`,
   `.github/copilot-instructions.md`, or `.mcp.json`
 
-So the simple question has no simple answer: *what is my AI actually configured
-to do right now?* That's the gap.
+To see the whole setup, you need to look across those locations.
 
-## The part that costs you money
+## How much context the instructions use
 
-Here's the bit that surprised me most, and the reason I care about this beyond
-tidiness.
+I wanted to understand more than which files were there. I also wanted to know
+how much text they added to a request.
 
 Every request you send to an AI has a budget. The model can only hold so much
 text at once, called its
 <Term def="The maximum amount of text an AI can consider at one time. Everything counts toward it: your question, your config files, the tool descriptions, and the answer being written.">context window</Term>,
-and everything competes for it. Your instruction files get pasted in front of
-every single question you ask. The description of every MCP tool gets listed so
-the model knows what's available. All of that is spent before you've typed a
-word.
+and your question shares that space with instructions and tool descriptions.
+Some instructions load on every request; others load only for certain files or
+tasks.
 
-The problem is that it's invisible. Nobody deletes an instruction file they
-think is free.
+File size alone doesn't tell you how often that text loads. The tool groups its
+estimates by when the content is used:
 
-So the tool prices it, and splits the bill by *when* you actually pay:
-
-| Category        | When you pay it                            | Example                                |
+| Category        | When it loads                              | Example                                |
 | --------------- | ------------------------------------------ | -------------------------------------- |
-| **Always**      | Every request, forever                     | Root instruction files, skill names     |
+| **Always**      | Every request                              | Root instruction files, skill names     |
 | **Conditional** | Only when the work touches matching files  | An instruction file scoped to `*.ts`    |
-| **On demand**   | Only once the AI picks that capability     | The full body of a skill                |
+| **On demand**   | When the AI selects that capability       | The full body of a skill                |
 
 That split matters more than the total. On my machine, the always-on cost came
-to roughly **2,728 <Term def="The unit AI models are billed and measured in. Roughly four characters of English text, so about three-quarters of a word.">tokens</Term>
-(10.7 KB)** across all tools. Meanwhile my Visual Studio Code
-<Term def="Files the AI loads only when it decides it needs them, so they cost nothing until then.">on-demand</Term>
-content was 33.4 KB. Three times larger, and almost free, because it's only
-loaded when something actually needs it.
+to roughly **2,728 <Term def="The units used to measure how much text an AI processes. A token is often part of a word; its size varies with the text and the model.">tokens</Term>**,
+or 10.7 kilobytes ("KB"), across all tools. Meanwhile my Visual Studio Code
+<Term def="Files the AI loads only when it needs them for the current task.">on-demand</Term>
+content was 33.4 KB. About three times larger, but it only uses context when
+it's loaded.
 
 If I'd only seen one combined number, I'd have deleted the wrong thing.
 
@@ -108,26 +103,21 @@ If I'd only seen one combined number, I'd have deleted the wrong thing.
   caption="Look at when the content loads, not just its size. The sample includes instructions read on every request and a skill loaded when selected."
 />
 
-<Explain title="Why 'roughly'?">
+<Explain title="About the estimate">
 Token counts here are an approximation at four bytes per token. Getting it exact
-would mean shipping a separate counting library for every AI vendor, which is a
-lot of weight for a number that only needs to be right to an order of magnitude.
-The tool says so plainly in the interface rather than pretending to a precision
-it doesn't have.
+would require model-specific counting. I use the estimate to compare files and
+decide what to review, not to calculate a bill.
 </Explain>
 
-### The one thing it refuses to guess
+### MCP context cost isn't measured
 
-MCP servers publish their tool descriptions when they start up, which means the
-only honest way to measure their context cost is to launch all 27 of them and
-read what comes back. This tool never launches anything. So instead of inventing
-a plausible-looking number, it reports the server count and flags it as an
-unmeasured factor.
+Measuring the MCP tool descriptions would require connecting to the servers and
+reading what they provide. AI Harness Helper doesn't launch them. It reports
+the server count and marks their context cost as unmeasured.
 
-I'd rather have a gap I know about than a figure I can't trust. And practically,
-this is where the duplicate hunting earns its keep: two servers pointed at the
-same endpoint register the same tool descriptions twice, on every request, for
-zero extra capability.
+That leaves a gap in the estimate, but the inventory still helps you find
+duplicates. Two entries pointing at the same server are worth reviewing before
+you keep both.
 
 ## What it actually found
 
@@ -142,25 +132,25 @@ Review: 97/100 (A), recorded from the original run
 The findings were the useful part:
 
 - **`microsoft-learn` and `microsoftdocs/mcp` resolve to the identical launch
-  target.** Same URL, two names, started separately, tools registered twice.
+  target.** Same web address, two names, started separately, tools registered twice.
 - **Four servers all cover documentation lookup** (`context7`,
   `io.github.upstash/context7`, `upstash/context7`, `microsoft-learn`).
 - **Three cover GitHub. Three cover Azure. Three cover browser automation.**
-- **`@playwright/mcp` was unpinned**, so a compromised release would run
-  automatically the next time it started.
-- **One chat mode file had front matter that opened but never closed**, so Visual
-  Studio Code was reading its metadata as body text and seeing no name,
+- **`@playwright/mcp` was <Term def="Not set to one specific version, so a later run may download a newer release.">unpinned</Term>**,
+  so a later run could download a release I hadn't reviewed.
+- **One chat mode file was missing the closing dashes around its settings**, so
+  Visual Studio Code was reading them as body text and seeing no name,
   description, or model at all. I have no idea how long it had been like that.
 
 <Explain title="What's 'front matter'?">
 A block of settings at the very top of a text file, fenced between two lines of
 three dashes. It's how a file tells a tool its name, description, and which model
-to use. Miss the closing dashes and the tool reads all of it as ordinary prose
-and learns nothing.
+to use. In the file I found, the missing closing dashes meant those settings
+were read as ordinary text instead.
 </Explain>
 
-None of those would have shown up on their own. That last one is the kind of
-thing that never produces an error message. It just silently doesn't work.
+I hadn't noticed the missing settings before the scan. Having the finding tied
+to a specific file gave me somewhere to start.
 
 ### What the A actually measures
 
@@ -207,16 +197,17 @@ rather than use the letter as a reason to stop.
 
 ## Installing it
 
-Straight talk on this: the project is at the discovery stage. The `npx`
-one-liner in the README is where it's going, but the package **is not on npm
-yet**, so today you clone it and run it locally. That works fine, and I verified
-these exact steps on Windows before publishing.
+For version 0.1.1, you copy the project from GitHub and run it locally. The
+`npx` command in the README was the planned install method, but the package
+wasn't on npm, the public package catalog, when I ran these steps on Windows
+before publishing.
 
 You'll need:
 
 - **Node.js 20.11 or newer** (`node --version` to check)
-- **pnpm**, which you get with `npm install -g pnpm`
-- **git**
+- **pnpm**, which you get with `npm install -g pnpm` using npm, the package
+  manager included with Node.js
+- **Git**, which copies the project from GitHub and tracks changes to its files
 
 <Explain title="What are Node.js and pnpm?">
 Node.js lets your computer run programs written in JavaScript outside a web
@@ -232,45 +223,45 @@ cd ai-harness-helper
 pnpm start
 ```
 
-That's it. On first run, `pnpm start` installs dependencies and builds the
-project (give it a few minutes), then scans your machine and opens the interface
-in your browser. Later runs skip straight to the scan.
+On first run, `pnpm start` downloads the code the project depends on and prepares
+it to run. Give it a few minutes. It then scans your machine and opens the
+interface in your browser. Later runs skip straight to the scan.
 
-Your projects are **not** scanned unless you name them. It never crawls your
-drive:
+The default scan checks tool settings, not every project on your drive. To
+include project folders, name them explicitly:
 
 ```bash
 pnpm start -- --project C:\repos\my-app --project C:\repos\other-app
 ```
 
-The `--` matters. It tells pnpm the flags belong to the tool, not to pnpm.
+The `--` tells pnpm to pass the options that follow to AI Harness Helper.
 
-### If you'd rather not let it touch anything
+### Start in read-only mode
 
-Fair. It reads sensitive files, and you have no reason to trust me yet:
+To review the findings without allowing changes to your files, use:
 
 ```bash
 pnpm start -- --read-only
 ```
 
-Every write, delete, and edit is refused for the whole session. Look around
-first, decide later.
+This blocks writes, deletions, and edits for the whole session. You can review
+what it finds before deciding whether to make changes.
 
 ## Your first ten minutes
 
 Four screens, in this order:
 
-1. **Overview** — the damage report. Tools found, files found, duplicates,
-   conflicts, plaintext secrets, empty files, deprecated locations.
+1. **Overview** — tools and files found, along with duplicates, conflicts,
+   exposed credentials, empty files, and settings in older locations.
 2. **Review** — 23 rules check skills, agents, instructions, server settings, and
    permission rules. Issues are grouped by file, and each one names its fix.
    The 0–100 score tracks those Review issues, not the separate Overview
    findings or the context budget.
 3. **MCP servers** — every server from every tool in one table, with the
    overlap groups. Each group shows its confidence and the evidence behind it,
-   because "same launch command" is certainty and "sounds like it covers the same
-   area" is a hunch, and conflating those would make you distrust both.
-4. **Context budget** — what all of it costs you, split three ways.
+   so you can distinguish a matching launch command from tools that cover a
+   similar area.
+4. **Context budget** — estimated instruction size, grouped by when it loads.
 
 <Screenshot
   src={mcpOverlap}
@@ -280,70 +271,68 @@ Four screens, in this order:
 
 Then do these three things:
 
-- **Delete the servers that lose.** Where two names resolve to one endpoint, keep
-  the one configured how you want. The tool removes it surgically from the file
-  that declares it: comments, key order, and formatting elsewhere in the file
-  survive untouched.
+- **Review duplicate server entries.** Where two names point to the same
+  address, compare their settings and keep the one you intend to use. The tool
+  removes the other entry from its settings file, preserving comments, setting
+  order, and formatting elsewhere in the file.
 - **Pin your `npx` packages.** `@playwright/mcp@1.2.3`, not `@playwright/mcp`.
-  An unpinned package is one supply-chain incident away from running on your
-  machine with your permissions.
-- **Move rarely-needed instructions out of the always-on tier.** A long
-  instruction file that only matters for one language belongs behind an
-  `applyTo` glob, so it's conditional instead of permanent.
+  The version is an example; choose a release you've reviewed. Pinning keeps a
+  later run from automatically selecting a newer release.
+- **Limit specialized instructions to the files that need them.** In tools
+  that support it, use an `applyTo` file-matching pattern, such as `**/*.ts` for
+  TypeScript files, rather than loading those instructions on every request.
 
 Then rerun the scan and check the relevant screen. Fixing a Review issue can
 raise the score; removing a duplicate changes the inventory; moving instructions
 changes the context budget. An improvement doesn't have to change the grade.
 
-## The safety design, because it reads your secrets
+## How it handles sensitive files
 
-A tool that walks through every config file on your machine is exactly the kind
-of thing that deserves suspicion. So here's what it does about that:
+These settings can contain credentials. Here's how the tool handles access:
 
-- The server binds to `127.0.0.1` only, never to your network.
-- Every request needs a token generated fresh on each run.
+- The local server listens at `127.0.0.1`, an address reachable only from your
+  own computer, not other devices on your network.
+- Every request needs an access token generated fresh on each run.
 - The API can only touch files the scanner already found. Everything else is
-  structurally unreachable, not merely filtered out.
-- Values are masked when the key looks like a secret or the value matches a known
-  credential shape. Revealing is one value at a time, on purpose, never saved.
+  outside its allowed file list.
+- Values are masked when the setting name looks like a secret or the value
+  matches a known credential format. You can reveal one value at a time; that
+  choice isn't saved.
 - Credential stores — `~/.claude/.credentials.json`, `~/.codex/auth.json`,
   `~/.docker/config.json` — are listed as present and never opened. Editing them
   is blocked outright.
-- Search redacts *before* matching, so you can't use a query to confirm a secret
-  one character at a time.
-- Every edit is backed up to `~/.ai-harness-helper/backups/` and written
-  atomically, and refuses to run if the file changed on disk since you loaded it.
+- Search masks credentials before matching, so queries don't run against the
+  hidden values.
+- Every edit is backed up to `~/.ai-harness-helper/backups/`. The tool writes
+  the complete replacement rather than changing the file in place, and refuses
+  the edit if the file has changed on disk since you loaded it.
 
-There's no telemetry and no outbound traffic at all, with exactly one exception:
-if you pass `--check-updates`, it asks GitHub whether a newer release exists. It
-sends nothing but its own name and version.
+The scan sends no usage data and makes no outbound network requests unless you
+pass `--check-updates`. That option asks GitHub whether a newer release exists,
+identifying the tool by its name and version.
 
-## What it doesn't do yet
+## Current limits
 
-Honest limits, since I'd rather you hear them from me:
+This post covers version 0.1.1. A few limits to keep in mind:
 
-- **Not on npm yet.** Clone-and-run for now. The packaging work is done and the
-  `npx` one-liner will replace the clone here once it's published.
-- **MIT licensed**, so you can actually use it. That was a gap I only noticed
-  while writing this post, which is a decent argument for writing things down.
+- **Installation uses a local copy.** The steps above use the GitHub project
+  because the package wasn't on npm when I ran version 0.1.1.
 - **MCP context cost is unmeasured**, for the reason above.
 - **It won't tell you which server is better.** It tells you three of them look
-  like the same job and hands you the evidence. Deciding is still yours.
-- **It's version 0.1.1.** Some of what I described has been rewritten twice
-  already and will be again.
+  like they cover the same job and shows you why. You still need to decide which
+  ones fit your work.
+- **The project is still changing.** The interface and rules may differ in later
+  versions.
 
-## Go look at your own number
+## Try it on your setup
 
-I genuinely expected my setup to be tidy. I'm the person who writes about this
-stuff. It was not tidy. It was 27 servers deep, with four teams of duplicates and
-a chat mode that had been quietly doing nothing for who knows how long.
+The useful result for me wasn't the score. It was finding duplicate entries and
+a chat mode file with missing settings, then knowing which files to review.
 
-You're probably in better shape than I was. But you don't know that, because
-nothing has ever shown you. Clone it, run `pnpm start -- --read-only`, and spend
-five minutes on the Context budget screen. Worst case you learn your harness is
-clean.
+Run `pnpm start -- --read-only` and start with Overview. If you find a duplicate,
+compare the settings before removing it. Then look at Context budget to see
+which instruction files load on every request.
 
 If you find something the tool should have caught and didn't,
-[open an issue](https://github.com/russrimm/ai-harness-helper/issues). The rules
-engine is the part most worth growing, and I only know about the problems I've
-personally had.
+[open an issue](https://github.com/russrimm/ai-harness-helper/issues) with a
+sanitized example. Other setups will help me improve the rules.
