@@ -142,7 +142,8 @@ Running it against my own setup, sanitized:
 
 ```
 6 tools · 34 files · 18 directories · 27 MCP servers
-2 duplicates · 16 findings · review score 97/100 (A)
+Overview: 2 duplicates · 16 findings
+Review: 97/100 (A), recorded from the original run
 ```
 
 The findings were the useful part:
@@ -168,10 +169,47 @@ and learns nothing.
 None of those would have shown up on their own. That last one is the kind of
 thing that never produces an error message. It just silently doesn't work.
 
+### What the A actually measures
+
+That A doesn't cover everything I just listed. In version 0.1.1, Overview
+findings and Review issues are separate lists. The 16 findings are not 16
+deductions from the Review score. Duplicate servers and capability overlaps
+appear in the inventory, but they don't directly lower that grade.
+
+The [scoring rules in version 0.1.1](https://github.com/russrimm/ai-harness-helper/blob/bd2c5466cf2f68a38ee782fdc697b2228f618c19/packages/core/src/review.ts#L1307-L1361)
+start at 100 and subtract points for each Review issue:
+
+| Review severity | Points deducted per issue |
+| --------------- | ------------------------- |
+| Error           | 6                         |
+| Warning         | 2                         |
+| Suggestion      | 0.5                       |
+
+The result is rounded to the nearest whole number, with halves rounded up, and
+can't go below zero. Anything from 90 through 100 gets an A. It isn't a
+percentage of checks passed, and having an error doesn't automatically prevent
+an A.
+
+For example, the sample screenshot below shows one error, no warnings, and
+three suggestions. That's `100 - 6 - (3 × 0.5) = 92.5`, rounded to **93: an A**,
+even though the missing skill description still needs fixing.
+
+The rules also explain why the problems in my scan could leave a high score.
+Unclosed front matter is a warning, costing 2 points. An unpinned package is a
+suggestion, costing 0.5 points. Those weights are the tool's choices, not a
+measure of how much a problem could affect my work. The original issue-by-issue
+Review export isn't saved with this post, so I can't independently reconstruct
+the reported 97 from the summary alone.
+
+So the A means few weighted deductions under these rules, not that my whole
+setup is efficient, secure, or working correctly. The duplicate findings and
+unmeasured MCP context cost still deserve attention. I'd fix the named problems
+rather than use the letter as a reason to stop.
+
 <Screenshot
   src={review}
   alt="Review showing a sample score of 93 out of 100 and fixes for a skill missing its description and an unpinned Playwright package."
-  caption="Review groups issues by file and gives each one a fix. These sample files illustrate a missing skill description and an unpinned package."
+  caption="Sample configuration: one error and three suggestions deduct 7.5 points. Rounding gives 93, still an A under the version 0.1.1 rubric."
 />
 
 ## Installing it
@@ -231,10 +269,10 @@ Four screens, in this order:
 
 1. **Overview** — the damage report. Tools found, files found, duplicates,
    conflicts, plaintext secrets, empty files, deprecated locations.
-2. **Review** — 23 rules run over everything, grouped by the file you'd open to
-   fix it. Every issue names its fix, because a finding you can't act on is just
-   noise wearing a severity badge. The 0–100 score exists for one purpose: to
-   make "did that edit help?" answerable at a glance.
+2. **Review** — 23 rules check skills, agents, instructions, server settings, and
+   permission rules. Issues are grouped by file, and each one names its fix.
+   The 0–100 score tracks those Review issues, not the separate Overview
+   findings or the context budget.
 3. **MCP servers** — every server from every tool in one table, with the
    overlap groups. Each group shows its confidence and the evidence behind it,
    because "same launch command" is certainty and "sounds like it covers the same
@@ -260,8 +298,9 @@ Then do these three things:
   instruction file that only matters for one language belongs behind an
   `applyTo` glob, so it's conditional instead of permanent.
 
-Then rerun the scan and watch the number move. That feedback loop is the whole
-point.
+Then rerun the scan and check the relevant screen. Fixing a Review issue can
+raise the score; removing a duplicate changes the inventory; moving instructions
+changes the context budget. An improvement doesn't have to change the grade.
 
 ## The safety design, because it reads your secrets
 
