@@ -4,16 +4,16 @@ heroImage: ../../assets/blog/managing-github-copilot-credit-consumption.webp
 heroAlt: "Editorial illustration representing AI coding credit management."
 description: "Plan GitHub Copilot credit consumption with real-user pilots, measure savings alongside costs, and use budgets and focused tasks to manage spending."
 pubDate: 2026-09-16
-updatedDate: 2026-09-20
+updatedDate: 2026-09-21
 tags: ["GitHub Copilot", "AI", "Agents"]
 draft: false
 ---
 
-A calculator can help you put an initial budget around GitHub Copilot credit consumption. Customers trying to forecast each person's agent usage are finding that a user count isn't enough. Pricing calculators are only as good as their inputs, and getting those inputs right before anyone uses the agent means trying to predict the future. Copilot Studio calculators are available too, but nothing gives you a more accurate picture than real-world usage data from your own users and agents.
+An agent, software that takes actions on your behalf, can read files, try a change, check it, and try again before answering one short request. Each pass can consume tokens, the pieces of text its artificial intelligence ("AI") model reads or generates. I use *Tokenomics* to mean managing token consumption across those agentic operations. The challenge is knowing how much work a request will trigger and keeping that work affordable without skipping necessary checks.
 
-An agent is software that takes actions on your behalf. A calculator doesn't know how each person will use it, or how the agent will use its skills (reusable instructions for particular tasks) and tools (capabilities such as reading files or searching for information). Consumption depends on those choices as well as how the agent is built and configured.
+A calculator can help you put an initial budget around GitHub Copilot credit consumption. Customers trying to forecast each person's agent usage are finding that a user count isn't enough. Pricing calculators are only as good as their inputs. Copilot Studio calculators are available too, but real-world usage data from your own users and agents gives you a firmer basis for a budget.
 
-One person gives a precise request; another works out what they need through several follow-ups. The artificial intelligence ("AI") harness the agent maker designed to process the request matters too: it coordinates the model and the agent's tools. A short request can involve reading files, trying a change, checking it, and correcting the result. Real usage gives you a firmer basis for estimating that mix.
+One person gives a precise request; another works out what they need through several follow-ups. Consumption also depends on the agent's skills (reusable instructions for particular tasks), tools (capabilities such as reading files or searching for information), and AI harness, the software that coordinates the model and those tools. A calculator can't predict that mix for each person.
 
 I'd plan a small pilot, a trial with real users and representative tasks, before treating an estimate as a working budget. Measure the savings, too. Return on investment ("ROI") can be substantial and arrive quickly when an agent saves time on frequent, valuable work. The pilot should establish both what that work costs and what people gain from it, including the time they still spend reviewing results.
 
@@ -23,9 +23,13 @@ Billing and usage guidance checked against GitHub Docs on September 18, 2026. Th
 
 ## Know what GitHub AI Credits measure
 
-GitHub's billing unit for AI model usage is [GitHub AI Credits](https://docs.github.com/en/copilot/concepts/billing-and-usage/organizations-and-enterprises/billing). These aren't the Copilot Credits used by [Copilot Studio agents](/blog/estimating-copilot-studio-agent-costs/); keep the two budgets separate.
+Microsoft uses tokens to measure what models process and generate. For example, [Azure OpenAI in Microsoft Foundry](https://learn.microsoft.com/en-us/azure/ai-foundry/openai/how-to/manage-costs) uses token-based pricing for pay-as-you-go language model usage. Input is what the model receives, including instructions, conversation history, and information returned by tools; output is what it generates. Rates depend on the model and deployment type, so counting tokens alone doesn't tell you the cost.
 
-Tokens are pieces of text the model processes or generates: a word, part of a word, or punctuation. Input is what the model receives; output is what it generates. Cached tokens come from information stored for reuse. Each has [model-specific prices](https://docs.github.com/en/copilot/reference/copilot-billing/models-and-pricing), so there isn't one fixed credit price per question.
+Don't confuse tokens with [Copilot Credits](https://learn.microsoft.com/en-us/microsoft-copilot-studio/billing-licensing), the consumption unit used for Copilot Studio and metered agent experiences in Microsoft 365 Copilot. Depending on the experience, those credits can cover [model tokens, tools, and the agent harness](https://learn.microsoft.com/en-us/microsoft-copilot-studio/agents-experience/billing-credit-overview). One Copilot Credit doesn't mean one token.
+
+GitHub Copilot has a separate billing unit: [GitHub AI Credits](https://docs.github.com/en/copilot/concepts/billing-and-usage/organizations-and-enterprises/billing). GitHub prices token usage by model and converts the cost into AI credits. These aren't the Copilot Credits used by [Copilot Studio agents](/blog/estimating-copilot-studio-agent-costs/); keep the two budgets separate.
+
+Cached tokens come from information stored for reuse. GitHub has [model-specific prices for input, output, and cached tokens](https://docs.github.com/en/copilot/reference/copilot-billing/models-and-pricing), so there isn't one fixed credit price per question.
 
 Output tokens cost more per token than input tokens in GitHub's current pricing tables, but the ratio varies by model. Asking for a short answer instead of a full report can help, though Copilot may still need to read files and check its work.
 
