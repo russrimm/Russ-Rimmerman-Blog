@@ -1,0 +1,357 @@
+---
+title: "Open Notebook: A Self-Hosted AI Research Notebook"
+description: "A field guide to Open Notebook, the open-source research notebook you host yourself: sources, chat, search, transformations, podcasts, the API, and MCP."
+pubDate: 2026-09-24
+tags: ["AI", "Open Source", "Azure", "MCP", "Security"]
+featured: false
+draft: true
+---
+
+import Explain from "@/components/Explain.astro";
+
+The "drop in your sources and talk to them" workflow is one of the most useful
+things AI has given researchers. Upload a stack of PDFs, a couple of web
+articles, and a recorded meeting, then ask questions and get answers that point
+back to the page they came from. The sticking point is usually not the workflow.
+It's the constraint around it: the content has to stay on infrastructure you
+control, or the model has to be the one your organization already approved.
+
+[Open Notebook](https://github.com/lfnovo/open-notebook) is built for that
+situation. It's an open-source research notebook, inspired by Google's
+NotebookLM, that you run yourself in Docker and point at whichever model
+provider you choose, including Azure OpenAI or a fully local model.
+
+This post walks through everything it does: how it organizes content, what it
+can ingest, how chat and search work, transformations, podcast generation, the
+REST API, the Model Context Protocol ("MCP") server, and the security settings
+you should change before anyone else can reach it.
+
+<Explain title="Last verified">
+  Written against Open Notebook v1.14.0, released July 2026, and the project
+  documentation as of September 2026. The project ships often, so menu labels
+  and provider lists may have moved by the time you read this.
+</Explain>
+
+## Open Notebook at a glance
+
+- **License:** MIT. Free to use, modify, and self-host.
+- **Stack:** A Python and FastAPI backend, a Next.js and React frontend, and
+  SurrealDB for storage.
+- **Runs as:** Two Docker containers, the app and the database. The web UI
+  listens on port `8502` and the REST API on `5055`.
+- **Cost:** The software is free. You pay whatever your model provider charges,
+  or nothing if you run models locally.
+- **Interface languages:** English, Portuguese, Chinese (Simplified and
+  Traditional), Japanese, Russian, and Bengali, with Spanish added in v1.8.5.
+
+## Notebooks, sources, and notes
+
+Everything in Open Notebook lives in one of three layers, and understanding them
+makes the rest of the app click.
+
+A **notebook** is a container for one research project. It has a name and a
+description, and that description becomes shared context for every AI
+interaction inside it. Notebooks are isolated from each other: a source in one
+never shows up in another.
+
+A **source** is one piece of raw material, such as a PDF, a URL, or an audio
+file. Sources don't change after you add them. If a document gets a new
+version, you add it as a new source. You can tag sources inside a notebook to
+group them ("background," "primary research").
+
+A **note** is output. You can write notes by hand, save a chat response as a
+note, or let a transformation generate one. Notes are searchable alongside your
+sources and can cite them, so you keep a trail from each insight back to its
+evidence.
+
+One boundary to plan around: a source belongs to exactly one notebook. If you
+need the same document in two projects, add it to both. Cross-notebook sources
+are on the project's roadmap.
+
+## Getting content in
+
+When you add a source, Open Notebook extracts the text, splits it into chunks,
+generates an embedding for each chunk, and stores the result so it's ready for
+search and chat.
+
+<Explain title="What's an embedding, and why do I care?">
+  An embedding is a list of numbers that represents the meaning of a piece of
+  text. Two passages about the same idea end up with similar numbers even if
+  they share no words. That's what lets Open Notebook find "the section about
+  access reviews" when the document actually says "periodic entitlement
+  certification." You need an embedding model configured for this to work,
+  separate from the chat model.
+</Explain>
+
+Here's what it accepts:
+
+- **Documents:** PDF, Word, PowerPoint, Excel, EPUB, Markdown, plain text, and
+  HTML. The docs list a practical ceiling of roughly 100 MB per file.
+- **Web content:** Articles and blog posts, online PDFs, public Reddit posts,
+  and YouTube videos, playlists, Shorts, and live URLs.
+- **Audio and video:** MP3, WAV, M4A, OGG, FLAC, MP4, MOV, MKV, WebM, and
+  others. These are transcribed automatically once you configure a
+  speech-to-text ("STT") model.
+- **Pasted text:** Available immediately, with no processing wait.
+
+Two extraction engines are opt-in to keep the default container small. **Docling**
+adds layout-aware extraction for tables and multi-column documents, plus optical
+character recognition ("OCR") for scanned PDFs and images. **Crawl4AI** renders
+JavaScript-heavy pages locally before extracting them. You turn each on with an
+environment variable (`OPEN_NOTEBOOK_ENABLE_DOCLING=true` or
+`OPEN_NOTEBOOK_ENABLE_CRAWL4AI=true`), then choose engines under **Settings →
+Content Processing**. As of v1.14.0, Docling also has optional toggles for
+extracting formulas and for describing images and charts with a vision model.
+
+Paywalled pages and password-protected PDFs can't be extracted. Save the content
+another way and upload it as a file or pasted text.
+
+## Bring your own model
+
+This is the feature that makes Open Notebook work in an enterprise setting.
+Model access goes through the project's Esperanto library, and the provider list
+is long: OpenAI, Anthropic, Google (Gemini and Vertex AI), Azure OpenAI,
+Mistral, Groq, DeepSeek, xAI, Cohere, Perplexity, OpenRouter, ElevenLabs,
+Deepgram, Voyage, and more. For local models there's Ollama, LM Studio, oMLX on
+Apple Silicon, and any OpenAI-compatible endpoint.
+
+Providers don't all do the same jobs. Open Notebook assigns models by role: a
+language model for chat and transformations, an embedding model for search, and
+optionally STT and text-to-speech ("TTS") models for transcription and podcasts.
+Azure OpenAI covers all four roles, so if your organization already has Azure
+OpenAI deployments, you can run the whole app against them. Anthropic, by
+contrast, provides language models only, so you'd pair it with a separate
+embedding provider.
+
+You add a provider in the UI by pasting its credential, testing the connection,
+and syncing the available models. **Auto-Assign Defaults** fills the required
+slots for you. Credentials are encrypted in the database with a key you supply,
+which comes up again in the setup section.
+
+A few details worth knowing:
+
+- Each transformation can use its own model, so you can run bulk summaries on a
+  small, inexpensive model and save a larger one for deep analysis. (This
+  setting was stored but ignored before v1.14.0, so upgrade if you rely on it.)
+- Reasoning models such as DeepSeek-R1 and Qwen3 are supported.
+- If you run a local model on a single GPU, set
+  `OPEN_NOTEBOOK_WORKER_MAX_TASKS=1` so parallel source processing doesn't
+  overload it. The default is 5.
+
+## Chat, with you deciding what the model sees
+
+Chat is where most of your time goes, and its most useful feature is context
+control. For each source in a notebook, you pick one of three levels:
+
+- **Full content:** The model sees the entire text. Best for close reading and
+  precise citations.
+- **Summary only:** The model sees a short generated summary. Good for
+  background material, at a fraction of the token cost.
+- **Not in context:** The model sees nothing. The source stays in the notebook
+  but is never sent to the provider.
+
+That third option is the one I'd point out to anyone handling sensitive
+material. You can keep a confidential document in the same notebook as your
+public research and guarantee it never leaves your server during a chat.
+
+You can change context mid-conversation without losing history, keep multiple
+chat sessions per notebook, and save any response as a note. Responses include
+citations back to your sources, and clicking one opens the source so you can
+check the claim yourself.
+
+### Ask: when you want one thorough answer
+
+Chat sends the sources you selected. **Ask** works differently: it uses
+Retrieval-Augmented Generation ("RAG"), meaning it searches across the notebook
+for the most relevant chunks, then answers from those. Use Ask for a single
+comprehensive question when you don't know which sources hold the answer. Use
+Chat when you want to go back and forth with a set of sources you've already
+chosen.
+
+## Search: keywords or meaning
+
+Open Notebook has two search modes, and each one finds things the other misses.
+
+- **Text search** matches keywords across source titles, source content, notes,
+  and generated insights. It's instant and the right choice for exact phrases,
+  names, error codes, and version numbers.
+- **Vector search** matches meaning using the embeddings. It finds related
+  content even when the wording differs, but it doesn't match titles, and it's
+  weaker on exact strings like `AADSTS50076`.
+
+The docs boil it down well: if you remember the exact words, use text search.
+If you remember the idea, use vector search.
+
+## Transformations: the same analysis across many sources
+
+A transformation is a saved prompt that runs against one or many sources and
+produces one note per source. It's the answer to "I have fifteen documents and
+I want the same summary of each."
+
+Built-in templates cover Summary, Key Concepts, Methodology, Takeaways, and
+Questions. You can also write your own. A template for vendor documentation, a
+meeting transcript, or a security assessment takes a few minutes to write and
+then runs across the whole batch in the background while you keep working.
+Output notes are named after the transformation and the source, tagged, and
+linked back to where they came from.
+
+The docs recommend testing a new template on one source before running it on
+twenty, and that advice holds up. A vague prompt produces vague notes at scale.
+
+## Podcasts from your research
+
+Open Notebook can turn a notebook into an audio episode, which is handy for
+catching up on a research pile during a commute. It gives you a lot of control
+over the result:
+
+- **One to four speakers**, each with a profile covering expertise,
+  personality, and an optional accent.
+- **Episode profiles** that set the topic, length, tone, format (monologue,
+  interview, debate, or panel), and audience. v1.14.0 added an optional **Max
+  output tokens** field to cap generation per step.
+- **Per-speaker voice models**, so each speaker can use a different TTS
+  provider if you want.
+
+Generation runs in the background in stages: outline, then transcript, then
+audio. A 30-minute episode can take 10 minutes or more. If a step fails, for
+example because of an expired key or a rate limit, the episode is marked
+**Failed** with the provider's error message and a **Retry** button.
+
+On privacy: with a cloud TTS provider, the provider receives the generated
+script, not your raw sources. With a local TTS option, nothing leaves the
+machine.
+
+## The REST API and MCP
+
+Everything you can do in the UI is also available through the REST API on port
+`5055`. Interactive documentation lives at `http://localhost:5055/docs`. That
+opens the door to scripting: adding sources from a pipeline, creating notebooks
+per project, or pulling notes into another tool.
+
+There's also an MCP server, which lets AI assistants such as GitHub Copilot in
+VS Code or Claude Desktop use your notebooks as a tool. Once it's connected, you
+can ask your assistant to search a notebook, list its sources, add a PDF, start
+a chat session, or save a note, without switching windows. The server exposes
+tools for notebooks, sources, notes, chat, search, models, and settings.
+
+The MCP server is maintained by a separate team, Epochal, rather than the core
+project. It's published to PyPI as `open-notebook-mcp` and listed in the
+official MCP Registry. For VS Code, add it to `.vscode/mcp.json`:
+
+```json
+{
+  "servers": {
+    "open-notebook": {
+      "command": "uvx",
+      "args": ["open-notebook-mcp"],
+      "env": {
+        "OPEN_NOTEBOOK_URL": "http://localhost:5055",
+        "OPEN_NOTEBOOK_PASSWORD": "${input:openNotebookPassword}"
+      }
+    }
+  },
+  "inputs": [
+    {
+      "id": "openNotebookPassword",
+      "type": "promptString",
+      "description": "Open Notebook password",
+      "password": true
+    }
+  ]
+}
+```
+
+The `inputs` block prompts for the password instead of storing it in a file
+you might commit. `uvx` comes with the `uv` Python tool, so install that first.
+
+## Standing it up
+
+You need Docker Desktop and about five minutes. I'd also follow the habit from
+[my vibe-coding toolkit post](/blog/favorite-ai-tools-for-vibe-coding/):
+download the file, read it, then run it.
+
+```powershell
+# 1. Download the official compose file into a new folder
+mkdir open-notebook; cd open-notebook
+iwr https://raw.githubusercontent.com/lfnovo/open-notebook/main/docker-compose.yml -OutFile docker-compose.yml
+
+# 2. Generate a strong encryption key (PowerShell 7)
+[Convert]::ToBase64String([System.Security.Cryptography.RandomNumberGenerator]::GetBytes(32))
+```
+
+Before starting anything, open `docker-compose.yml` and change three things:
+
+1. **Replace the encryption key.** Find
+   `OPEN_NOTEBOOK_ENCRYPTION_KEY=change-me-to-a-secret-string` and swap in the
+   value you generated. This key encrypts your provider credentials. There's no
+   default and no rotation yet, and if you lose or change it, the stored
+   credentials become unreadable. Keep it somewhere safe, apart from your data
+   backups.
+2. **Bind the app to localhost.** Change `"8502:8502"` and `"5055:5055"` to
+   `"127.0.0.1:8502:8502"` and `"127.0.0.1:5055:5055"` so only your machine can
+   reach them. The database port is already bound this way.
+3. **Set a password if anyone else can reach it.** Add
+   `OPEN_NOTEBOOK_PASSWORD` under the `open_notebook` environment. Without it,
+   authentication is off entirely.
+
+Then start it:
+
+```powershell
+docker compose up -d
+```
+
+Give it 15 to 20 seconds, open `http://localhost:8502`, add a provider under
+**Models**, and create your first notebook. For a fully offline setup, the
+project has a [local quick start](https://github.com/lfnovo/open-notebook/blob/main/docs/0-START-HERE/quick-start-local.md)
+that adds an Ollama container to the same compose file.
+
+Quick note if you're following older guides: the Ollama variable is
+`OLLAMA_API_BASE`. Some earlier examples used `OLLAMA_BASE_URL`, which the app
+doesn't read, and the v1.14.0 release notes call that out.
+
+## Security: what it covers and what you add
+
+The built-in protection is intentionally simple, and the documentation is clear
+about it. One term before the table: Cross-Origin Resource Sharing ("CORS")
+controls which websites can call your API from a browser. Here's what's built in
+and how to fill each gap.
+
+| Area               | Built in                                         | What to add for a shared deployment                          |
+| ------------------ | ------------------------------------------------ | ------------------------------------------------------------ |
+| Authentication     | One shared password, off until you set it        | An identity-aware proxy for single sign-on ("SSO")           |
+| Transport          | The password is sent as-is                       | HTTPS through a reverse proxy such as Caddy, nginx, or Traefik |
+| Users and roles    | None; everyone shares one login                  | Separate instances per team or audience                      |
+| Sessions           | Last until the browser closes                    | Timeout enforcement at the proxy                             |
+| Rate limiting, audit logs | Not included                              | Your API gateway or proxy logs                               |
+| CORS               | Any origin by default                            | Set `CORS_ORIGINS` to your frontend's exact URL              |
+
+That last row is easy to miss. The CORS default of `*` is convenient on a laptop, but on a server it means any site a signed-in user
+visits could send requests to your instance. The API logs a warning at startup
+until you set it.
+
+Two things the project handles well: API keys are encrypted at rest, and
+v1.14.0 added DNS pinning to outbound provider calls so a hostname can't be
+swapped to a cloud metadata endpoint after it's validated. Both passwords and
+encryption keys also accept Docker secrets through a `_FILE` suffix, such as
+`OPEN_NOTEBOOK_ENCRYPTION_KEY_FILE`, which beats pasting them into the compose
+file on a shared host.
+
+For a personal instance on localhost, the defaults plus a real encryption key
+are fine. For anything a team will use, put it behind a proxy with HTTPS and
+SSO before you load sensitive documents into it.
+
+## Where it fits
+
+Open Notebook is a strong fit when you want the notebook-style research workflow
+and need a say in where the data lives and which model reads it. It's MIT
+licensed, it runs anywhere Docker runs, and it treats local and enterprise
+providers as first-class options. The trade-off is that you own the operations,
+including updates, backups, and the security layer around it.
+
+If that trade-off works for you, start small: stand up the localhost instance,
+point it at one provider, and load a single notebook with a project you're
+actively working on. Try the three context levels in chat, run one
+transformation across your sources, and see whether it earns a permanent spot.
+The [documentation](https://github.com/lfnovo/open-notebook/tree/main/docs) is
+thorough when you're ready to go further, and I'd love to hear what you end up
+using it for.
