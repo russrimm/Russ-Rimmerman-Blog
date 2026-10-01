@@ -2,6 +2,7 @@
 title: "See Every CSP Violation in Your Power Platform Apps"
 description: "Power Platform sends CSP violation reports from code, model-driven, and canvas apps. Here's the small open source collector I built to triage them."
 pubDate: 2026-09-29
+updatedDate: 2026-10-01
 tags: ["Power Platform", "Power Apps", "Security", "Azure", "Entra", "Open Source"]
 draft: false
 featured: false
@@ -12,6 +13,8 @@ import Screenshot from "@/components/Screenshot.astro";
 import dashboard from "@/assets/blog/csp-reporting-server/dashboard-light.png";
 import inspector from "@/assets/blog/csp-reporting-server/dashboard-dark-inspector.png";
 import testPage from "@/assets/blog/csp-reporting-server/test-page.png";
+import ppacTabs from "@/assets/blog/csp-reporting-server/ppac-csp-tabs.png";
+import ppacReporting from "@/assets/blog/csp-reporting-server/ppac-csp-reporting.png";
 
 Microsoft's guidance for rolling out Content Security Policy ("CSP") in Power
 Platform comes down to three steps: enforce the policy in a dev or test
@@ -58,7 +61,7 @@ see in the reports:
   list, the frame is blocked.
 
 Reporting is configured in two places. Model-driven and canvas apps share one
-reporting endpoint. Code apps have their own, on the **App** tab. Either way,
+reporting endpoint. Code apps have their own, on a separate tab. Either way,
 reports are sent whether or not enforcement is on.
 
 <Explain title="Enforce vs. report-only">
@@ -166,32 +169,92 @@ register the sign-in redirect URI, and zip-deploy the code. The
 [README](https://github.com/russrimm/csp-reporting-server#deploy-to-azure-optional)
 has the exact commands.
 
-## Point Power Platform at it
+## Configure CSP in the Power Platform admin center
+
+With the collector running, the rest happens in the Power Platform admin center.
+You need to be an administrator of the environment, and it's worth doing this in
+a dev or test environment before production.
 
 The collector tells apps apart by the last segment of the URL path, so give each
 reporting setting its own name. I use the environment name plus the app type.
 
-In the [Power Platform admin center](https://admin.powerplatform.microsoft.com),
-go to **Manage** > **Environments**, select the environment, then **Settings** >
-**Product** > **Privacy + Security**.
+### Open the CSP settings
 
-**Model-driven and canvas apps.** Turn on **Enable reporting** and set the
-endpoint:
+1. Sign in to the
+   [Power Platform admin center](https://admin.powerplatform.microsoft.com).
+2. In the navigation pane, select **Manage**, then **Environments**.
+3. Select the environment, then select **Settings** in the command bar.
+4. Expand **Product** and select **Privacy + Security**.
+5. Scroll to **Content security policy**. There are three tabs: **App
+   (model-driven)**, **App (canvas)**, and **App**, which is the one for code
+   apps.
 
-```text
-https://<your-host>/csp-report/<env-name>-mda-canvas
-```
+<Screenshot
+  src={ppacTabs}
+  alt="Content security policy section of the Power Platform admin center with three tabs: App (model-driven), App (canvas), and App. The App tab is selected, showing Enable reporting off, Enforce content security policy on, and Use default frame-ancestors on."
+  caption="The Content security policy section, with the App tab for code apps selected. Image: Microsoft Learn, CC BY 4.0."
+/>
 
-Both app types share that URL, so they show up under one app name in the
-dashboard. The **Page** column tells you which app raised each report. Leave
-production enforcement off for now. Reports still arrive in report-only mode.
+### Turn on reporting for model-driven and canvas apps
 
-**Code apps.** Under **Content security policy**, select the **App** tab, turn
-on **Enable reporting**, and set:
+1. Select the **App (model-driven)** tab.
+2. Turn on **Enable reporting** and enter your collector's endpoint in
+   **Reporting endpoint**:
 
-```text
-https://<your-host>/reports/<env-name>-code-apps
-```
+   ```text
+   https://<your-host>/csp-report/<env-name>-mda-canvas
+   ```
+
+3. Decide on **Enforce content security policy**. In dev or test, turn it on so
+   you see real blocks. In production, leave it off for now. The apps then run
+   in report-only mode and reports still arrive.
+4. Select the **App (canvas)** tab and set **Enforce content security policy**
+   the same way. Enforcement is separate for each app type.
+5. Save your changes.
+
+<Screenshot
+  src={ppacReporting}
+  alt="Enable reporting toggle turned on, with a Reporting endpoint text box below it containing a placeholder URL."
+  caption="Enable reporting turned on, with the collector's URL in Reporting endpoint. Image: Microsoft Learn, CC BY 4.0."
+/>
+
+Model-driven and canvas apps share one reporting endpoint, so they show up under
+one app name in the dashboard. The **Page** column tells you which app raised
+each report.
+
+### Turn on reporting for code apps
+
+1. Select the **App** tab.
+2. Turn on **Enable reporting** and enter:
+
+   ```text
+   https://<your-host>/reports/<env-name>-code-apps
+   ```
+
+3. Leave **Enforce content security policy** on. That's the default for code
+   apps, and the reports will show you what the policy is already blocking.
+4. Save your changes.
+
+Now open an app, click around, and watch the dashboard. `report-uri` reports
+show up right away. Chromium batches `report-to` deliveries, so give those up to
+a minute.
+
+### Add sources when the reports call for it
+
+**Configure directives** is where a report turns into a fix. Turn off the
+**Use default** toggle for a directive (for example, **Use default
+frame-ancestors**), then add the source a report showed you needs to be
+allowed. Custom values are appended to the default, except where the
+default is `'none'`, in which case they replace it. Turning off a default and
+saving an empty list removes that directive from the policy entirely, so don't
+leave one empty by accident.
+
+For model-driven and canvas apps, `frame-ancestors` is the directive you'll
+customize most often. That's where you'd add hosts like
+`https://teams.microsoft.com` or `https://app.powerbi.com` when an app is
+embedded there.
+
+### Managing many environments
 
 If you manage a lot of environments, both settings can be scripted. Code apps
 use the `PowerApps_CSPReportingEndpoint` setting through the Power Platform API,
@@ -201,10 +264,6 @@ organization setting. Microsoft Learn covers both:
 and
 [CSP for code apps](https://learn.microsoft.com/power-apps/developer/code-apps/how-to/content-security-policy).
 
-Open an app, click around, and watch the dashboard. `report-uri` reports show up
-right away. Chromium batches `report-to` deliveries, so give those up to a
-minute.
-
 ## Turning reports into decisions
 
 Here's the loop I use:
@@ -212,7 +271,9 @@ Here's the loop I use:
 1. **Filter to report-only.** That's the list of things that would break if you
    enforced today.
 2. **Work down the Blocked list.** Each unique blocked URL is one decision:
-   allow the source, or fix or remove whatever is loading it.
+   allow the source in
+   [Configure directives](#add-sources-when-the-reports-call-for-it), or fix or
+   remove whatever is loading it.
 3. **Treat `inline` differently.** When the Blocked column says `inline`, it's an
    inline script or style, not a domain. Adding a source won't cover it. The fix
    is usually moving that code into a file.
