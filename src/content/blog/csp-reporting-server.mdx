@@ -103,7 +103,8 @@ in a few minutes.
   `application/reports+json`) and legacy `report-uri`
   (`application/csp-report`) and normalizes them into one shape. Learn's
   model-driven and canvas examples use `report-uri`. You don't need to know
-  which one your app sends, because both endpoint paths accept either format.
+  which one your app sends, because the `/reporting` endpoint accepts either
+  format.
 - **Triage first.** Reports are grouped by directive, blocked URL, and app, with
   one-click filters, search, and an enforced/report-only toggle. Filters live in
   the URL, so you can share a view with whoever owns the fix.
@@ -162,8 +163,8 @@ an option for a Power Platform environment.
 The repo includes Bicep for Azure App Service (Linux, Node 22, F1 Free tier),
 plus Log Analytics and Application Insights. App Service Authentication with
 Microsoft Entra ID protects the dashboard, `/api/*`, and `/test`. The ingestion
-paths (`/reports`, `/csp-report`) and `/health` stay anonymous, because a
-browser can't sign in to deliver a report.
+path (`/reporting`) and `/health` stay anonymous, because a browser can't sign
+in to deliver a report.
 
 Deployment is five steps: pick an environment name, create a single-tenant Entra
 app registration for sign-in, deploy the Bicep with `az deployment sub create`,
@@ -177,8 +178,12 @@ With the collector running, the rest happens in the Power Platform admin center.
 You need to be an administrator of the environment, and it's worth doing this in
 a dev or test environment before production.
 
-The collector tells apps apart by the last segment of the URL path, so give each
-reporting setting its own name. I use the environment name plus the app type.
+Every reporting endpoint URL starts with `https://<your-host>/reporting/`. What
+comes after that is up to you. Use a name that tells you where the reports are
+coming from, such as `https://contoso.com/reporting/my-app`. The collector shows
+that name as the app in the dashboard, so give each reporting setting its own
+name. Keep it to one path segment, with no extra slashes. I use the environment
+name plus the app type.
 
 ### Open the CSP settings
 
@@ -204,7 +209,7 @@ reporting setting its own name. I use the environment name plus the app type.
    **Reporting endpoint**:
 
    ```text
-   https://<your-host>/csp-report/<env-name>-mda-canvas
+   https://<your-host>/reporting/<env-name>-mda-canvas
    ```
 
    If you also use code apps in this environment, turn on **Enable reporting**
@@ -234,7 +239,7 @@ each report.
 2. Turn on **Enable reporting** and enter:
 
    ```text
-   https://<your-host>/reports/<env-name>-code-apps
+   https://<your-host>/reporting/<env-name>-code-apps
    ```
 
 3. Leave **Enforce content security policy** on. That's the default for code
