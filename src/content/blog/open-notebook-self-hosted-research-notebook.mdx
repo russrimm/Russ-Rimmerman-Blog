@@ -1,9 +1,10 @@
 ---
-title: "Open Notebook: A Self-Hosted AI Research Notebook"
+title: "InfiniAIBook: A Self-Hosted AI Research Notebook"
 heroImage: ../../assets/blog/open-notebook-self-hosted-research-notebook.webp
 heroAlt: "Editorial illustration representing Self-Hosted AI Research Notebook."
-description: "A field guide to Open Notebook, the open-source research notebook you host yourself: sources, chat, search, transformations, podcasts, the API, and MCP."
+description: "A field guide to InfiniAIBook, the AI research notebook you host yourself: sources, chat, search, transformations, podcasts, the API, and MCP."
 pubDate: 2026-09-24
+updatedDate: 2026-10-01
 tags: ["AI", "Open Source", "Azure", "MCP", "Security"]
 featured: false
 draft: false
@@ -18,10 +19,9 @@ back to the page they came from. The sticking point is usually not the workflow.
 It's the constraint around it: the content has to stay on infrastructure you
 control, or the model has to be the one your organization already approved.
 
-[Open Notebook](https://github.com/lfnovo/open-notebook) is built for that
-situation. It's an open-source research notebook, inspired by Google's
-NotebookLM, that you run yourself in Docker and point at whichever model
-provider you choose, including Azure OpenAI or a fully local model.
+InfiniAIBook is built for that situation. It's a research notebook that you run
+yourself in Docker and point at whichever model provider you choose, including
+Azure OpenAI or a fully local model.
 
 This post walks through everything it does: how it organizes content, what it
 can ingest, how chat and search work, transformations, podcast generation, the
@@ -29,26 +29,25 @@ REST API, the Model Context Protocol ("MCP") server, and the security settings
 you should change before anyone else can reach it.
 
 <Explain title="Last verified">
-  Written against Open Notebook v1.14.0, released July 2026, and the project
-  documentation as of September 2026. The project ships often, so menu labels
-  and provider lists may have moved by the time you read this.
+  Written in September 2026. Menu labels and provider lists may have moved by
+  the time you read this, and the InfiniAIBook README is the source of truth for
+  configuration settings.
 </Explain>
 
-## Open Notebook at a glance
+## InfiniAIBook at a glance
 
-- **License:** MIT. Free to use, modify, and self-host.
 - **Stack:** A Python and FastAPI backend, a Next.js and React frontend, and
   SurrealDB for storage.
 - **Runs as:** Two Docker containers, the app and the database. The web UI
   listens on port `8502` and the REST API on `5055`.
-- **Cost:** The software is free. You pay whatever your model provider charges,
-  or nothing if you run models locally.
-- **Interface languages:** English, Portuguese, Chinese (Simplified and
-  Traditional), Japanese, Russian, and Bengali, with Spanish added in v1.8.5.
+- **Cost:** You pay whatever your model provider charges, or nothing if you run
+  models locally.
+- **Interface languages:** English, Spanish, Portuguese, Chinese (Simplified and
+  Traditional), Japanese, Russian, and Bengali.
 
 ## Notebooks, sources, and notes
 
-Everything in Open Notebook lives in one of three layers, and understanding them
+Everything in InfiniAIBook lives in one of three layers, and understanding them
 makes the rest of the app click.
 
 A **notebook** is a container for one research project. It has a name and a
@@ -67,19 +66,18 @@ sources and can cite them, so you keep a trail from each insight back to its
 evidence.
 
 One boundary to plan around: a source belongs to exactly one notebook. If you
-need the same document in two projects, add it to both. Cross-notebook sources
-are on the project's roadmap.
+need the same document in two projects, add it to both.
 
 ## Getting content in
 
-When you add a source, Open Notebook extracts the text, splits it into chunks,
+When you add a source, InfiniAIBook extracts the text, splits it into chunks,
 generates an embedding for each chunk, and stores the result so it's ready for
 search and chat.
 
 <Explain title="What's an embedding, and why do I care?">
   An embedding is a list of numbers that represents the meaning of a piece of
   text. Two passages about the same idea end up with similar numbers even if
-  they share no words. That's what lets Open Notebook find "the section about
+  they share no words. That's what lets InfiniAIBook find "the section about
   access reviews" when the document actually says "periodic entitlement
   certification." You need an embedding model configured for this to work,
   separate from the chat model.
@@ -99,10 +97,9 @@ Here's what it accepts:
 Two extraction engines are opt-in to keep the default container small. **Docling**
 adds layout-aware extraction for tables and multi-column documents, plus optical
 character recognition ("OCR") for scanned PDFs and images. **Crawl4AI** renders
-JavaScript-heavy pages locally before extracting them. You turn each on with an
-environment variable (`OPEN_NOTEBOOK_ENABLE_DOCLING=true` or
-`OPEN_NOTEBOOK_ENABLE_CRAWL4AI=true`), then choose engines under **Settings →
-Content Processing**. As of v1.14.0, Docling also has optional toggles for
+JavaScript-heavy pages locally before extracting them. You turn each on in the
+container configuration (the README lists the settings), then choose engines
+under **Settings → Content Processing**. Docling also has optional toggles for
 extracting formulas and for describing images and charts with a vision model.
 
 Paywalled pages and password-protected PDFs can't be extracted. Save the content
@@ -110,14 +107,13 @@ another way and upload it as a file or pasted text.
 
 ## Bring your own model
 
-This is the feature that makes Open Notebook work in an enterprise setting.
-Model access goes through the project's Esperanto library, and the provider list
-is long: OpenAI, Anthropic, Google (Gemini and Vertex AI), Azure OpenAI,
+This is the feature that makes InfiniAIBook work in an enterprise setting. The
+provider list is long: OpenAI, Anthropic, Google (Gemini and Vertex AI), Azure OpenAI,
 Mistral, Groq, DeepSeek, xAI, Cohere, Perplexity, OpenRouter, ElevenLabs,
 Deepgram, Voyage, and more. For local models there's Ollama, LM Studio, oMLX on
 Apple Silicon, and any OpenAI-compatible endpoint.
 
-Providers don't all do the same jobs. Open Notebook assigns models by role: a
+Providers don't all do the same jobs. InfiniAIBook assigns models by role: a
 language model for chat and transformations, an embedding model for search, and
 optionally STT and text-to-speech ("TTS") models for transcription and podcasts.
 Azure OpenAI covers all four roles, so if your organization already has Azure
@@ -133,12 +129,11 @@ which comes up again in the setup section.
 A few details worth knowing:
 
 - Each transformation can use its own model, so you can run bulk summaries on a
-  small, inexpensive model and save a larger one for deep analysis. (This
-  setting was stored but ignored before v1.14.0, so upgrade if you rely on it.)
+  small, inexpensive model and save a larger one for deep analysis.
 - Reasoning models such as DeepSeek-R1 and Qwen3 are supported.
-- If you run a local model on a single GPU, set
-  `OPEN_NOTEBOOK_WORKER_MAX_TASKS=1` so parallel source processing doesn't
-  overload it. The default is 5.
+- If you run a local model on a single GPU, lower the worker's maximum
+  concurrent tasks from the default of 5 to 1 so parallel source processing
+  doesn't overload it.
 
 ## Chat, with you deciding what the model sees
 
@@ -172,7 +167,7 @@ chosen.
 
 ## Search: keywords or meaning
 
-Open Notebook has two search modes, and each one finds things the other misses.
+InfiniAIBook has two search modes, and each one finds things the other misses.
 
 - **Text search** matches keywords across source titles, source content, notes,
   and generated insights. It's instant and the right choice for exact phrases,
@@ -202,15 +197,15 @@ twenty, and that advice holds up. A vague prompt produces vague notes at scale.
 
 ## Podcasts from your research
 
-Open Notebook can turn a notebook into an audio episode, which is handy for
+InfiniAIBook can turn a notebook into an audio episode, which is handy for
 catching up on a research pile during a commute. It gives you a lot of control
 over the result:
 
 - **One to four speakers**, each with a profile covering expertise,
   personality, and an optional accent.
 - **Episode profiles** that set the topic, length, tone, format (monologue,
-  interview, debate, or panel), and audience. v1.14.0 added an optional **Max
-  output tokens** field to cap generation per step.
+  interview, debate, or panel), and audience. An optional **Max output
+  tokens** field caps generation per step.
 - **Per-speaker voice models**, so each speaker can use a different TTS
   provider if you want.
 
@@ -236,35 +231,9 @@ can ask your assistant to search a notebook, list its sources, add a PDF, start
 a chat session, or save a note, without switching windows. The server exposes
 tools for notebooks, sources, notes, chat, search, models, and settings.
 
-The MCP server is maintained by a separate team, Epochal, rather than the core
-project. It's published to PyPI as `open-notebook-mcp` and listed in the
-official MCP Registry. For VS Code, add it to `.vscode/mcp.json`:
-
-```json
-{
-  "servers": {
-    "open-notebook": {
-      "command": "uvx",
-      "args": ["open-notebook-mcp"],
-      "env": {
-        "OPEN_NOTEBOOK_URL": "http://localhost:5055",
-        "OPEN_NOTEBOOK_PASSWORD": "${input:openNotebookPassword}"
-      }
-    }
-  },
-  "inputs": [
-    {
-      "id": "openNotebookPassword",
-      "type": "promptString",
-      "description": "Open Notebook password",
-      "password": true
-    }
-  ]
-}
-```
-
-The `inputs` block prompts for the password instead of storing it in a file
-you might commit. `uvx` comes with the `uv` Python tool, so install that first.
+The README has the exact VS Code configuration. One tip when you set it up:
+have VS Code prompt for the password rather than typing it into the
+configuration file, so it never ends up in a file you might commit.
 
 ## Standing it up
 
@@ -272,29 +241,26 @@ You need Docker Desktop and about five minutes. I'd also follow the habit from
 [my vibe-coding toolkit post](/blog/favorite-ai-tools-for-vibe-coding/):
 download the file, read it, then run it.
 
-```powershell
-# 1. Download the official compose file into a new folder
-mkdir open-notebook; cd open-notebook
-iwr https://raw.githubusercontent.com/lfnovo/open-notebook/main/docker-compose.yml -OutFile docker-compose.yml
+Start by putting the `docker-compose.yml` file from the InfiniAIBook repository
+in a new folder. Then generate a strong encryption key:
 
-# 2. Generate a strong encryption key (PowerShell 7)
+```powershell
+# Generate a strong encryption key (PowerShell 7)
 [Convert]::ToBase64String([System.Security.Cryptography.RandomNumberGenerator]::GetBytes(32))
 ```
 
-Before starting anything, open `docker-compose.yml` and change three things:
+Before starting anything, open `docker-compose.yml` and change three things.
+The README names the exact settings.
 
-1. **Replace the encryption key.** Find
-   `OPEN_NOTEBOOK_ENCRYPTION_KEY=change-me-to-a-secret-string` and swap in the
-   value you generated. This key encrypts your provider credentials. There's no
-   default and no rotation yet, and if you lose or change it, the stored
-   credentials become unreadable. Keep it somewhere safe, apart from your data
-   backups.
+1. **Replace the encryption key.** Swap the placeholder value for the key you
+   generated. This key encrypts your provider credentials. There's no default
+   and no rotation yet, and if you lose or change it, the stored credentials
+   become unreadable. Keep it somewhere safe, apart from your data backups.
 2. **Bind the app to localhost.** Change `"8502:8502"` and `"5055:5055"` to
    `"127.0.0.1:8502:8502"` and `"127.0.0.1:5055:5055"` so only your machine can
    reach them. The database port is already bound this way.
-3. **Set a password if anyone else can reach it.** Add
-   `OPEN_NOTEBOOK_PASSWORD` under the `open_notebook` environment. Without it,
-   authentication is off entirely.
+3. **Set a password if anyone else can reach it.** Without one, authentication
+   is off entirely.
 
 Then start it:
 
@@ -304,17 +270,12 @@ docker compose up -d
 
 Give it 15 to 20 seconds, open `http://localhost:8502`, add a provider under
 **Models**, and create your first notebook. For a fully offline setup, the
-project has a [local quick start](https://github.com/lfnovo/open-notebook/blob/main/docs/0-START-HERE/quick-start-local.md)
-that adds an Ollama container to the same compose file.
-
-Quick note if you're following older guides: the Ollama variable is
-`OLLAMA_API_BASE`. Some earlier examples used `OLLAMA_BASE_URL`, which the app
-doesn't read, and the v1.14.0 release notes call that out.
+README covers adding an Ollama container to the same compose file.
 
 ## Security: what it covers and what you add
 
-The built-in protection is intentionally simple, and the documentation is clear
-about it. One term before the table: Cross-Origin Resource Sharing ("CORS")
+The built-in protection is intentionally simple, and the README is clear about
+it. One term before the table: Cross-Origin Resource Sharing ("CORS")
 controls which websites can call your API from a browser. Here's what's built in
 and how to fill each gap.
 
@@ -325,18 +286,17 @@ and how to fill each gap.
 | Users and roles    | None; everyone shares one login                  | Separate instances per team or audience                      |
 | Sessions           | Last until the browser closes                    | Timeout enforcement at the proxy                             |
 | Rate limiting, audit logs | Not included                              | Your API gateway or proxy logs                               |
-| CORS               | Any origin by default                            | Set `CORS_ORIGINS` to your frontend's exact URL              |
+| CORS               | Any origin by default                            | Restrict allowed origins to your frontend's exact URL        |
 
 That last row is easy to miss. The CORS default of `*` is convenient on a laptop, but on a server it means any site a signed-in user
 visits could send requests to your instance. The API logs a warning at startup
-until you set it.
+until you restrict it.
 
-Two things the project handles well: API keys are encrypted at rest, and
-v1.14.0 added DNS pinning to outbound provider calls so a hostname can't be
-swapped to a cloud metadata endpoint after it's validated. Both passwords and
-encryption keys also accept Docker secrets through a `_FILE` suffix, such as
-`OPEN_NOTEBOOK_ENCRYPTION_KEY_FILE`, which beats pasting them into the compose
-file on a shared host.
+Two things InfiniAIBook handles well: API keys are encrypted at rest, and
+outbound provider calls use DNS pinning so a hostname can't be swapped to a
+cloud metadata endpoint after it's validated. Passwords and encryption keys
+also accept Docker secrets (the README shows how), which beats pasting them
+into the compose file on a shared host.
 
 For a personal instance on localhost, the defaults plus a real encryption key
 are fine. For anything a team will use, put it behind a proxy with HTTPS and
@@ -344,16 +304,16 @@ SSO before you load sensitive documents into it.
 
 ## Where it fits
 
-Open Notebook is a strong fit when you want the notebook-style research workflow
-and need a say in where the data lives and which model reads it. It's MIT
-licensed, it runs anywhere Docker runs, and it treats local and enterprise
-providers as first-class options. The trade-off is that you own the operations,
+InfiniAIBook is a strong fit when you want the notebook-style research workflow
+and need a say in where the data lives and which model reads it. It runs
+anywhere Docker runs, and it treats local and enterprise providers as
+first-class options. The trade-off is that you own the operations,
 including updates, backups, and the security layer around it.
 
 If that trade-off works for you, start small: stand up the localhost instance,
 point it at one provider, and load a single notebook with a project you're
 actively working on. Try the three context levels in chat, run one
 transformation across your sources, and see whether it earns a permanent spot.
-The [documentation](https://github.com/lfnovo/open-notebook/tree/main/docs) is
+The README is
 thorough when you're ready to go further, and I'd love to hear what you end up
 using it for.
