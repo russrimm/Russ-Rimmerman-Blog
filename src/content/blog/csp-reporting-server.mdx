@@ -207,6 +207,10 @@ reporting setting its own name. I use the environment name plus the app type.
    https://<your-host>/csp-report/<env-name>-mda-canvas
    ```
 
+   If you also use code apps in this environment, turn on **Enable reporting**
+   on the **App** tab as well. It's a separate setting, covered in
+   [Turn on reporting for code apps](#turn-on-reporting-for-code-apps).
+
 3. Decide on **Enforce content security policy**. In dev or test, turn it on so
    you see real blocks. In production, leave it off for now. The apps then run
    in report-only mode and reports still arrive.
