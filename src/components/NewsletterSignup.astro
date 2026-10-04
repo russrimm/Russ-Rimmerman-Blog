@@ -6,11 +6,14 @@
 // "not available yet" message rather than silently dropping the signup.
 interface Props {
   compact?: boolean;
+  /** Anchor target so other CTAs (e.g. the home hero) can link straight here. */
+  id?: string;
 }
-const { compact = false } = Astro.props;
+const { compact = false, id } = Astro.props;
 ---
 
 <div
+  id={id}
   data-newsletter-container
   class:list={[
     "border-ink-200 from-azure-50 dark:border-ink-800 dark:from-ink-900 dark:to-ink-950 rounded-2xl border bg-gradient-to-br to-white p-6 sm:p-8",
