@@ -140,6 +140,8 @@ A committed-restrained hybrid: the Azure blue carries brand identity on interact
 **Display & Body Font:** Inter (with ui-sans-serif, system-ui fallback stack)
 **Mono Font:** JetBrains Mono (with ui-monospace, SFMono-Regular, Cascadia Code fallback)
 
+No webfont is loaded today. Visitors who don't have Inter or JetBrains Mono installed get the system stack (Segoe UI and Cascadia Code on Windows, SF Pro and SF Mono on Apple devices). Treat the stack, not Inter specifically, as what most readers see.
+
 **Character:** Technical confidence meets reading comfort. Inter's clean geometry signals engineering precision, while its generous x-height and open apertures keep long-form content approachable. JetBrains Mono for code blocks reinforces the practitioner identity without decorating.
 
 ### Hierarchy
@@ -149,7 +151,7 @@ A committed-restrained hybrid: the Azure blue carries brand identity on interact
 - **Title** (600, 1.125rem, line-height 1.3): Sidebar section headings, widget titles.
 - **Body** (400, 1rem, line-height 1.65): Article content. Max line-length capped at 65–75ch via prose containers.
 - **Label** (600, 0.875rem, line-height 1.4): Navigation items, tag text, metadata. Uppercase used sparingly and only for small functional labels (e.g., "Featured" badge, "Popular topics").
-- **Mono** (400, 0.875rem, line-height 1.6): Code blocks, the hero animation, and any technical inline references.
+- **Mono** (400, 0.875rem, line-height 1.6): Code blocks and any technical inline references.
 
 ### Named Rules
 
@@ -161,7 +163,7 @@ A hybrid approach: tonal layering is the primary depth mechanism (cards use back
 
 ### Shadow Vocabulary
 
-- **Hover lift** (`0 20px 45px -20px oklch(0.45 0.12 240 / 0.45)` — azure-tinted): Applied to cards and the hero panel on hover. Lifts the element optically; the azure tint ties the shadow to the brand.
+- **Hover lift** (`0 20px 45px -20px oklch(0.45 0.12 240 / 0.45)` — azure-tinted): Applied to cards and the featured post on hover. Lifts the element optically; the azure tint ties the shadow to the brand.
 - **Card hover** (`shadow-lg shadow-azure-500/5`): Subtle brand-colored glow that appears on card hover. Barely visible but felt.
 - **Backdrop blur** (`backdrop-blur-md`): Header and sticky elements use frosted glass, not hard backgrounds. Signals layering without hard edges.
 
@@ -209,9 +211,13 @@ Cards have presence — they're distinct surfaces, not just grouped content.
 - **Brand mark:** "RR" monogram in a gradient (azure-600 → teal-500) rounded square. Compact, recognizable.
 - **Mobile:** Full-width slide-down panel with larger tap targets (py-2, text-base).
 
-### Hero Panel (Signature Component)
+### Home Hero
 
-The animated "vibe coding" panel is the site's signature visual — a living demonstration of the practitioner identity. Conic-gradient rotating border, floating animation, typing simulation, and streaming code lines. Fully disabled under `prefers-reduced-motion`. Dark/light aware.
+Text-led and static. A balanced display headline with one azure-accented phrase, a short byline paragraph, then two actions: "Read the latest" (primary, links to `/blog/`) and "Get new posts by email" (secondary, jumps to the `#newsletter` signup further down the home page). Up to four topic chips follow. On large screens a 15rem portrait column sits to the right, with a short caption (name, "30+ years in IT, from the U.S. Air Force to Microsoft", and an About link) so the hero carries a real human presence instead of empty space; below `lg` it's hidden because the header already shows the headshot. It sits on the subtle `bg-grid` with a single blurred azure glow and has no animation.
+
+### Home Page Order
+
+Hero → featured post → latest posts → full-width newsletter signup → "Explore topics" and "Browse by tag" side by side. The newsletter is the primary conversion, so it sits directly after the reading, never beside or below the browsing tools.
 
 ## 6. Do's and Don'ts
 

@@ -60,7 +60,7 @@ export const TOPICS: TopicDef[] = [
       "Building purpose-built agents and custom copilots in Copilot Studio.",
     intro:
       "Hands-on guidance for Copilot Studio — designing, building, and shipping purpose-built agents that solve real business problems.",
-    icon: "chip",
+    icon: "chat",
     tags: ["Copilot Studio", "ServiceNow"],
     focus: [
       "Building agents in Copilot Studio",
@@ -90,7 +90,7 @@ export const TOPICS: TopicDef[] = [
       "Architecture, identity, and governance patterns across the Azure platform.",
     intro:
       "Field-tested architecture, identity, and governance guidance for the Azure platform — the patterns and trade-offs behind solutions that hold up in production.",
-    icon: "shield",
+    icon: "cloud",
     tags: ["Azure", "Static Web Apps"],
     focus: [
       "Cloud architecture and design patterns",
