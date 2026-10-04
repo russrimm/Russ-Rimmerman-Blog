@@ -479,7 +479,7 @@ async function deriveBrief({ title, description, body }, cfg) {
 }
 
 // --- Headshot reference ------------------------------------------------------
-// Load the author headshot once and normalise it to a PNG buffer suitable as a
+// Load the author headshot once and normalize it to a PNG buffer suitable as a
 // reference image for the image-edit endpoint. Returns null (with a warning) if
 // the file is missing so generation can still proceed without a likeness.
 let cachedHeadshot;

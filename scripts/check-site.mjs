@@ -81,11 +81,7 @@ function plainText(contents) {
     .trim();
 }
 
-function hasAccessibleName(
-  attributes,
-  contents = "",
-  labelledText = new Map()
-) {
+function hasAccessibleName(attributes, contents = "", labeledText = new Map()) {
   if (
     /\baria-label="[^"]+"/i.test(attributes) ||
     /\btitle="[^"]+"/i.test(attributes)
@@ -93,11 +89,11 @@ function hasAccessibleName(
     return true;
   }
 
-  const labelledBy = attributes.match(/\baria-labelledby="([^"]+)"/i)?.[1];
+  const labeledBy = attributes.match(/\baria-labelledby="([^"]+)"/i)?.[1];
   if (
-    labelledBy
+    labeledBy
       ?.split(/\s+/)
-      .some(id => (labelledText.get(id) ?? "").trim().length > 0)
+      .some(id => (labeledText.get(id) ?? "").trim().length > 0)
   ) {
     return true;
   }
@@ -315,11 +311,11 @@ for (const file of htmlFiles) {
   }
 
   const ids = [...markup.matchAll(/\bid="([^"]+)"/gi)].map(match => match[1]);
-  const labelledText = new Map();
+  const labeledText = new Map();
   for (const match of markup.matchAll(
     /<([a-z][\w-]*)\b[^>]*\bid="([^"]+)"[^>]*>([\s\S]*?)<\/\1>/gi
   )) {
-    labelledText.set(match[2], plainText(match[3]));
+    labeledText.set(match[2], plainText(match[3]));
   }
   const duplicateIds = ids.filter((id, index) => ids.indexOf(id) !== index);
   for (const id of new Set(duplicateIds)) {
@@ -448,7 +444,7 @@ for (const file of htmlFiles) {
       if (
         anchorTag &&
         !/\baria-hidden="true"/i.test(anchorTag) &&
-        !hasAccessibleName(anchorTag, "", labelledText)
+        !hasAccessibleName(anchorTag, "", labeledText)
       ) {
         fail(`${route}: linked decorative image has no accessible link name`);
       }
@@ -472,7 +468,7 @@ for (const file of htmlFiles) {
     if (/\btype="hidden"/i.test(attributes)) continue;
     const id = attributes.match(/\bid="([^"]+)"/i)?.[1];
     if (
-      !hasAccessibleName(attributes, "", labelledText) &&
+      !hasAccessibleName(attributes, "", labeledText) &&
       (!id || !labels.has(id))
     ) {
       fail(`${route}: ${match[1].toLowerCase()} control is missing a label`);
@@ -484,7 +480,7 @@ for (const file of htmlFiles) {
   )) {
     const [, element, attributes, contents] = match;
     if (/\baria-hidden="true"/i.test(attributes)) continue;
-    if (!hasAccessibleName(attributes, contents, labelledText)) {
+    if (!hasAccessibleName(attributes, contents, labeledText)) {
       fail(
         `${route}: ${element.toLowerCase()} control is missing an accessible name`
       );

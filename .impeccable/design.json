@@ -17,7 +17,7 @@
       "mono": { "displayName": "Mono", "purpose": "Code blocks and technical references." }
     },
     "shadows": [
-      { "name": "hover-lift", "value": "0 20px 45px -20px oklch(0.45 0.12 240 / 0.45)", "purpose": "Hero panel and featured card hover — azure-tinted depth." },
+      { "name": "hover-lift", "value": "0 20px 45px -20px oklch(0.45 0.12 240 / 0.45)", "purpose": "Card and featured post hover — azure-tinted depth." },
       { "name": "card-hover", "value": "0 10px 15px -3px oklch(0.55 0.17 240 / 0.05), 0 4px 6px -4px oklch(0.55 0.17 240 / 0.05)", "purpose": "Standard card hover glow." }
     ],
     "motion": [

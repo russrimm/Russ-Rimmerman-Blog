@@ -213,7 +213,7 @@ Cards have presence — they're distinct surfaces, not just grouped content.
 
 ### Home Hero
 
-Text-led and static. A balanced display headline with one azure-accented phrase, a short byline paragraph, then two actions: "Read the latest" (primary, links to `/blog/`) and "Get new posts by email" (secondary, jumps to the `#newsletter` signup further down the home page). Up to four topic chips follow. It sits on the subtle `bg-grid` with a single blurred azure glow and has no animation.
+Text-led and static. A balanced display headline with one azure-accented phrase, a short byline paragraph, then two actions: "Read the latest" (primary, links to `/blog/`) and "Get new posts by email" (secondary, jumps to the `#newsletter` signup further down the home page). Up to four topic chips follow. On large screens a 15rem portrait column sits to the right, with a short caption (name, "30+ years in IT, from the U.S. Air Force to Microsoft", and an About link) so the hero carries a real human presence instead of empty space; below `lg` it's hidden because the header already shows the headshot. It sits on the subtle `bg-grid` with a single blurred azure glow and has no animation.
 
 ### Home Page Order
 
