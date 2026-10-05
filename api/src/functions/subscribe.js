@@ -12,9 +12,55 @@ const RATE_LIMIT_MAX_CLIENTS = 1_000;
 // Azure edge because Functions instances do not share process memory.
 const instanceRateLimits = new Map();
 
+function headerIps(value) {
+  return (value ?? "")
+    .split(",")
+    .map(entry => entry.trim())
+    .filter(Boolean);
+}
+
+function isPublicIp(value) {
+  if (!value || value.length > 128) return false;
+  if (value.includes(":")) {
+    const lower = value.toLowerCase();
+    if (
+      lower === "::1" ||
+      lower.startsWith("fe80:") ||
+      lower.startsWith("fc") ||
+      lower.startsWith("fd")
+    ) {
+      return false;
+    }
+    return /^[0-9a-f:]+$/i.test(value);
+  }
+  if (!/^\d{1,3}(\.\d{1,3}){3}$/.test(value)) return false;
+  const parts = value.split(".").map(Number);
+  if (parts.some(part => part > 255)) return false;
+  if (parts[0] === 10 || parts[0] === 127 || parts[0] === 0) return false;
+  if (parts[0] === 192 && parts[1] === 168) return false;
+  if (parts[0] === 169 && parts[1] === 254) return false;
+  if (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) return false;
+  return true;
+}
+
+/**
+ * Prefer a platform-set client address. Azure Front Door overwrites
+ * `x-azure-clientip`, so a caller cannot spoof it when that header is present.
+ * Otherwise walk `x-forwarded-for` from the right and skip private hops, so a
+ * spoofed left-hand value does not win and a private proxy hop does not
+ * collapse every visitor into one bucket.
+ */
 function clientAddress(request) {
-  const forwardedFor = request.headers.get("x-forwarded-for");
-  return forwardedFor?.split(",").at(-1)?.trim().slice(0, 128) || "unknown";
+  const platform =
+    headerIps(request.headers.get("x-azure-clientip"))[0] ||
+    headerIps(request.headers.get("x-client-ip"))[0];
+  if (platform && isPublicIp(platform)) return platform.slice(0, 128);
+
+  const forwarded = headerIps(request.headers.get("x-forwarded-for"));
+  for (let index = forwarded.length - 1; index >= 0; index -= 1) {
+    if (isPublicIp(forwarded[index])) return forwarded[index].slice(0, 128);
+  }
+  return forwarded.at(-1)?.slice(0, 128) || "unknown";
 }
 
 function hostOf(value) {
@@ -170,10 +216,20 @@ async function subscribeButtondown(email) {
   });
 
   if (res.ok) {
+    let payload = null;
+    try {
+      payload = JSON.parse(await res.text());
+    } catch {
+      /* empty success body */
+    }
+    const pending =
+      payload?.type === "unactivated" || payload?.type === "unpaid";
     return {
       ok: true,
       status: 200,
-      message: "You're subscribed. Thanks for joining!",
+      message: pending
+        ? "Check your inbox to confirm your subscription."
+        : "You're subscribed. Thanks for joining!",
     };
   }
 
@@ -216,7 +272,7 @@ async function subscribeMailchimp(email) {
   }
 
   const res = await fetch(
-    `https://${dc}.api.mailchimp.com/3.0/lists/${listId}/members`,
+    `https://${encodeURIComponent(dc)}.api.mailchimp.com/3.0/lists/${encodeURIComponent(listId)}/members`,
     {
       method: "POST",
       headers: {
@@ -224,7 +280,7 @@ async function subscribeMailchimp(email) {
         "Content-Type": "application/json",
       },
       signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS),
-      body: JSON.stringify({ email_address: email, status: "subscribed" }),
+      body: JSON.stringify({ email_address: email, status: "pending" }),
     }
   );
 
@@ -232,7 +288,7 @@ async function subscribeMailchimp(email) {
     return {
       ok: true,
       status: 200,
-      message: "You're subscribed. Thanks for joining!",
+      message: "Check your inbox to confirm your subscription.",
     };
   }
 
@@ -261,6 +317,7 @@ async function handler(request, context) {
     headers: {
       "Cache-Control": "no-store",
       "Content-Type": "application/json",
+      "X-Content-Type-Options": "nosniff",
       ...additionalHeaders,
     },
     jsonBody: payload,
@@ -284,7 +341,22 @@ async function handler(request, context) {
     });
   }
 
-  if (!isAllowedOrigin(request)) {
+  // Brake every POST before reading the body, including malformed JSON.
+  // The browser form always sends Origin; a missing Origin is not a
+  // same-origin form post.
+  const rateLimit = consumeRateLimit(request);
+  if (!rateLimit.allowed) {
+    return json(
+      429,
+      {
+        ok: false,
+        message: "Too many subscription attempts. Please try again later.",
+      },
+      { "Retry-After": String(rateLimit.retryAfterSeconds) }
+    );
+  }
+
+  if (!request.headers.get("origin") || !isAllowedOrigin(request)) {
     return json(403, { ok: false, message: "Request origin is not allowed." });
   }
 
@@ -311,18 +383,6 @@ async function handler(request, context) {
   }
   if (!data || typeof data !== "object" || Array.isArray(data)) {
     return json(400, { ok: false, message: "Invalid request." });
-  }
-
-  const rateLimit = consumeRateLimit(request);
-  if (!rateLimit.allowed) {
-    return json(
-      429,
-      {
-        ok: false,
-        message: "Too many subscription attempts. Please try again later.",
-      },
-      { "Retry-After": String(rateLimit.retryAfterSeconds) }
-    );
   }
 
   // Honeypot: real users leave this empty. Bots fill it in.

@@ -4,18 +4,20 @@
 //   import Video from "@/components/Video.astro";
 //   import clip from "@/assets/blog/my-post/clip.mp4";
 //   import clipPoster from "@/assets/blog/my-post/clip-poster.jpg";
-//   <Video src={clip} poster={clipPoster} label="Narrated demo of the feature" caption="What the clip shows." />
+//   <Video src={clip} poster={clipPoster} captions={clipCaptions} label="Narrated demo of the feature" caption="What the clip shows." />
 import { getImage } from "astro:assets";
 import type { ImageMetadata } from "astro";
 
 interface Props {
   src: string;
   poster: ImageMetadata;
+  /** URL of an English WebVTT caption track for the narration. */
+  captions: string;
   label: string;
   caption?: string;
 }
 
-const { src, poster, label, caption } = Astro.props;
+const { src, poster, captions, label, caption } = Astro.props;
 const posterImage = await getImage({
   src: poster,
   width: Math.min(poster.width, 1280),
@@ -38,6 +40,13 @@ const posterImage = await getImage({
       class="block aspect-video h-auto w-full bg-black"
     >
       <source src={src} type="video/mp4" />
+      <track
+        kind="captions"
+        src={captions}
+        srclang="en"
+        label="English"
+        default
+      />
       <a href={src}>Download the video</a>
     </video>
   </div>

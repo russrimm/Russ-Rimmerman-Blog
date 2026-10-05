@@ -178,8 +178,8 @@ A hybrid approach: tonal layering is the primary depth mechanism (cards use back
 Tactile and confident — these are elements you want to press.
 
 - **Shape:** rounded-lg (12px)
-- **Primary:** Azure Brand bg, white text, px-5 py-3, font-semibold text-sm. Communicates the primary action unambiguously.
-- **Hover:** Darker azure (azure-700), smooth transition. Focus: 2px ring azure-500/40.
+- **Primary:** azure-700 (`#005ba1`) background, white text, px-5 py-3, font-semibold text-sm. White on `#0078d4` is only 4.53:1, so filled buttons use the deeper blue for a real contrast margin. Communicates the primary action unambiguously.
+- **Hover:** azure-800, smooth transition. Focus: 2px ring azure-500/40.
 - **Secondary (outline):** Transparent bg, ink-700 text, 1px border ink-300. On hover: border shifts to azure-400, text to azure-600. In dark mode: border ink-700, text ink-200.
 
 ### Chips / Tags
@@ -213,7 +213,7 @@ Cards have presence — they're distinct surfaces, not just grouped content.
 
 ### Home Hero
 
-Text-led and static. A balanced display headline with one azure-accented phrase, a short byline paragraph, then two actions: "Read the latest" (primary, links to `/blog/`) and "Get new posts by email" (secondary, jumps to the `#newsletter` signup further down the home page). Up to four topic chips follow. On large screens a 15rem portrait column sits to the right, with a short caption (name, "30+ years in IT, from the U.S. Air Force to Microsoft", and an About link) so the hero carries a real human presence instead of empty space; below `lg` it's hidden because the header already shows the headshot. It sits on the subtle `bg-grid` with a single blurred azure glow and has no animation.
+Text-led and static. The headline is "Practical cloud engineering from 30 years of building it," with "30 years" in Azure blue, then a first-person byline. Below `lg`, a one-line credential (name, "30+ years in IT, from the U.S. Air Force to Microsoft", and an About link) sits under the byline so the proof is not trapped in the portrait column. Two actions follow: "Read the latest" (primary, links to `/blog/`) and "Get new posts by email" (secondary, jumps to the `#newsletter` signup further down the home page). Up to four topic chips follow. On large screens a 15rem portrait column sits to the right, with the same credential as its caption, so the hero carries a real human presence instead of empty space; the portrait itself stays hidden below `lg` because the header already shows the headshot. It sits on the subtle `bg-grid` with a single blurred azure glow and has no animation.
 
 ### Home Page Order
 

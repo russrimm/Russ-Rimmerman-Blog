@@ -1,0 +1,80 @@
+WEBVTT
+
+1
+00:00:00.020 --> 00:00:05.080
+Running AI on your own machine keeps data
+off third-party servers and swaps
+
+2
+00:00:05.080 --> 00:00:10.580
+unpredictable API bills for a fixed upfront cost.
+The trade-off is you need the
+
+3
+00:00:10.580 --> 00:00:16.880
+right hardware. Step one, the single most
+important part is the GPU's video memory,
+
+4
+00:00:16.880 --> 00:00:23.060
+or VRAM. If a model fits entirely in VRAM,
+you get fast, fluid chat. If it
+
+5
+00:00:23.060 --> 00:00:29.540
+overflows to system RAM, it slows to a crawl.
+Step two, a starter setup with a
+
+6
+00:00:29.580 --> 00:00:35.380
+12 gigabyte GPU and 32 gigs of RAM runs
+7 billion parameter models for around $1,200
+
+7
+00:00:35.380 --> 00:00:41.140
+to $1,500. A mid-tier build with a 24 gigabyte
+card jumps to about $2,500 and
+
+8
+00:00:41.140 --> 00:00:48.300
+comfortably runs models up to 30 billion
+parameters. Step three, the GPU handles
+
+9
+00:00:48.300 --> 00:00:53.140
+the heavy math, but your system RAM and
+storage matter too. You'll want at least
+
+10
+00:00:53.140 --> 00:00:58.140
+32 gigabytes of RAM and a fast SSD with
+half a terabyte or more to store
+
+11
+00:00:58.140 --> 00:01:05.140
+chunky model files. Step four, if your team
+spends over $500 a month on API calls,
+
+12
+00:01:05.140 --> 00:01:11.220
+a mid-tier self-hosting setup typically
+pays for itself within six months. After
+
+13
+00:01:11.220 --> 00:01:16.300
+that, you're mainly paying for electricity.
+The best move is to start with a small
+
+14
+00:01:16.300 --> 00:01:21.180
+quantized 7 billion parameter model on
+affordable hardware. Prove it works for
+
+15
+00:01:21.180 --> 00:01:25.540
+your use case first, then scale up. The tools
+are ready and the math favors owning
+
+16
+00:01:25.540 --> 00:01:28.060
+your own stack.

@@ -17,10 +17,18 @@ function request({
   url = "http://127.0.0.1:7071/api/subscribe",
 } = {}) {
   const encodedBody = new TextEncoder().encode(body);
+  const merged = new Headers({
+    origin: "https://www.russrimmerman.com",
+    "x-forwarded-host": "www.russrimmerman.com",
+  });
+  for (const [key, value] of Object.entries(headers)) {
+    if (value == null) merged.delete(key);
+    else merged.set(key, value);
+  }
   return {
     method,
     url,
-    headers: new Headers(headers),
+    headers: merged,
     body: new ReadableStream({
       start(controller) {
         controller.enqueue(encodedBody);
@@ -48,6 +56,22 @@ beforeEach(() => {
 afterEach(() => {
   global.fetch = originalFetch;
   process.env = { ...originalEnv };
+});
+
+test("rejects subscription requests with no Origin", async () => {
+  const response = await handler(
+    request({
+      body: JSON.stringify({ email: "reader@example.com" }),
+      headers: {
+        "content-type": "application/json",
+        origin: null,
+      },
+    }),
+    context
+  );
+
+  assert.equal(response.status, 403);
+  assert.equal(response.headers["X-Content-Type-Options"], "nosniff");
 });
 
 test("rejects cross-origin subscription requests", async () => {
@@ -162,6 +186,107 @@ test("rate limits repeated subscription attempts by forwarded client", async () 
   const limited = await makeAttempt();
   assert.equal(limited.status, 429);
   assert.match(limited.headers["Retry-After"], /^\d+$/);
+});
+
+test("rate limits malformed JSON before parsing it", async () => {
+  const makeAttempt = () =>
+    handler(
+      request({
+        body: "{",
+        headers: {
+          "content-type": "application/json",
+          "x-forwarded-for": "198.51.100.11",
+        },
+      }),
+      context
+    );
+
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    assert.equal((await makeAttempt()).status, 400);
+  }
+  assert.equal((await makeAttempt()).status, 429);
+});
+
+test("keys the rate limit on the platform client IP, not a spoofed forwarded hop", async () => {
+  const makeAttempt = forwardedFor =>
+    handler(
+      request({
+        body: JSON.stringify({ email: "invalid" }),
+        headers: {
+          "content-type": "application/json",
+          "x-azure-clientip": "198.51.100.20",
+          "x-forwarded-for": forwardedFor,
+        },
+      }),
+      context
+    );
+
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    assert.equal((await makeAttempt("203.0.113.9")).status, 400);
+  }
+  assert.equal((await makeAttempt("198.51.100.99")).status, 429);
+
+  const otherClient = await handler(
+    request({
+      body: JSON.stringify({ email: "invalid" }),
+      headers: {
+        "content-type": "application/json",
+        "x-forwarded-for": "203.0.113.50, 10.0.0.4",
+      },
+    }),
+    context
+  );
+  assert.equal(otherClient.status, 400);
+});
+
+test("asks the reader to confirm an unactivated Buttondown signup", async () => {
+  process.env.NEWSLETTER_PROVIDER = "buttondown";
+  process.env.BUTTONDOWN_API_KEY = "test-key";
+  global.fetch = async () =>
+    new Response(JSON.stringify({ type: "unactivated" }), { status: 201 });
+
+  const response = await handler(
+    request({
+      body: JSON.stringify({ email: "reader@example.com" }),
+      headers: { "content-type": "application/json" },
+    }),
+    context
+  );
+
+  assert.equal(response.status, 200);
+  assert.equal(
+    response.jsonBody.message,
+    "Check your inbox to confirm your subscription."
+  );
+});
+
+test("asks Mailchimp subscribers to confirm before they are on the list", async () => {
+  process.env.NEWSLETTER_PROVIDER = "mailchimp";
+  process.env.MAILCHIMP_API_KEY = "abc123-us21";
+  process.env.MAILCHIMP_LIST_ID = "list 1";
+  let calledUrl = "";
+  global.fetch = async url => {
+    calledUrl = url;
+    return new Response(JSON.stringify({ status: "pending" }), { status: 200 });
+  };
+
+  const response = await handler(
+    request({
+      body: JSON.stringify({ email: "reader@example.com" }),
+      headers: { "content-type": "application/json" },
+    }),
+    context
+  );
+
+  assert.equal(response.status, 200);
+  assert.equal(
+    response.jsonBody.message,
+    "Check your inbox to confirm your subscription."
+  );
+  assert.equal(
+    calledUrl,
+    "https://us21.api.mailchimp.com/3.0/lists/list%201/members"
+  );
 });
 
 test("treats a Buttondown duplicate as success", async () => {
