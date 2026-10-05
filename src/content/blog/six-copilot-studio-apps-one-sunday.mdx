@@ -1,0 +1,348 @@
+---
+title: "Six Business Apps in One Sunday with Copilot Studio"
+description: "I had an agent build six demo apps in Copilot Studio in one day, then wire one to live energy data through custom connectors. Here's what review taught me."
+pubDate: 2026-10-04
+tags: ["Copilot Studio", "Power Platform", "Agents", "Vibe Coding", "AI", "Dataverse"]
+draft: true
+featured: false
+---
+
+import { Image } from "astro:assets";
+import Term from "@/components/Term.astro";
+import Explain from "@/components/Explain.astro";
+import Screenshot from "@/components/Screenshot.astro";
+import executivePulse from "@/assets/blog/six-copilot-studio-apps-one-sunday/executive-pulse-markets.webp";
+import executivePulseGrid from "@/assets/blog/six-copilot-studio-apps-one-sunday/executive-pulse-grid.webp";
+import supplyChain from "@/assets/blog/six-copilot-studio-apps-one-sunday/supply-chain-tower.webp";
+import dealRoom from "@/assets/blog/six-copilot-studio-apps-one-sunday/deal-room.webp";
+import smartWorkplace from "@/assets/blog/six-copilot-studio-apps-one-sunday/smart-workplace.webp";
+import learningQuest from "@/assets/blog/six-copilot-studio-apps-one-sunday/learning-quest.webp";
+import cineServe from "@/assets/blog/six-copilot-studio-apps-one-sunday/cineserve.webp";
+import videoThumb from "@/assets/blog/six-copilot-studio-apps-one-sunday/video-thumbnail.webp";
+
+At 11:22 a.m. on a Sunday I typed one request into Autopilot, the AI agent I
+run on my desktop:
+
+> Use Copilot Studio Managed Runtime App Studio to make 5 impressive apps that showcase the art of the possible. Use only my tenant.
+
+That was the whole request. I didn't write a spec or sketch a single screen. An
+hour later, five working apps were published in my Copilot Studio environment. I
+asked for a couple more features, and half an hour after that, one of them was
+pulling live oil, gas, and power grid numbers from public government data
+sources.
+
+For the last year and a half I've been building prototype apps with help from
+various AI tools, because I don't know any programming languages beyond Apple ][
+BASIC (am I showing my age?), WinBatch, and PowerShell. This Sunday felt
+different. I barely touched the apps myself. Most of my day went to reviewing
+them.
+
+## The setup: one agent directing another
+
+Two agents did the work, and it helps to know which did what.
+
+**Autopilot** is the agent on my desktop. It can drive a web browser, run
+commands, read documentation, and remember what we've already done.
+
+**Copilot Studio** did the actual building, and you can use it too. You
+[describe the app you want in a chat](https://learn.microsoft.com/microsoft-copilot-studio/apps-experience/create-app),
+and Copilot Studio writes the code for a complete web app and shows you a live
+preview. From there you keep refining it by chatting. When you
+publish, the app runs on
+[Microsoft Copilot Managed Runtime](https://learn.microsoft.com/microsoft-365/managed-apps/),
+which is in preview as of October 2026. Copilot Managed Runtime hosts the app
+and handles sign-in with Microsoft Entra ID and your tenant's governance
+policies. You never set up a server. You can use any of the more than 1,500
+Power Platform connectors, or build a custom connector in a few minutes when
+the one you need doesn't exist.
+
+Here's what Autopilot did with Copilot Studio:
+
+1. Opened Copilot Studio and confirmed it was signed in to the correct tenant.
+2. Looked at the 14 apps already in my environment so it wouldn't repeat one.
+3. Picked five new ideas and wrote a detailed brief for each.
+4. Opened five browser tabs and started all five builds at the same time.
+5. Watched each build, took screenshots of the previews, and reviewed them like
+   a perfectionist product manager.
+6. Sent fixes back to the builder, checked the results with its "eyes"
+   (<Term def="A tool that lets a program open web pages, click around, and take screenshots the way a person would.">Playwright</Term>),
+   and published the apps.
+
+I went from building to reviewing. I'll come back to that, because it's what
+I'd want you to take from this post.
+
+## The five apps
+
+Every company in these apps is fictional, and every business figure is sample
+data unless the app labels it as live.
+
+### Executive Pulse: a chief executive's dashboard on live data
+
+<Screenshot
+  src={executivePulse}
+  alt="Executive Pulse dashboard for Contoso, with a Live Energy Markets row showing WTI crude, Brent crude, the Brent–WTI spread, and Henry Hub gas prices above six business metric tiles, next to the Copilot Studio build chat."
+  caption="Executive Pulse in the Copilot Studio preview, with the build conversation on the left."
+/>
+
+Executive Pulse is a dark, glassy dashboard for Contoso, which turned into an
+oil, gas, and power company partway through the day. It has a company health
+gauge, six business metric tiles with small trend charts, and a row of live
+energy prices: West Texas Intermediate ("WTI") crude, Brent crude, the spread
+between them, and Henry Hub natural gas.
+
+Further down there's a live power grid panel, a what-if simulator whose oil
+price slider starts at today's Brent price, and an AI briefing that writes a
+summary from the current numbers and says which ones are live and which are
+sample. Alerts raise themselves when Brent moves more than 3% in a day, grid
+demand runs well above forecast, or a strong earthquake hits near one of ten
+Contoso sites.
+
+I learned more from this app than any of the others, so the live data gets its
+own section below.
+
+### Supply Chain Control Tower: logistics on a world map
+
+<Screenshot
+  src={supplyChain}
+  alt="Fabrikam Supply Chain Control Tower with six metric tiles above a dark world map showing ocean, air, and truck shipping routes between factories and distribution centers."
+  caption="The Control Tower map, with ocean, air, and truck routes in different colors."
+/>
+
+Fabrikam's control tower shows shipments moving along curved routes between
+factories and distribution centers. Pick an incident from the disruption list,
+such as port congestion in Rotterdam or a typhoon in the Taiwan Strait, and the
+affected routes turn red with the revenue at risk. An AI advisor ranks three
+reroute options by cost, time, carbon emissions, and confidence. Click
+**Apply** and the shipment reroutes on the map.
+
+Everything here is sample data, but it behaves like a simulation, not a static
+mockup. A **Stress Test** button fires a random global event so you can watch
+the effects spread. This was the only app that passed review with no changes.
+
+### Deal Room: a sales pipeline with an AI coach
+
+<Screenshot
+  src={dealRoom}
+  alt="Deal Room sales pipeline for Northwind Cloud, showing pipeline totals, a stage conversion funnel narrowing from 42 prospects to 5 closed-won deals, and deal cards below."
+  caption="Deal Room after review, with a funnel that narrows the way a real one does."
+/>
+
+Northwind Cloud's pipeline holds about 40 deals across seven stages, and you
+move them by dragging. Each deal card shows an AI win probability. Open a deal
+and you get a qualification score and an AI coach that flags risks like "no
+economic buyer engaged in 21 days" and drafts a follow-up email. Drop a deal
+into **Closed Won** and you get confetti.
+
+The first build had two problems a sales leader would spot in seconds: 17 of 21
+deals were marked at risk, and the funnel showed a 167% conversion rate from one
+stage to the next. Autopilot caught both, asked the builder to rebalance the
+sample data and rebuild the funnel, and checked the result before publishing.
+Either mistake would have cost the demo its credibility in front of a sales
+audience.
+
+### Smart Workplace: desk booking you can see
+
+<Screenshot
+  src={smartWorkplace}
+  alt="Smart Workplace floor plan for Woodgrove Bank headquarters, with meeting rooms, lounges, phone booths, and desks color-coded as available, occupied, or booked, plus a smart suggestion panel."
+  caption="Floor 2 of the Woodgrove Bank headquarters, generated entirely from data."
+/>
+
+Woodgrove Bank's headquarters gets a desk and room booking app with a clickable
+floor plan across three floors. Turn on **Find my team** to see where
+colleagues are sitting today, or drag the time slider to watch an occupancy
+heatmap shift through the day. Facilities managers get suggestions like
+"convert 12 under-used desks into two collaboration rooms."
+
+The app's code draws the floor plan from a list of rooms and desks instead of
+using an image file. So when review found a phone booth overlapping a desk
+cluster, the fix was a one-line data change, not a redesign.
+
+### Learning Quest: onboarding as a game
+
+<Screenshot
+  src={learningQuest}
+  alt="Learning Quest onboarding dashboard for Tailspin Toys, showing player Jordan Lee at level 4 with a 6-day streak, an XP bar, a badge shelf, and a quest map of onboarding milestones marked done, current, or locked."
+  caption="Learning Quest opens on a demo player partway through onboarding."
+/>
+
+Tailspin Toys gets onboarding that plays like a game, with levels, experience
+points, a streak counter, badges, and a quest map of onboarding milestones.
+Flashcards flip, timed quizzes award points, and an AI study buddy answers
+policy questions or quizzes you on the spot.
+
+The first build opened on a brand-new hire with zero points. That's realistic,
+but it's a dull way to start a demo. Autopilot had the builder load a demo
+player, Jordan Lee at level 4 with a six-day streak, and kept a **Reset** button
+so you can still show the fresh-start experience. Progress is saved in the
+browser, so it survives a page refresh.
+
+## The bonus app: CineServe, from a Microsoft reference architecture
+
+<Screenshot
+  src={cineServe}
+  alt="CineServe command center for Northwind Cinemas, with ticket and refund metrics, a case volume by channel donut chart, a refunds by reason bar chart, and a queue of cases awaiting human approval."
+  caption="CineServe's command center, with refunds waiting on a human decision in the lower right."
+/>
+
+Late in the afternoon I pointed Autopilot at a Microsoft solution idea,
+[Ticket management system with Copilot Studio agents](https://learn.microsoft.com/power-platform/architecture/solution-ideas/agent-ticket-and-refund),
+and asked for a sixth app. Autopilot read the architecture first and turned it
+into a brief.
+
+CineServe is a ticket and refund operations app for Northwind Cinemas, a
+fictional chain with 40 theaters across Canada. Each piece of the architecture
+shows up as its own screen:
+
+- An **assisted agent**, styled like Teams, that looks up a booking, checks it
+  against policy, and proposes a refund, then waits for a person to approve it.
+- An **autonomous inbox agent**, styled like Outlook, that sorts incoming guest
+  emails, resolves low-risk refunds under a set amount, escalates the rest, and
+  shows its reasoning as it goes.
+- An **automation flow view** that lights up each step: agent, Power Automate
+  cloud flow, Dataverse, desktop robotic process automation ("RPA") on an Azure
+  virtual machine, the legacy ticketing system, Azure Key Vault, the refund, and
+  the guest notification.
+- A **governance panel** with approval thresholds, a policy editor, role-based
+  permissions, and an audit log of every agent decision.
+
+It runs on sample data shaped like the Dataverse tables in the reference
+architecture. Connecting it to real tables is the next step.
+
+## How Executive Pulse got live data
+
+If you're planning your own app, this is the section to read. It's where I
+learned the most about how the platform is meant to work.
+
+The obvious way to get live energy data into an app is to have the app call
+public data services directly over the internet. Each service offers an
+<Term def="A published set of web addresses a program can call to ask another system for data or to ask it to do something.">API</Term>
+for exactly that. Autopilot checked that four of them worked, from the U.S.
+Energy Information Administration ("EIA"), the UK National Grid's carbon
+intensity service, Frankfurter (for European Central Bank exchange rates), and
+the U.S. Geological Survey ("USGS") earthquake feed. Then it tested from inside
+the running app and found every one of those calls blocked.
+
+That's intentional. Copilot Managed Runtime apps inherit the tenant's
+<Term def="A browser rule that lists which outside web addresses a page is allowed to contact. Anything not on the list is blocked.">content security policy</Term>,
+and Microsoft's documentation says these apps
+[connect to data through connectors](https://learn.microsoft.com/microsoft-365/managed-apps/developer/connect-to-data).
+Every data call is routed through the platform, where Microsoft Entra
+identity, Data Loss Prevention ("DLP"), and Advanced Connector Policies ("ACP")
+apply.
+
+<Explain title="What's a connector, and what's a custom connector?">
+  A connector is a ready-made, managed link between Power Platform and another
+  service, such as SharePoint, SQL Server, or Office 365. Your app asks the
+  connector for data, and the platform handles sign-in and applies your
+  organization's rules about which services can share data with which. When
+  there's no ready-made connector for a service, you can create a custom
+  connector by describing that service's API in a standard format called
+  OpenAPI. After that, it behaves like any other connector, including for your
+  admins.
+</Explain>
+
+Next, Autopilot set up the connectors:
+
+1. Wrote an OpenAPI description for each of the four data sources. The EIA one
+   packs all its query options into a single setting, so one connector covers
+   oil prices, gas prices, grid demand, and the generation mix.
+2. Opened the Power Apps maker portal and created four custom connectors: EIA
+   Energy Data, Carbon Intensity UK, Frankfurter FX Rates, and USGS Earthquakes.
+3. Created a connection for each one.
+4. Told the Copilot Studio builder exactly which connectors existed, what each
+   one returns, and how to wire them into the app.
+
+<Screenshot
+  src={executivePulseGrid}
+  alt="Executive Pulse grid telemetry panel with a 48-hour chart of US Lower-48 electricity demand against the day-ahead forecast, a fuel mix donut showing 13% renewable, and a UK carbon intensity gauge, each marked LIVE."
+  caption="The live grid panel after the data cleanup, with the source credited under the chart."
+/>
+
+I hit two smaller issues along the way. An older custom connector in my
+environment had an incomplete sign-in setup, and it held up the consent prompt
+for the whole app, so I removed it. EIA's newest hourly grid figures also arrive
+before every region has reported, which made the demand line drop sharply at the
+right edge of the chart. The fix was to skip any hour that comes in below 85% of
+the previous day's median. When the app flagged demand at 19.5% above forecast,
+Autopilot checked that number against EIA's raw data before I trusted it, and
+it matched.
+
+The finished dashboard puts a green **LIVE** badge on every panel backed by a
+live feed and shows where every number comes from.
+
+## What I took away
+
+The models are impressive, but they weren't what stuck with me.
+
+**I directed instead of building.** I described outcomes, and two agents
+handled the browser tabs, builds, fixes, connectors, and publishing. My part
+was judgment: deciding what looked good, what was believable, and what a chief
+financial officer would push back on.
+
+**Review took the most skill.** Every app worked on the first build. Most
+weren't ready to show anyone. The real improvements came from catching things
+like the 167% funnel, a chart that rendered as a solid block, a clock labeled
+Coordinated Universal Time ("UTC") that actually showed local time, and an
+outlook forecasting $178 oil. A straight-line projection produced that last
+one, and the fix dampens the volatility and caps the swing at 25% in either
+direction. If you can spot problems like these, you can now ship at a speed
+that wasn't possible last month.
+
+**The guardrails made the app better.** Because the content security policy
+blocks direct calls to outside services, the app ended up on governed
+connectors that IT can see, manage, and reuse. That puts a prototype much closer
+to production on day one.
+
+That shift, from asking Copilot for help to handing an agent a defined piece of
+work, is what the short video below is about. [InfiniAIBook](/blog/open-notebook-self-hosted-research-notebook/) made it. That's a tool
+I built that turns source material into training videos, FAQs, and
+infographics, so the video is one more piece of work I handed off.
+
+<figure class="not-prose my-8">
+  <a
+    href="https://www.youtube.com/watch?v=imPfOKmvt9U"
+    class="group border-ink-200 dark:border-ink-800 block overflow-hidden rounded-xl border shadow-sm ring-1 ring-black/5 dark:ring-white/5"
+  >
+    <Image
+      src={videoThumb}
+      alt="Watch From Copilot to Autopilot: Delegating Work in Microsoft 365 on YouTube"
+      widths={[480, 768, 1024, 1280]}
+      sizes="(min-width: 1024px) 768px, 100vw"
+      loading="lazy"
+      class="h-auto w-full transition-transform duration-300 group-hover:scale-[1.01]"
+    />
+  </a>
+  <figcaption class="text-ink-500 dark:text-ink-400 mt-3 text-center text-sm leading-relaxed">
+    <a href="https://www.youtube.com/watch?v=imPfOKmvt9U">
+      From Copilot to Autopilot: Delegating Work in Microsoft 365
+    </a>{" "}
+    on YouTube, generated by InfiniAIBook.
+  </figcaption>
+</figure>
+
+## If you want to try this
+
+- **Write a brief, not a feature request.** Each app started from a paragraph
+  covering the audience, the visual style, and six to eight features. Spell
+  out who the app is for and what it should do, not just what it's called.
+- **Ask for data honesty.** The live, cached, and sample badges were one of the
+  best ideas of the day. An executive trusts a demo more when it tells them
+  what's real.
+- **Plan for connectors early.** If your app needs outside data, create the
+  custom connector first. It's a few minutes of OpenAPI work, and you get
+  governed, reusable access out of it.
+- **Budget time for review.** The builds took minutes. Most of the quality came
+  from going through each preview carefully.
+
+To get started, follow
+[Create an app in Microsoft Copilot Studio](https://learn.microsoft.com/microsoft-copilot-studio/apps-experience/create-app)
+in a dev environment, give it a real brief, and save most of your time for
+review. If you'd rather write the code yourself, my
+[Power Apps code apps post](/blog/power-apps-code-apps/) covers that path.
+
+_Company names in this post (Contoso, Fabrikam, Northwind, Woodgrove, and
+Tailspin) are fictional. Business figures are sample data unless labeled live.
+Live data in Executive Pulse comes from the U.S. EIA, the UK National Grid
+Carbon Intensity API, European Central Bank rates through Frankfurter, and the
+USGS._
