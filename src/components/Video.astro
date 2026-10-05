@@ -1,0 +1,51 @@
+---
+// Framed, self-hosted video clip with a poster frame and optional caption, for use in MDX.
+// Usage:
+//   import Video from "@/components/Video.astro";
+//   import clip from "@/assets/blog/my-post/clip.mp4";
+//   import clipPoster from "@/assets/blog/my-post/clip-poster.jpg";
+//   <Video src={clip} poster={clipPoster} label="Narrated demo of the feature" caption="What the clip shows." />
+import { getImage } from "astro:assets";
+import type { ImageMetadata } from "astro";
+
+interface Props {
+  src: string;
+  poster: ImageMetadata;
+  label: string;
+  caption?: string;
+}
+
+const { src, poster, label, caption } = Astro.props;
+const posterImage = await getImage({
+  src: poster,
+  width: Math.min(poster.width, 1280),
+  format: "webp",
+});
+---
+
+<figure class="not-prose my-8">
+  <div
+    class="border-ink-200 bg-ink-100 dark:border-ink-800 dark:bg-ink-900 overflow-hidden rounded-xl border shadow-sm ring-1 ring-black/5 dark:ring-white/5"
+  >
+    <video
+      controls
+      playsinline
+      preload="none"
+      poster={posterImage.src}
+      width={poster.width}
+      height={poster.height}
+      aria-label={label}
+      class="block aspect-video h-auto w-full bg-black"
+    >
+      <source src={src} type="video/mp4" />
+      <a href={src}>Download the video</a>
+    </video>
+  </div>
+  {
+    caption && (
+      <figcaption class="text-ink-500 dark:text-ink-400 mt-3 text-center text-sm leading-relaxed">
+        {caption}
+      </figcaption>
+    )
+  }
+</figure>
