@@ -4,6 +4,7 @@ heroImage: ../../assets/blog/six-copilot-studio-apps-one-sunday.webp
 heroAlt: "Editorial illustration representing AI-Built Business Apps."
 description: "I had an agent build six demo apps in Copilot Studio in one day, then wire one to live energy data through custom connectors. Here's what review taught me."
 pubDate: 2026-10-04
+updatedDate: 2026-10-05
 tags: ["Copilot Studio", "Power Platform", "Agents", "Vibe Coding", "AI", "Dataverse"]
 draft: false
 featured: false
@@ -230,7 +231,9 @@ That's intentional. Copilot Managed Runtime apps inherit the tenant's
 and Microsoft's documentation says these apps
 [connect to data through connectors](https://learn.microsoft.com/microsoft-365/managed-apps/developer/connect-to-data).
 Every data call is routed through the platform, where Microsoft Entra
-identity, Data Loss Prevention ("DLP"), and Advanced Connector Policies ("ACP") based on the pre-defined configurations following the final decisions made Northwind Cinema's data security and compliance departments.
+identity, Data Loss Prevention ("DLP"), and Advanced Connector Policies ("ACP")
+apply whatever rules your organization's security and compliance teams have
+set.
 
 <Explain title="What's a connector, and what's a custom connector?">
   A connector is a ready-made, managed link between Power Platform and another
@@ -242,16 +245,63 @@ organization's rules about which services can share data with which. When there'
 admins.
 </Explain>
 
-Next, Autopilot set up the connectors:
+Executive Pulse is the only one of the six apps wired to outside APIs. The
+other five run entirely on sample data built into the app. Here's how
+Autopilot connected the four services:
 
-1. Wrote an OpenAPI description for each of the four data sources. The EIA one
-   packs all its query options into a single setting, so one connector covers
-   oil prices, gas prices, grid demand, and the generation mix.
-2. Opened the Power Apps maker portal and created four custom connectors: EIA
-   Energy Data, Carbon Intensity UK, Frankfurter FX Rates, and USGS Earthquakes.
-3. Created a connection for each one.
-4. Told the Copilot Studio builder exactly which connectors existed, what each
-   one returns, and how to wire them into the app.
+1. **Described each API in an OpenAPI file.** Each file tells Power Platform
+   where the service lives, which operations it offers, what inputs each one
+   takes, and what comes back. Every operation gets a name, its `operationId`,
+   and that name becomes the action the app calls.
+2. **Imported each file as a custom connector** in the Power Apps maker
+   portal. Three of the services are public and need no sign-in. EIA requires
+   a free
+   <Term def="A secret code a service gives you so it can tell who's calling. Treat it like a password.">API key</Term>,
+   so its connector is set to API key authentication and sends the key as the
+   `api_key` query parameter.
+3. **Created a connection for each connector.** A connection is a signed-in
+   copy of a connector that an app can actually use. The EIA key goes in once,
+   when you create the connection, and stays on the platform side instead of
+   in the app's code.
+4. **Handed the connectors to the Copilot Studio builder.** Autopilot told the
+   builder which connectors existed, the `operationId` of each action, and
+   what each one returns, and the builder did the wiring. Per
+   [Microsoft's documentation](https://learn.microsoft.com/microsoft-365/managed-apps/developer/connect-to-data),
+   the app never sends raw web requests to a connector. It calls generated
+   code for each action, and the Copilot Managed Runtime host routes every
+   call through the platform.
+
+Here's what each connector feeds in the app:
+
+- **EIA Energy Data** uses the EIA Open Data API (version 2, API key
+  required). `GetPetroleumSpotPrices` returns WTI and Brent crude prices,
+  `GetNaturalGasPrices` returns Henry Hub gas, `GetGridRegionData` returns
+  hourly U.S. Lower-48 demand against the day-ahead forecast, and
+  `GetGridFuelMix` returns the generation mix by fuel.
+- **Carbon Intensity UK** uses National Grid's public Carbon Intensity API (no
+  sign-in). `GetCurrentIntensity` and `GetGenerationMix` drive the UK carbon
+  gauge.
+- **Frankfurter FX Rates** uses Frankfurter's public API for European Central
+  Bank reference rates (no sign-in). `GetLatestRates` translates figures into
+  regional currencies.
+- **USGS Earthquakes** uses the USGS real-time earthquake feeds (no sign-in).
+  `GetSignificantQuakesPastDay` and `GetSignificantQuakesPastWeek` drive the
+  alerts for magnitude 5.5 or stronger quakes near Contoso sites.
+
+The EIA connector needed one workaround. EIA's API takes nested query options,
+such as which price series to return and how to sort them, and those don't map
+neatly to ordinary connector inputs. So every EIA operation takes a single
+<Term def="Extra information sent along with a web request, separate from the address itself.">header</Term>
+called `X-Params` that carries the whole query as
+<Term def="A plain-text format for structured data, written as labeled values inside curly braces. Most web APIs send and receive data this way.">JSON</Term>.
+Change the series code, such as `RBRTE` for Brent or `RNGWHHD` for Henry Hub,
+and the same pattern returns different data. That's how one connector covers
+oil, gas, grid demand, and the generation mix.
+
+The app caches EIA results for 30 minutes and the other three feeds for 5
+minutes, so it isn't calling the services on every page load. The first time
+someone opens the app, Copilot Managed Runtime asks them to consent to all four
+connections before any data loads.
 
 <Screenshot
   src={executivePulseGrid}
