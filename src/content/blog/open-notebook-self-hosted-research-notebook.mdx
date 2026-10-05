@@ -2,15 +2,27 @@
 title: "InfiniAIBook: A Self-Hosted AI Research Notebook"
 heroImage: ../../assets/blog/open-notebook-self-hosted-research-notebook.webp
 heroAlt: "Editorial illustration representing Self-Hosted AI Research Notebook."
-description: "A field guide to InfiniAIBook, the AI research notebook you host yourself: sources, chat, search, transformations, podcasts, the API, and MCP."
+description: "A field guide to InfiniAIBook, the AI research notebook you host yourself: sources, chat, search, podcasts, infographics, videos, and MCP."
 pubDate: 2026-09-24
-updatedDate: 2026-10-01
+updatedDate: 2026-10-05
 tags: ["AI", "Open Source", "Azure", "MCP", "Security"]
 featured: false
 draft: false
 ---
 
 import Explain from "@/components/Explain.astro";
+import Screenshot from "@/components/Screenshot.astro";
+import Video from "@/components/Video.astro";
+import workspace from "@/assets/blog/open-notebook-self-hosted-research-notebook/workspace.png";
+import infographicSketch from "@/assets/blog/open-notebook-self-hosted-research-notebook/infographic-sketch.png";
+import infographicVisualGuide from "@/assets/blog/open-notebook-self-hosted-research-notebook/infographic-visual-guide.jpg";
+import whiteboardScript from "@/assets/blog/open-notebook-self-hosted-research-notebook/whiteboard-script.png";
+import whiteboardVideo from "@/assets/blog/open-notebook-self-hosted-research-notebook/whiteboard-video-self-hosted-ai.mp4";
+import whiteboardPoster from "@/assets/blog/open-notebook-self-hosted-research-notebook/whiteboard-video-poster.jpg";
+import motionVideo from "@/assets/blog/open-notebook-self-hosted-research-notebook/motion-explainer-scout-fundraising.mp4";
+import motionPoster from "@/assets/blog/open-notebook-self-hosted-research-notebook/motion-explainer-poster.jpg";
+import trainingVideo from "@/assets/blog/open-notebook-self-hosted-research-notebook/training-video-clip.mp4";
+import trainingPoster from "@/assets/blog/open-notebook-self-hosted-research-notebook/training-video-poster.jpg";
 
 The "drop in your sources and talk to them" workflow is one of the most useful
 things AI has given researchers. Upload a stack of PDFs, a couple of web
@@ -24,9 +36,10 @@ yourself in Docker and point at whichever model provider you choose, including
 Azure OpenAI or a fully local model.
 
 This post walks through everything it does: how it organizes content, what it
-can ingest, how chat and search work, transformations, podcast generation, the
-REST API, the Model Context Protocol ("MCP") server, and the security settings
-you should change before anyone else can reach it.
+can ingest, how chat and search work, transformations, podcast generation,
+infographics and videos, the REST API, the Model Context Protocol ("MCP")
+server, and the security settings you should change before anyone else can
+reach it.
 
 <Explain title="Last verified">
   Written in September 2026. Menu labels and provider lists may have moved by
@@ -217,6 +230,134 @@ example because of an expired key or a rate limit, the episode is marked
 On privacy: with a cloud TTS provider, the provider receives the generated
 script, not your raw sources. With a local TTS option, nothing leaves the
 machine.
+
+## Infographics and videos
+
+Notes and chat answers work well when you're the one reading them. When you
+need to hand research to someone else, a page of notes isn't always the right
+format. The **Studio** panel turns the sources you've selected into finished
+pieces: reports, briefings, PowerPoint decks, mind maps, quizzes, flashcards,
+the podcasts above, and the visual formats in this section. Every one is built
+only from your sources.
+
+<Screenshot
+  src={workspace}
+  alt="InfiniAIBook notebook with four community garden sources selected on the left, a cited chat answer in the middle, and the Studio panel with audio overview, whiteboard video, report, and infographic options on the right."
+  caption="A sample notebook: sources on the left, a cited chat answer in the middle, and the Studio panel on the right."
+/>
+
+A **focus box** at the top of the Studio panel steers every generator, so the
+same notebook can produce one video about the budget and another about the
+volunteer schedule.
+
+### Infographics
+
+There are 33 infographic styles. Some are laid out as web pages, so the text
+stays sharp and each number keeps a clickable citation. Others are drawn by your
+image model as a single picture. A style gallery shows every style rendered on
+the same sample notebook, so you can compare them before you spend a
+generation. You can also pick the shape (landscape, portrait, or square), the
+level of detail, and describe what you want in a sentence or two.
+
+<Screenshot
+  src={infographicSketch}
+  alt="Sketch-note infographic titled Community Garden Pilot Snapshot, with hand-lettered headline numbers for beds, households, weeks, and budget, and grouped bullet points with numbered citation badges."
+  caption="The Sketch note style, one of the web-page layouts. The numbered badges are citations back to the sources."
+/>
+
+<Screenshot
+  src={infographicVisualGuide}
+  alt="Illustrated infographic titled Portal 360: One Workspace, Connected Control, with a central platform graphic joined by colored ribbons to unified view, safe actions, and smart operations panels."
+  caption="The default Visual guide style, drawn by the image model from a notebook about my Portal 360° project."
+/>
+
+If the Portal 360° name is new to you, the
+[Portal of Portals deep dive](/blog/portal-of-portals-deep-dive/) covers what
+that infographic is summarizing.
+
+### Whiteboard videos
+
+A whiteboard video is a narrated, hand-drawn explainer. The generator plans six
+scenes, each with a hand-lettered title, one simple drawing, a caption, and a
+line or two of narration. Then it stops so you can review the script. Nothing is
+drawn or recorded until you press **Render video**.
+
+<Screenshot
+  src={whiteboardScript}
+  alt="Whiteboard video script editor with voice and music settings, followed by scene one, An Empty Lot, showing editable fields for the on-screen caption, what gets drawn, and the narration."
+  caption="Every scene is editable before rendering: the title, the caption, the drawing, and the exact words the narrator says."
+/>
+
+When you render, the image model draws each scene, Azure AI Speech narrates
+it, and the renderer animates a hand sketching the lines onto the board. A
+six-scene video takes about six and a half minutes end to end, mostly spent on
+the drawings. It runs in the background, so you can keep working while it
+builds.
+
+<Video
+  src={whiteboardVideo}
+  poster={whiteboardPoster}
+  label="Narrated whiteboard video about the hardware needed to self-host AI models"
+  caption="An 86-second whiteboard video generated from five public articles about self-hosting AI models. The figures come from those articles."
+/>
+
+### Motion explainers
+
+A motion explainer is a short, narrated 2D animation. It follows the arc of a
+product explainer: the problem, the solution, how it works, the benefits, and a
+next step on a closing card. Characters and props slide into illustrated
+scenes, headlines animate in, and stat cards count up.
+
+The image model draws the backgrounds, the character, and the props. The motion
+itself comes from the renderer, not an AI model, which keeps the timing
+predictable. Under **Options → Customize** you can change the length, tone,
+audience, illustration style, colors, recurring character, and the call to
+action on the closing card.
+
+<Video
+  src={motionVideo}
+  poster={motionPoster}
+  label="Narrated motion explainer about how Scout troops fund their year with popcorn sales and other fundraisers"
+  caption="A 100-second motion explainer generated from public pages about Scout troop fundraising, with the default friendly tone and flat illustration style."
+/>
+
+### Training videos
+
+The training video is the most involved format. It writes a trainer's script
+from your selected sources and every note in the notebook: a welcome and
+learning objectives, a few teaching sections, a recap, and a spoken knowledge
+check. Once you're happy with the script, the Azure AI Speech text to speech
+avatar renders a lip-synced presenter, with sign-in through Microsoft Entra ID.
+
+By default the presenter shares the frame with visuals: title cards, bullet
+points, key numbers, quotes, knowledge checks, pictures, screenshots, and the
+notebook's own infographics. Each visual is pinned to a phrase in the script
+and appears as the presenter says it, so editing other parts of the script
+doesn't knock it out of sync. You can plan, edit, and preview the visuals in the
+browser before any avatar time is billed.
+
+<Video
+  src={trainingVideo}
+  poster={trainingPoster}
+  label="First minute of an avatar training video, with a presenter introducing learning objectives as slides appear beside her"
+  caption="The first minute of an eight-minute training video built from public articles about the new Microsoft Copilot. Each slide appears as the presenter reaches it."
+/>
+
+### What the visual formats need
+
+Only a chat model is required to run InfiniAIBook. The visual formats switch on
+as you add more:
+
+- **Web-page infographics:** the chat model.
+- **Drawn infographics:** an image model.
+- **Whiteboard videos and motion explainers:** an image model, Azure AI Speech
+  for the narration, and Python 3 with a few imaging packages on the machine
+  running the app.
+- **Training videos:** Azure AI Speech for the avatar. Avatar rendering is
+  billed by the second of finished video, so review the script before you
+  render.
+
+The README lists the exact settings and Python packages for each one.
 
 ## The REST API and MCP
 
