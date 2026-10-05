@@ -50,20 +50,20 @@ and Copilot Studio writes the code for a complete web app and shows you a live
 preview. From there you keep refining it by chatting. When you
 publish, the app runs on
 [Microsoft Copilot Managed Runtime](https://learn.microsoft.com/microsoft-365/managed-apps/),
-which is in preview as of October 2026. Copilot Managed Runtime hosts the app
-and handles sign-in with Microsoft Entra ID and your tenant's governance
-policies. You never set up a server. You can use any of the more than 1,500
-Power Platform connectors, or build a custom connector in a few minutes when
-the one you need doesn't exist.
+which is in preview as of October 2026. Copilot Managed Runtime hosts the "Power Apps Managed app"
+and handles authentication with Microsoft Entra ID and all of your tenant's existing governance
+policies, including Conditional Access, MFA, Purview, Defender, you name it. You never set up a server. You can use any of the more than 1,600
+Power Platform connectors (you can literally mention the data source and it will automatically add in the appropriate connector(s), or build a custom connector of your own (low-med complexity level) when
+the one you need doesn't exist. 
 
-Here's what Autopilot did with Copilot Studio:
+Here's what Autopilot did for me using Copilot Studio:
 
-1. Opened Copilot Studio and confirmed it was signed in to the correct tenant.
-2. Looked at the 14 apps already in my environment so it wouldn't repeat one.
-3. Picked five new ideas and wrote a detailed brief for each.
+1. Opened the Copilot Studio portal and confirmed it was signed in to the correct tenant.
+2. Looked at the 14 apps already in my environment so it wouldn't significantly overlap any in features.
+3. Picked five new ideas for me and wrote a detailed brief for each.
 4. Opened five browser tabs and started all five builds at the same time.
-5. Watched each build, took screenshots of the previews, and reviewed them like
-   a perfectionist product manager.
+5. Watched each build, automatically took screenshots of the processes, and reviewed them like
+   an accurately perfect product manager to insure the highest level of quality assurance possible.
 6. Sent fixes back to the builder, checked the results with its "eyes"
    (<Term def="A tool that lets a program open web pages, click around, and take screenshots the way a person would.">Playwright</Term>),
    and published the apps.
@@ -228,12 +228,11 @@ That's intentional. Copilot Managed Runtime apps inherit the tenant's
 and Microsoft's documentation says these apps
 [connect to data through connectors](https://learn.microsoft.com/microsoft-365/managed-apps/developer/connect-to-data).
 Every data call is routed through the platform, where Microsoft Entra
-identity, Data Loss Prevention ("DLP"), and Advanced Connector Policies ("ACP")
-apply.
+identity, Data Loss Prevention ("DLP"), and Advanced Connector Policies ("ACP") based on the pre-defined configurations following the final decisions made Northwind Cinema's data security and compliance departments.
 
 <Explain title="What's a connector, and what's a custom connector?">
-  A connector is a ready-made, managed link between Power Platform and another
-  service, such as SharePoint, SQL Server, or Office 365. Your app asks the
+  A connector is a ready-made, managed link between Power Platform and another first or third-party
+service, such as SharePoint, SQL Server, Office 365, and ServiceNow. Your app asks the
   connector for data, and the platform handles sign-in and applies your
   organization's rules about which services can share data with which. When
   there's no ready-made connector for a service, you can create a custom
@@ -280,8 +279,7 @@ handled the browser tabs, builds, fixes, connectors, and publishing. My part
 was judgment: deciding what looked good, what was believable, and what a chief
 financial officer would push back on.
 
-**Review took the most skill.** Every app worked on the first build. Most
-weren't ready to show anyone. The real improvements came from catching things
+**Review requires the most skill.** Every app will "work" on the first build, but most won't be ready to show anyone. The real improvements come from catching things
 like the 167% funnel, a chart that rendered as a solid block, a clock labeled
 Coordinated Universal Time ("UTC") that actually showed local time, and an
 outlook forecasting $178 oil. A straight-line projection produced that last
@@ -296,8 +294,7 @@ to production on day one.
 
 That shift, from asking Copilot for help to handing an agent a defined piece of
 work, is what the short video below is about. [InfiniAIBook](/blog/open-notebook-self-hosted-research-notebook/) made it. That's a tool
-I built that turns source material into training videos, FAQs, and
-infographics, so the video is one more piece of work I handed off.
+I built the other day that turns all kinds of source material into training videos, FAQs, reports, PowerPoints, Study Guides, Podcasts, infographics, and many others, so the video is one more piece of work I handed off.
 
 <figure class="not-prose my-8">
   <a
@@ -329,8 +326,7 @@ infographics, so the video is one more piece of work I handed off.
 - **Ask for data honesty.** The live, cached, and sample badges were one of the
   best ideas of the day. An executive trusts a demo more when it tells them
   what's real.
-- **Plan for connectors early.** If your app needs outside data, create the
-  custom connector first. It's a few minutes of OpenAPI work, and you get
+- **Plan for connectors early.** If your app needs outside data, and there's no out-of-the-box connector, create a custom connector first. It's a few minutes of OpenAPI work, and you get
   governed, reusable access out of it.
 - **Budget time for review.** The builds took minutes. Most of the quality came
   from going through each preview carefully.
