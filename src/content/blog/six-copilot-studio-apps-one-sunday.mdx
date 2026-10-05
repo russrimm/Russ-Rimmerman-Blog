@@ -271,6 +271,75 @@ it matched.
 The finished dashboard puts a green **LIVE** badge on every panel backed by a
 live feed and shows where every number comes from.
 
+## What the day actually used
+
+When the apps were done, I asked Autopilot how long it had really been working
+and how much it had used. It didn't guess. It measured the time from the
+timestamps in its own session log.
+
+My requests ran for about 2 hours 42 minutes in total. Autopilot was actively
+working for about 66 minutes of that, and the AI model itself accounted for only
+about 28 minutes. Model time is the part that uses Autopilot's credits.
+
+All times below are in minutes. **Model** is the AI model working, **Tools** is
+browser and tool work, and **Waiting** is time spent waiting on the Copilot
+Studio builder.
+
+| Request                 |   Total |  Model |  Tools | Waiting |
+| ----------------------- | ------: | -----: | -----: | ------: |
+| First five apps         |    56.7 |    9.0 |   15.4 |    32.3 |
+| Live energy data        |    96.4 |   13.3 |   19.6 |    63.5 |
+| CineServe, post draft   |     7.2 |    4.0 |    3.2 |       0 |
+| Follow-up questions     |     2.0 |    1.9 |    0.1 |       0 |
+| **Total**               | **162** | **28** | **38** |  **96** |
+
+Idle time between my messages isn't counted at all. Here's what the waiting and
+tool time covers:
+
+- **Waiting on the builder (96 minutes).** Autopilot paused on purpose while
+  Copilot Studio wrote and compiled the apps. That used none of Autopilot's
+  credits. The Copilot Studio builder was doing real work during that time,
+  though, and it draws on Copilot Studio credits, which don't show up in
+  Autopilot's log.
+- **Browser and tool work (38 minutes).** Clicking through Copilot Studio, the
+  Power Apps maker portal, and the Connections page, taking screenshots, and
+  calling the EIA API. This runs slightly high, because it includes short
+  pauses while pages loaded or publishing finished.
+
+Take out the blog draft and the follow-ups, and building six apps and four
+custom connectors came to about 24 minutes of model time and 37 minutes of tool
+work. That's roughly an hour of actual activity.
+
+Autopilot reports usage in AI units ("AIU"), not dollars:
+
+| Request                                  |        AIU |
+| ---------------------------------------- | ---------: |
+| Build the first five apps                |        757 |
+| Live energy data                         |      2,381 |
+| Start CineServe                          |        282 |
+| Draft this post                          |        371 |
+| Rename a term in the draft               |        266 |
+| A one-line "where is the post?" question |        246 |
+| **Total**                                | **≈4,303** |
+
+That added up to six premium requests, about 97,000 output
+<Term def="The small chunks of text, roughly three-quarters of a word each, that an AI model reads and writes. Usage is counted in them.">tokens</Term>,
+and about 58 million tokens of reused
+<Term def="Everything the model is shown along with your message: its instructions, the conversation so far, and any files or tool results.">context</Term>.
+
+The surprise for me was what drives the number. It isn't time. Every new message
+sends the whole conversation history back to the model, so the cost of a request
+grows with how long the chat has been running. That's why asking where the post
+was saved, a one-line answer, used about 246 AIU, nearly as much as kicking off
+an entire app. The live data request used more than half the day's total on its
+own, because it was the longest stretch of steps, each carrying everything that
+came before it.
+
+The practical fix is simple: when a follow-up question has nothing to do with
+the work in progress, start a new chat. The log only reports AIU, so I can't
+convert these numbers to dollars or Copilot Credits, but the pattern is what
+matters.
+
 ## What I took away
 
 The ever improving AI models that are out now are quite impressive, but they weren't what stuck with me.
@@ -331,6 +400,9 @@ I built using the GitHub Copilot Windows app the other day that turns many types
   governed, reusable access out of it.
 - **Budget time for review.** The builds took minutes. Most of the quality came
   from going through each preview carefully.
+- **Start a new chat for unrelated questions.** Each message carries the whole
+  conversation with it, so a quick side question at the end of a long session
+  costs far more than the same question in a fresh chat.
 
 To get started, follow
 [Create an app in Microsoft Copilot Studio](https://learn.microsoft.com/microsoft-copilot-studio/apps-experience/create-app)
