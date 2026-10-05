@@ -19,10 +19,13 @@ import infographicVisualGuide from "@/assets/blog/open-notebook-self-hosted-rese
 import whiteboardScript from "@/assets/blog/open-notebook-self-hosted-research-notebook/whiteboard-script.png";
 import whiteboardVideo from "@/assets/blog/open-notebook-self-hosted-research-notebook/whiteboard-video-self-hosted-ai.mp4";
 import whiteboardPoster from "@/assets/blog/open-notebook-self-hosted-research-notebook/whiteboard-video-poster.jpg";
+import whiteboardCaptions from "@/assets/blog/open-notebook-self-hosted-research-notebook/whiteboard-video-self-hosted-ai.vtt?url";
 import motionVideo from "@/assets/blog/open-notebook-self-hosted-research-notebook/motion-explainer-scout-fundraising.mp4";
 import motionPoster from "@/assets/blog/open-notebook-self-hosted-research-notebook/motion-explainer-poster.jpg";
+import motionCaptions from "@/assets/blog/open-notebook-self-hosted-research-notebook/motion-explainer-scout-fundraising.vtt?url";
 import trainingVideo from "@/assets/blog/open-notebook-self-hosted-research-notebook/training-video-clip.mp4";
 import trainingPoster from "@/assets/blog/open-notebook-self-hosted-research-notebook/training-video-poster.jpg";
+import trainingCaptions from "@/assets/blog/open-notebook-self-hosted-research-notebook/training-video-clip.vtt?url";
 
 The "drop in your sources and talk to them" workflow is one of the most useful
 things AI has given researchers. Upload a stack of PDFs, a couple of web
@@ -297,6 +300,7 @@ builds.
 <Video
   src={whiteboardVideo}
   poster={whiteboardPoster}
+  captions={whiteboardCaptions}
   label="Narrated whiteboard video about the hardware needed to self-host AI models"
   caption="An 86-second whiteboard video generated from five public articles about self-hosting AI models. The figures come from those articles."
 />
@@ -317,6 +321,7 @@ action on the closing card.
 <Video
   src={motionVideo}
   poster={motionPoster}
+  captions={motionCaptions}
   label="Narrated motion explainer about how Scout troops fund their year with popcorn sales and other fundraisers"
   caption="A 100-second motion explainer generated from public pages about Scout troop fundraising, with the default friendly tone and flat illustration style."
 />
@@ -339,6 +344,7 @@ browser before any avatar time is billed.
 <Video
   src={trainingVideo}
   poster={trainingPoster}
+  captions={trainingCaptions}
   label="First minute of an avatar training video, with a presenter introducing learning objectives as slides appear beside her"
   caption="The first minute of an eight-minute training video built from public articles about the new Microsoft Copilot. Each slide appears as the presenter reaches it."
 />
