@@ -17,10 +17,25 @@ import Screenshot from "@/components/Screenshot.astro";
 import executivePulse from "@/assets/blog/six-copilot-studio-apps-one-sunday/executive-pulse-markets.webp";
 import executivePulseGrid from "@/assets/blog/six-copilot-studio-apps-one-sunday/executive-pulse-grid.webp";
 import supplyChain from "@/assets/blog/six-copilot-studio-apps-one-sunday/supply-chain-tower.webp";
-import dealRoom from "@/assets/blog/six-copilot-studio-apps-one-sunday/deal-room.webp";
-import smartWorkplace from "@/assets/blog/six-copilot-studio-apps-one-sunday/smart-workplace.webp";
+import dealRoom from "@/assets/blog/six-copilot-studio-apps-one-sunday/deal-room-pipeline.webp";
+import dealForecast from "@/assets/blog/six-copilot-studio-apps-one-sunday/deal-room-forecast.webp";
+import dealLeaderboard from "@/assets/blog/six-copilot-studio-apps-one-sunday/deal-room-leaderboard.webp";
+import workplaceFloor from "@/assets/blog/six-copilot-studio-apps-one-sunday/smart-workplace-floor-plan.webp";
+import workplaceRooms from "@/assets/blog/six-copilot-studio-apps-one-sunday/smart-workplace-room-finder.webp";
+import workplaceAnalytics from "@/assets/blog/six-copilot-studio-apps-one-sunday/smart-workplace-analytics.webp";
+import workplaceWeek from "@/assets/blog/six-copilot-studio-apps-one-sunday/smart-workplace-my-week.webp";
+import workplaceVisitors from "@/assets/blog/six-copilot-studio-apps-one-sunday/smart-workplace-visitors.webp";
 import learningQuest from "@/assets/blog/six-copilot-studio-apps-one-sunday/learning-quest.webp";
-import cineServe from "@/assets/blog/six-copilot-studio-apps-one-sunday/cineserve.webp";
+import learningLearn from "@/assets/blog/six-copilot-studio-apps-one-sunday/learning-quest-learn.webp";
+import learningBuddy from "@/assets/blog/six-copilot-studio-apps-one-sunday/learning-quest-study-buddy.webp";
+import learningTeam from "@/assets/blog/six-copilot-studio-apps-one-sunday/learning-quest-team.webp";
+import cineServe from "@/assets/blog/six-copilot-studio-apps-one-sunday/cineserve-command-center.webp";
+import cineQueue from "@/assets/blog/six-copilot-studio-apps-one-sunday/cineserve-case-queue.webp";
+import cineAgent from "@/assets/blog/six-copilot-studio-apps-one-sunday/cineserve-guest-agent.webp";
+import cineInbox from "@/assets/blog/six-copilot-studio-apps-one-sunday/cineserve-inbox.webp";
+import cineFlows from "@/assets/blog/six-copilot-studio-apps-one-sunday/cineserve-flows.webp";
+import cineInsights from "@/assets/blog/six-copilot-studio-apps-one-sunday/cineserve-insights.webp";
+import cineGovernance from "@/assets/blog/six-copilot-studio-apps-one-sunday/cineserve-governance.webp";
 import videoThumb from "@/assets/blog/six-copilot-studio-apps-one-sunday/video-thumbnail.webp";
 
 At 11:22 a.m. on a Sunday I typed one request into Autopilot, the AI agent I
@@ -126,8 +141,8 @@ the effects spread. This was the only app that passed review with no changes.
 
 <Screenshot
   src={dealRoom}
-  alt="Deal Room sales pipeline for Northwind Cloud, showing pipeline totals, a stage conversion funnel narrowing from 42 prospects to 5 closed-won deals, and deal cards below."
-  caption="Deal Room after review, with a funnel that narrows the way a real one does."
+  alt="Deal Room pipeline for Northwind Cloud, with stage totals, a funnel narrowing from prospects to closed-won, and deal cards below."
+  caption="Pipeline, after review. The funnel narrows the way a real one does."
 />
 
 Northwind Cloud's pipeline holds about 40 deals across seven stages, and you
@@ -143,23 +158,64 @@ sample data and rebuild the funnel, and checked the result before publishing.
 Either mistake would have cost the demo its credibility in front of a sales
 audience.
 
-### Smart Workplace: desk booking you can see
+The other two tabs are what a sales leader asks for next. Forecast rolls the
+quarter into commit, best case, and the full pipeline. Leaderboard ranks the
+reps by quota attainment.
 
 <Screenshot
-  src={smartWorkplace}
-  alt="Smart Workplace floor plan for Woodgrove Bank headquarters, with meeting rooms, lounges, phone booths, and desks color-coded as available, occupied, or booked, plus a smart suggestion panel."
-  caption="Floor 2 of the Woodgrove Bank headquarters, generated entirely from data."
+  src={dealForecast}
+  alt="Deal Room quarterly forecast for Northwind Cloud, with commit, best case, and a full pipeline roll-up."
+  caption="Forecast for the quarter."
 />
 
-Woodgrove Bank's headquarters gets a desk and room booking app with a clickable
-floor plan across three floors. Turn on **Find my team** to see where
+<Screenshot
+  src={dealLeaderboard}
+  alt="Deal Room leaderboard ranking sales reps by quota attainment this quarter."
+  caption="Leaderboard, ranked by quota attainment."
+/>
+
+### Smart Workplace: desk booking you can see
+
+Woodgrove Bank's headquarters gets a desk and room booking app. The tabs across
+the top are the five things it does.
+
+<Screenshot
+  src={workplaceFloor}
+  alt="Smart Workplace floor plan for Woodgrove Bank headquarters, with rooms and desks colored available, booked, or occupied, and a Find my team control."
+  caption="Floor Plan. The rooms and desks are drawn from data, not from an image file."
+/>
+
+The floor plan covers three floors. Turn on **Find my team** to see where
 colleagues are sitting today, or drag the time slider to watch an occupancy
-heatmap shift through the day. Facilities managers get suggestions like
+heatmap shift through the day. When review found a phone booth overlapping a
+desk cluster, the fix was a one-line data change, not a redesign.
+
+<Screenshot
+  src={workplaceRooms}
+  alt="Smart Workplace Room Finder with filters for floor, seats, and equipment, and an availability timeline of open room slots."
+  caption="Room Finder. Filter the rooms, then take an open slot on the timeline."
+/>
+
+<Screenshot
+  src={workplaceAnalytics}
+  alt="Smart Workplace analytics for Woodgrove Bank headquarters, with weekly utilization, the peak day, and facility recommendations."
+  caption="Analytics. Utilization, the peak day, and the facilities recommendations."
+/>
+
+Facilities managers get the recommendations on that tab, including ones like
 "convert 12 under-used desks into two collaboration rooms."
 
-The app's code draws the floor plan from a list of rooms and desks instead of
-using an image file. So when review found a phone booth overlapping a desk
-cluster, the fix was a one-line data change, not a redesign.
+<Screenshot
+  src={workplaceWeek}
+  alt="Smart Workplace My Week planner with office and remote days for Monday through Friday and a lunch buddy suggestion."
+  caption="My Week. Office days, remote days, and who else is in."
+/>
+
+<Screenshot
+  src={workplaceVisitors}
+  alt="Smart Workplace visitor check-in form with guest details and a QR badge preview for reception."
+  caption="Visitors. Register a guest and preview the QR badge for reception."
+/>
 
 ### Learning Quest: onboarding as a game
 
@@ -171,8 +227,27 @@ cluster, the fix was a one-line data change, not a redesign.
 
 Tailspin Toys gets onboarding that plays like a game, with levels, experience
 points, a streak counter, badges, and a quest map of onboarding milestones.
-Flashcards flip, timed quizzes award points, and an AI study buddy answers
-policy questions or quizzes you on the spot.
+Flashcards flip and timed quizzes award points on the Learn tab. Study Buddy
+answers policy questions or quizzes you on the spot. Team is the leaderboard
+and the shared goals.
+
+<Screenshot
+  src={learningLearn}
+  alt="Learning Quest Learn tab for Tailspin Toys, with a flashcard deck and a quizzes section."
+  caption="Learn. Flip a flashcard, or take the quiz."
+/>
+
+<Screenshot
+  src={learningBuddy}
+  alt="Learning Quest Study Buddy chat for Tailspin Toys, ready to answer questions about company values and security."
+  caption="Study Buddy, ready for a policy question."
+/>
+
+<Screenshot
+  src={learningTeam}
+  alt="Learning Quest team leaderboard for Tailspin Toys, ranking players for the week and all time."
+  caption="Team. Rank for the week, and the shared challenges."
+/>
 
 The first build opened on a brand-new hire with zero points. That's realistic,
 but it's a dull way to start a demo. Autopilot had the builder load a demo
@@ -182,12 +257,6 @@ browser, so it survives a page refresh.
 
 ## The bonus app: CineServe, from a Microsoft reference architecture
 
-<Screenshot
-  src={cineServe}
-  alt="CineServe command center for Northwind Cinemas, with ticket and refund metrics, a case volume by channel donut chart, a refunds by reason bar chart, and a queue of cases awaiting human approval."
-  caption="CineServe's command center, with refunds waiting on a human decision in the lower right."
-/>
-
 Late in the afternoon I pointed Autopilot at a Microsoft solution idea,
 [Ticket management system with Copilot Studio agents](https://learn.microsoft.com/power-platform/architecture/solution-ideas/agent-ticket-and-refund),
 and asked for a sixth app. Autopilot read the architecture first and turned it
@@ -195,19 +264,64 @@ into a brief.
 
 CineServe is a ticket and refund operations app for Northwind Cinemas, a
 fictional chain with 40 theaters across Canada. Each piece of the architecture
-shows up as its own screen:
+is its own screen.
 
-- An **assisted agent**, styled like Teams, that looks up a booking, checks it
-  against policy, and proposes a refund, then waits for a person to approve it.
-- An **autonomous inbox agent**, styled like Outlook, that sorts incoming guest
-  emails, resolves low-risk refunds under a set amount, escalates the rest, and
-  shows its reasoning as it goes.
-- An **automation flow view** that lights up each step: agent, Power Automate
-  cloud flow, Dataverse, desktop robotic process automation ("RPA") on an Azure
-  virtual machine, the legacy ticketing system, Azure Key Vault, the refund, and
-  the guest notification.
-- A **governance panel** with approval thresholds, a policy editor, role-based
-  permissions, and an audit log of every agent decision.
+<Screenshot
+  src={cineServe}
+  alt="CineServe command center for Northwind Cinemas, with open cases, refund totals, and a queue of cases waiting on a person."
+  caption="Command Center. The live view of ticket and refund operations."
+/>
+
+<Screenshot
+  src={cineQueue}
+  alt="CineServe case queue listing open ticket and refund cases for Northwind Cinemas."
+  caption="Case Queue. The open cases, in one list."
+/>
+
+The assisted agent is styled like Teams. It looks up a booking, checks it
+against policy, and proposes a refund, then waits for a person to approve it.
+
+<Screenshot
+  src={cineAgent}
+  alt="CineServe guest service agent styled like a Teams chat, proposing a refund that waits for a person to approve it."
+  caption="Guest Service Agent. It proposes. A person approves."
+/>
+
+The autonomous inbox agent is styled like Outlook. It sorts incoming guest
+emails, resolves low-risk refunds under a set amount, escalates the rest, and
+shows its reasoning as it goes.
+
+<Screenshot
+  src={cineInbox}
+  alt="CineServe autonomous inbox styled like Outlook, triaging guest refund emails and marking which ones it resolved and which it escalated."
+  caption="Autonomous Inbox. Low-risk refunds resolve. The rest wait."
+/>
+
+The automation flow view lights up each step: agent, Power Automate cloud flow,
+Dataverse, desktop robotic process automation ("RPA") on an Azure virtual
+machine, the legacy ticketing system, Azure Key Vault, the refund, and the
+guest notification.
+
+<Screenshot
+  src={cineFlows}
+  alt="CineServe automation flow view for a selected refund case, with each pipeline step lit up."
+  caption="Automation Flows. One selected case, end to end."
+/>
+
+<Screenshot
+  src={cineInsights}
+  alt="CineServe insights view of operational analytics across channels and agents."
+  caption="Insights. Volume across channels and agents."
+/>
+
+The governance panel has approval thresholds, a policy editor, role-based
+permissions, and an audit log of every agent decision.
+
+<Screenshot
+  src={cineGovernance}
+  alt="CineServe governance panel with approval thresholds, policy rules, role permissions, and an audit log of agent decisions."
+  caption="Governance. Thresholds, roles, and the audit log."
+/>
 
 It runs on sample data shaped like the Dataverse tables in the reference
 architecture. Connecting it to real tables is the next step.
