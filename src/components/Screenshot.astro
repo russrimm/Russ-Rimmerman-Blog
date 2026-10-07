@@ -23,14 +23,27 @@ const widths = [480, 768, 1024, 1440, src.width].filter(
   <div
     class="border-ink-200 bg-ink-100 dark:border-ink-800 dark:bg-ink-900 overflow-hidden rounded-xl border shadow-sm ring-1 ring-black/5 dark:ring-white/5"
   >
-    <Image
-      src={src}
-      alt={alt}
-      widths={widths}
-      sizes="(min-width: 1024px) 768px, 100vw"
-      loading="lazy"
-      class="h-auto w-full"
-    />
+    <button
+      type="button"
+      data-lightbox-open
+      aria-label={`Enlarge image: ${alt}`}
+      class="focus-visible:outline-azure-600 group relative block w-full cursor-zoom-in focus-visible:outline-2 focus-visible:-outline-offset-2"
+    >
+      <Image
+        src={src}
+        alt={alt}
+        widths={widths}
+        sizes="(min-width: 1024px) 768px, 100vw"
+        loading="lazy"
+        class="h-auto w-full"
+      />
+      <span
+        aria-hidden="true"
+        class="absolute right-3 bottom-3 rounded-full bg-black/70 px-2.5 py-1 text-xs font-medium text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
+      >
+        Click to enlarge
+      </span>
+    </button>
   </div>
   {
     caption && (
@@ -39,4 +52,70 @@ const widths = [480, 768, 1024, 1440, src.width].filter(
       </figcaption>
     )
   }
+  <dialog
+    data-lightbox
+    aria-label={alt}
+    class="m-auto h-dvh max-h-none w-dvw max-w-none bg-transparent p-0 backdrop:bg-black/85"
+  >
+    <div
+      data-lightbox-close
+      class="flex h-full w-full cursor-zoom-out items-center justify-center p-4 sm:p-8"
+    >
+      <Image
+        src={src}
+        alt={alt}
+        widths={[1024, 1440, 1920, src.width].filter(
+          (w, i, arr) => w <= src.width && arr.indexOf(w) === i
+        )}
+        sizes="100vw"
+        loading="lazy"
+        class="max-h-full max-w-full rounded-lg object-contain shadow-2xl"
+      />
+    </div>
+    <button
+      type="button"
+      data-lightbox-close
+      aria-label="Close enlarged image"
+      class="focus-visible:outline-azure-400 absolute top-4 right-4 inline-flex size-10 items-center justify-center rounded-full bg-black/70 text-2xl leading-none text-white hover:bg-black focus-visible:outline-2"
+    >
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </dialog>
 </figure>
+
+<script>
+  document.addEventListener("click", event => {
+    if (!(event.target instanceof Element)) return;
+
+    const opener = event.target.closest<HTMLElement>("[data-lightbox-open]");
+    if (opener) {
+      const dialog = opener
+        .closest("figure")
+        ?.querySelector<HTMLDialogElement>("dialog[data-lightbox]");
+      if (dialog && !dialog.open) {
+        dialog.showModal();
+        document.documentElement.style.overflow = "hidden";
+      }
+      return;
+    }
+
+    const closer = event.target.closest("[data-lightbox-close]");
+    const dialog = closer?.closest<HTMLDialogElement>("dialog[data-lightbox]");
+    // Clicking the image itself keeps it open; only the backdrop area and the close button dismiss.
+    if (dialog && !(event.target instanceof HTMLImageElement)) dialog.close();
+  });
+
+  // The close event doesn't bubble, so listen in the capture phase.
+  document.addEventListener(
+    "close",
+    event => {
+      if (
+        event.target instanceof HTMLDialogElement &&
+        event.target.hasAttribute("data-lightbox")
+      ) {
+        document.documentElement.style.overflow = "";
+      }
+    },
+    true
+  );
+</script>
