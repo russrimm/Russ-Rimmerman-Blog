@@ -2,10 +2,10 @@
 title: "InfiniAIBook: A Self-Hosted AI Research Notebook"
 heroImage: ../../assets/blog/open-notebook-self-hosted-research-notebook.webp
 heroAlt: "Editorial illustration representing Self-Hosted AI Research Notebook."
-description: "A field guide to InfiniAIBook, the AI research notebook you host yourself: sources, chat, search, podcasts, infographics, videos, and MCP."
+description: "A field guide to InfiniAIBook, the AI research notebook you host yourself: cited chat, live voice discussions, Studio formats, videos, and Azure deployment."
 pubDate: 2026-09-24
-updatedDate: 2026-10-05
-tags: ["AI", "Open Source", "Azure", "MCP", "Security"]
+updatedDate: 2026-10-09
+tags: ["AI", "Open Source", "Azure", "Security"]
 featured: false
 draft: false
 ---
@@ -14,6 +14,10 @@ import Explain from "@/components/Explain.astro";
 import Screenshot from "@/components/Screenshot.astro";
 import Video from "@/components/Video.astro";
 import workspace from "@/assets/blog/open-notebook-self-hosted-research-notebook/workspace.png";
+import mindMap from "@/assets/blog/open-notebook-self-hosted-research-notebook/mind-map.png";
+import quiz from "@/assets/blog/open-notebook-self-hosted-research-notebook/quiz.png";
+import powerpointDeck from "@/assets/blog/open-notebook-self-hosted-research-notebook/powerpoint-deck.png";
+import audioOverview from "@/assets/blog/open-notebook-self-hosted-research-notebook/audio-overview.png";
 import infographicSketch from "@/assets/blog/open-notebook-self-hosted-research-notebook/infographic-sketch.png";
 import infographicVisualGuide from "@/assets/blog/open-notebook-self-hosted-research-notebook/infographic-visual-guide.jpg";
 import whiteboardScript from "@/assets/blog/open-notebook-self-hosted-research-notebook/whiteboard-script.png";
@@ -23,6 +27,8 @@ import whiteboardCaptions from "@/assets/blog/open-notebook-self-hosted-research
 import motionVideo from "@/assets/blog/open-notebook-self-hosted-research-notebook/motion-explainer-scout-fundraising.mp4";
 import motionPoster from "@/assets/blog/open-notebook-self-hosted-research-notebook/motion-explainer-poster.jpg";
 import motionCaptions from "@/assets/blog/open-notebook-self-hosted-research-notebook/motion-explainer-scout-fundraising.vtt?url";
+import trainingCard from "@/assets/blog/open-notebook-self-hosted-research-notebook/training-card.png";
+import trainingEditor from "@/assets/blog/open-notebook-self-hosted-research-notebook/training-editor.png";
 import trainingVideo from "@/assets/blog/open-notebook-self-hosted-research-notebook/training-video-clip.mp4";
 import trainingPoster from "@/assets/blog/open-notebook-self-hosted-research-notebook/training-video-poster.jpg";
 import trainingCaptions from "@/assets/blog/open-notebook-self-hosted-research-notebook/training-video-clip.vtt?url";
@@ -30,218 +36,171 @@ import trainingCaptions from "@/assets/blog/open-notebook-self-hosted-research-n
 The "drop in your sources and talk to them" workflow is one of the most useful
 things AI has given researchers. Upload a stack of PDFs, a couple of web
 articles, and a recorded meeting, then ask questions and get answers that point
-back to the page they came from. The sticking point is usually not the workflow.
-It's the constraint around it: the content has to stay on infrastructure you
-control, or the model has to be the one your organization already approved.
+back to the passage they came from. The sticking point is usually not the
+workflow. It's the constraint around it: the content has to stay on
+infrastructure you control, or the model has to be the one your organization
+already approved.
 
-InfiniAIBook is built for that situation. It's a research notebook that you run
-yourself in Docker and point at whichever model provider you choose, including
-Azure OpenAI or a fully local model.
+[InfiniAIBook](https://github.com/russrimm/InfiniAIBook) is built for that
+situation. It's a research notebook you run yourself and point at whichever
+model provider you choose, including Azure OpenAI or a fully local model. It
+started as a place to chat with sources, and it has grown into a full studio
+that also turns them into decks, infographics, quizzes, podcasts, and narrated
+videos.
 
-This post walks through everything it does: how it organizes content, what it
-can ingest, how chat and search work, transformations, podcast generation,
-infographics and videos, the REST API, the Model Context Protocol ("MCP")
-server, and the security settings you should change before anyone else can
-reach it.
+This post walks through everything it does today: how it organizes content,
+what it can ingest, how chat, search, and live voice discussions work, every
+Studio format, how to run it locally or in Azure, and the security settings to
+change before anyone else can reach it.
 
 <Explain title="Last verified">
-  Written in September 2026. Menu labels and provider lists may have moved by
-  the time you read this, and the InfiniAIBook README is the source of truth for
-  configuration settings.
+  Updated October 9, 2026, against the InfiniAIBook repository at that date.
+  Menu labels and provider lists may have moved by the time you read this, and
+  the project README and docs are the source of truth for configuration.
 </Explain>
 
 ## InfiniAIBook at a glance
 
-- **Stack:** A Python and FastAPI backend, a Next.js and React frontend, and
-  SurrealDB for storage.
-- **Runs as:** Two Docker containers, the app and the database. The web UI
-  listens on port `8502` and the REST API on `5055`.
+- **Stack:** A Next.js and TypeScript app with a SQLite database. There's no
+  separate database server to run.
+- **Runs as:** A Node.js app on your machine (Node 22.13 or later), a single
+  Docker container, or an Azure Container App. The web UI opens at
+  `http://localhost:3000`.
+- **Where your data lives:** One `.data` folder holds sources, embeddings, chat
+  history, and generated media.
 - **Cost:** You pay whatever your model provider charges, or nothing if you run
   models locally.
-- **Interface languages:** English, Spanish, Portuguese, Chinese (Simplified and
-  Traditional), Japanese, Russian, and Bengali.
+- **Who it's for:** One person or one small trusted group. It has a single
+  shared password, not user accounts.
 
 ## Notebooks, sources, and notes
 
-Everything in InfiniAIBook lives in one of three layers, and understanding them
-makes the rest of the app click.
+Everything lives in one of three layers, and understanding them makes the rest
+of the app click.
 
-A **notebook** is a container for one research project. It has a name and a
-description, and that description becomes shared context for every AI
-interaction inside it. Notebooks are isolated from each other: a source in one
-never shows up in another.
+A **notebook** is a container for one research project. Notebooks are isolated
+from each other, so a source in one never shows up in another's chat.
 
 A **source** is one piece of raw material, such as a PDF, a URL, or an audio
 file. Sources don't change after you add them. If a document gets a new
-version, you add it as a new source. You can tag sources inside a notebook to
-group them ("background," "primary research").
+version, add it as a new source, or let InfiniAIBook re-check linked sources
+and tell you what changed.
 
-A **note** is output. You can write notes by hand, save a chat response as a
-note, or let a transformation generate one. Notes are searchable alongside your
-sources and can cite them, so you keep a trail from each insight back to its
-evidence.
+A **note** is output. You can write notes by hand, save a chat answer as a note
+(citations stay attached), or let a transformation generate one. A note can
+also become a source, so chat and the Studio can draw on it.
 
-One boundary to plan around: a source belongs to exactly one notebook. If you
-need the same document in two projects, add it to both.
+If you need the same document in two projects, the **From other notebooks**
+option copies it in with its text, summary, and embeddings, so nothing is
+fetched or processed again.
+
+The workspace is built to stay out of your way. The Sources and Studio panels
+can be pinned beside the chat or collapsed to a slim rail, a first-run guided
+tour shows where everything is (replayable from **Help**), and there's a light
+theme next to the dark one. If your system asks for reduced motion, the app
+fades instead of sliding.
 
 ## Getting content in
 
 When you add a source, InfiniAIBook extracts the text, splits it into chunks,
 generates an embedding for each chunk, and stores the result so it's ready for
-search and chat.
+search and chat. Ingestion runs in the background, three items at a time, and
+the rest show as "Queued," so you can keep adding while earlier items finish.
 
 <Explain title="What's an embedding, and why do I care?">
   An embedding is a list of numbers that represents the meaning of a piece of
   text. Two passages about the same idea end up with similar numbers even if
   they share no words. That's what lets InfiniAIBook find "the section about
   access reviews" when the document actually says "periodic entitlement
-  certification." You need an embedding model configured for this to work,
-  separate from the chat model.
+  certification." You need an embedding model configured for the best results.
+  Without one, retrieval falls back to keyword ranking and says so.
 </Explain>
 
 Here's what it accepts:
 
-- **Documents:** PDF, Word, PowerPoint, Excel, EPUB, Markdown, plain text, and
-  HTML. The docs list a practical ceiling of roughly 100 MB per file.
-- **Web content:** Articles and blog posts, online PDFs, public Reddit posts,
-  and YouTube videos, playlists, Shorts, and live URLs.
-- **Audio and video:** MP3, WAV, M4A, OGG, FLAC, MP4, MOV, MKV, WebM, and
-  others. These are transcribed automatically once you configure a
-  speech-to-text ("STT") model.
+- **Documents:** PDF, Word, PowerPoint, text, Markdown, CSV, JSON, and HTML,
+  up to 50 MB each. PowerPoint decks are read slide by slide, including speaker
+  notes. A deck over the limit is read in your browser and only its text is
+  uploaded.
+- **ZIP archives:** Every supported file inside becomes its own source, titled
+  with its path in the archive. Nested archives are opened, with caps on file
+  count and expanded size.
+- **Images:** Described by a vision model so they can be searched like any
+  other source.
+- **Audio and video:** MP3, M4A, WAV, OGG, FLAC, WebM, and MP4 files up to
+  25 MB, transcribed once a transcription model is configured.
+- **Web content:** Article URLs, YouTube links, and RSS or Atom feeds.
 - **Pasted text:** Available immediately, with no processing wait.
 
-Two extraction engines are opt-in to keep the default container small. **Docling**
-adds layout-aware extraction for tables and multi-column documents, plus optical
-character recognition ("OCR") for scanned PDFs and images. **Crawl4AI** renders
-JavaScript-heavy pages locally before extracting them. You turn each on in the
-container configuration (the README lists the settings), then choose engines
-under **Settings → Content Processing**. Docling also has optional toggles for
-extracting formulas and for describing images and charts with a vision model.
+Two features help when you don't have the material in hand yet. **Search web**
+takes a topic, expands it into a few queries, and lets you pick from the
+results (pages likely to block an automated fetch are flagged first). The
+built-in browser lets you read a page and keep what's useful.
 
-Paywalled pages and password-protected PDFs can't be extracted. Save the content
-another way and upload it as a file or pasted text.
+Paywalled pages and password-protected files can't be extracted. Save the
+content another way and upload it as a file or pasted text.
+
+### Structure explorer
+
+Some sources are data rather than prose. For JSON, XML, CSV, TSV, and HTTP
+Archive ("HAR") files, a **structure explorer** opens the source as a path tree
+and graph with types and counts, or as a sortable table. HAR files get extra
+views: a request table, a waterfall, and findings such as failures, slow
+responses, uncached resources, redirects, and secrets in URLs. **Diagnose with
+AI** sends a redacted digest, never the raw archive, to the model to suggest
+likely root causes, and there's a sanitized download for sharing.
 
 ## Bring your own model
 
-This is the feature that makes InfiniAIBook work in an enterprise setting. The
-provider list is long: OpenAI, Anthropic, Google (Gemini and Vertex AI), Azure OpenAI,
-Mistral, Groq, DeepSeek, xAI, Cohere, Perplexity, OpenRouter, ElevenLabs,
-Deepgram, Voyage, and more. For local models there's Ollama, LM Studio, oMLX on
-Apple Silicon, and any OpenAI-compatible endpoint.
+This is the feature that makes InfiniAIBook work in an enterprise setting.
+Named presets cover Azure OpenAI, OpenAI, Anthropic, Google Gemini, Groq,
+Mistral, DeepSeek, OpenRouter, xAI, Perplexity, and Together. Any
+OpenAI-compatible endpoint works too, including Ollama, llama.cpp, and
+LM Studio for local models.
 
-Providers don't all do the same jobs. InfiniAIBook assigns models by role: a
-language model for chat and transformations, an embedding model for search, and
-optionally STT and text-to-speech ("TTS") models for transcription and podcasts.
-Azure OpenAI covers all four roles, so if your organization already has Azure
-OpenAI deployments, you can run the whole app against them. Anthropic, by
-contrast, provides language models only, so you'd pair it with a separate
-embedding provider.
+Models are assigned by role. Only a chat model is required, and each optional
+model switches on a feature:
 
-You add a provider in the UI by pasting its credential, testing the connection,
-and syncing the available models. **Auto-Assign Defaults** fills the required
-slots for you. Credentials are encrypted in the database with a key you supply,
-which comes up again in the setup section.
+- **Embeddings** for semantic search and retrieval.
+- **Image** for drawn infographics, whiteboard videos, and motion explainers.
+- **Vision** for images and the screen helper.
+- **Transcription** for audio and video sources.
+- **Realtime voice** for live discussions.
+- **Azure AI Speech** for every spoken format.
+
+You can mix providers. Anthropic offers chat models only, so you'd pair it with
+a separate embedding provider. If you're on Azure, the app can sign in with
+Microsoft Entra ID (through `az login`, or a managed identity when it runs in
+Azure) instead of storing keys.
 
 A few details worth knowing:
 
-- Each transformation can use its own model, so you can run bulk summaries on a
-  small, inexpensive model and save a larger one for deep analysis.
-- Reasoning models such as DeepSeek-R1 and Qwen3 are supported.
-- If you run a local model on a single GPU, lower the worker's maximum
-  concurrent tasks from the default of 5 to 1 so parallel source processing
-  doesn't overload it.
+- A **model picker** in the workspace header switches the chat, embedding,
+  image, and vision models without editing a settings file. If you change the
+  embedding model, the notebook reports how many passages still use the old one
+  and can re-embed them.
+- A separate **Studio script model** can write scripts and scene plans, with
+  chat reserved for everyday questions.
+- Cloud providers get a **daily spending ceiling** of $25 by default, estimated
+  across chat, image, speech, and discussion calls. You can raise it or turn it
+  off.
+- A local model on a CPU is slow. On a GPU or Apple Silicon it's far quicker,
+  but "no key needed" and "fast" aren't the same thing.
 
-## Chat, with you deciding what the model sees
+## Chat, grounded in what you selected
 
-Chat is where most of your time goes, and its most useful feature is context
-control. For each source in a notebook, you pick one of three levels:
+Chat is where most of your time goes. You tick the sources you want in play,
+and answers stream in built only from those sources, with numbered citations.
+Click a citation to open the source with the passage highlighted, so you can
+check the claim yourself. **Stop** ends an answer early and keeps what was
+written. With nothing selected, chat declines rather than quietly using
+everything.
 
-- **Full content:** The model sees the entire text. Best for close reading and
-  precise citations.
-- **Summary only:** The model sees a short generated summary. Good for
-  background material, at a fraction of the token cost.
-- **Not in context:** The model sees nothing. The source stays in the notebook
-  but is never sent to the provider.
-
-That third option is the one I'd point out to anyone handling sensitive
-material. You can keep a confidential document in the same notebook as your
-public research and guarantee it never leaves your server during a chat.
-
-You can change context mid-conversation without losing history, keep multiple
-chat sessions per notebook, and save any response as a note. Responses include
-citations back to your sources, and clicking one opens the source so you can
-check the claim yourself.
-
-### Ask: when you want one thorough answer
-
-Chat sends the sources you selected. **Ask** works differently: it uses
-Retrieval-Augmented Generation ("RAG"), meaning it searches across the notebook
-for the most relevant chunks, then answers from those. Use Ask for a single
-comprehensive question when you don't know which sources hold the answer. Use
-Chat when you want to go back and forth with a set of sources you've already
-chosen.
-
-## Search: keywords or meaning
-
-InfiniAIBook has two search modes, and each one finds things the other misses.
-
-- **Text search** matches keywords across source titles, source content, notes,
-  and generated insights. It's instant and the right choice for exact phrases,
-  names, error codes, and version numbers.
-- **Vector search** matches meaning using the embeddings. It finds related
-  content even when the wording differs, but it doesn't match titles, and it's
-  weaker on exact strings like `AADSTS50076`.
-
-The docs boil it down well: if you remember the exact words, use text search.
-If you remember the idea, use vector search.
-
-## Transformations: the same analysis across many sources
-
-A transformation is a saved prompt that runs against one or many sources and
-produces one note per source. It's the answer to "I have fifteen documents and
-I want the same summary of each."
-
-Built-in templates cover Summary, Key Concepts, Methodology, Takeaways, and
-Questions. You can also write your own. A template for vendor documentation, a
-meeting transcript, or a security assessment takes a few minutes to write and
-then runs across the whole batch in the background while you keep working.
-Output notes are named after the transformation and the source, tagged, and
-linked back to where they came from.
-
-The docs recommend testing a new template on one source before running it on
-twenty, and that advice holds up. A vague prompt produces vague notes at scale.
-
-## Podcasts from your research
-
-InfiniAIBook can turn a notebook into an audio episode, which is handy for
-catching up on a research pile during a commute. It gives you a lot of control
-over the result:
-
-- **One to four speakers**, each with a profile covering expertise,
-  personality, and an optional accent.
-- **Episode profiles** that set the topic, length, tone, format (monologue,
-  interview, debate, or panel), and audience. An optional **Max output
-  tokens** field caps generation per step.
-- **Per-speaker voice models**, so each speaker can use a different TTS
-  provider if you want.
-
-Generation runs in the background in stages: outline, then transcript, then
-audio. A 30-minute episode can take 10 minutes or more. If a step fails, for
-example because of an expired key or a rate limit, the episode is marked
-**Failed** with the provider's error message and a **Retry** button.
-
-On privacy: with a cloud TTS provider, the provider receives the generated
-script, not your raw sources. With a local TTS option, nothing leaves the
-machine.
-
-## Infographics and videos
-
-Notes and chat answers work well when you're the one reading them. When you
-need to hand research to someone else, a page of notes isn't always the right
-format. The **Studio** panel turns the sources you've selected into finished
-pieces: reports, briefings, PowerPoint decks, mind maps, quizzes, flashcards,
-the podcasts above, and the visual formats in this section. Every one is built
-only from your sources.
+That selection is also your privacy control. A source you haven't ticked is
+never sent to the model, so a confidential document can sit in the same
+notebook as your public research. You can keep several chat sessions per
+notebook, so an unrelated question isn't colored by an old thread, and save any
+answer as a note.
 
 <Screenshot
   src={workspace}
@@ -249,17 +208,155 @@ only from your sources.
   caption="A sample notebook: sources on the left, a cited chat answer in the middle, and the Studio panel on the right."
 />
 
-A **focus box** at the top of the Studio panel steers every generator, so the
-same notebook can produce one video about the budget and another about the
-volunteer schedule.
+### Search and Ask across notebooks
+
+**Search** looks across every notebook at once, in two modes. Keyword search is
+instant and right for exact phrases, names, and error codes. Semantic search
+matches meaning, so it finds related content even when the wording differs.
+**Ask** goes one step further and returns a single grounded answer from the best
+passages across your whole library, citing the notebook each one came from.
+
+### Notes and transformations
+
+A transformation is a saved prompt you run on a source to produce a note. Eight
+ship built in, including Dense summary, Key insights, Glossary, and Action
+items, and you can add your own. Results are cited like everything else. Test a
+new prompt on one source before relying on it, because a vague prompt produces
+vague notes.
+
+## Live discussions: talk it through
+
+You can also talk to your sources. A live discussion is a spoken conversation
+with a realtime voice model that has read the sources you selected. You can
+interrupt it mid-sentence, the way you would a colleague.
+
+Seven modes change what the AI does:
+
+- **Discussion:** Explores the material with you.
+- **Debate:** Argues the other side, using your sources as evidence.
+- **Q&A:** Short spoken answers, with an offer to go deeper.
+- **Interview an expert:** You ask, and it answers as the author of the sources.
+- **Get interviewed:** It asks, follows up on vague answers, and pushes back
+  when you conflict with the sources.
+- **Oral quiz:** Spoken questions with instant feedback and a running score.
+- **Socratic tutor:** Guiding questions that correct misconceptions with
+  evidence.
+
+When a point relies on specific passages, they appear as clickable citation
+chips on that line. If the conversation moves past what it started with, the AI
+searches your sources mid-sentence. When you hang up, **Save to notes** keeps
+the takeaways (checked against the cited passages), any marked answers, and the
+full transcript. It needs a realtime voice model, and your other models aren't
+used for the call itself.
+
+## Screen helper: coaching for any app
+
+The screen helper isn't about your sources at all. You share an app window,
+type what you're trying to do, and a vision model coaches you one step at a
+time. A numbered box on a snapshot of your screen shows where to click, and the
+step text names the control too, since the box is approximate.
+
+With **Auto-watch** on, the helper notices when you've taken a step and the
+screen has settled, then suggests the next one without being asked. It can
+read steps aloud, and inside a notebook you can save a session as a note.
+
+## Studio: turn sources into finished pieces
+
+The **Studio** panel turns the sources you've selected into fourteen formats.
+**Create** lists the generators, and **Library** holds everything already made
+in the notebook. A **focus box** at the top steers every generator, so one
+notebook can produce a video about the budget and another about the volunteer
+schedule. Every output is built only from your sources and carries citations.
+
+| Group             | Formats                                                                   |
+| ----------------- | ------------------------------------------------------------------------- |
+| Documents         | Report, briefing, study guide, FAQ, timeline, and PowerPoint deck         |
+| Visuals           | Infographic and mind map                                                  |
+| Study             | Quiz and flashcards                                                       |
+| Audio and video   | Audio overview, whiteboard video, motion explainer, and training video    |
+
+The written formats take a **Length** option, and the quiz and flashcards add a
+difficulty level. The video formats take a length too, either a preset or a
+custom number of scenes. Everything exports: Markdown for text, PPTX for decks,
+MP3 for audio, MP4 for video, PNG for mind maps and infographics, and a CSV
+that Anki and Quizlet accept for flashcards.
+
+### Documents, decks, and study aids
+
+The **PowerPoint deck** has a title slide, an agenda, content slides, speaker
+notes, and a sources slide. You preview it in the app and download it as a PPTX
+file.
+
+<Screenshot
+  src={powerpointDeck}
+  alt="Slide preview titled Water without a tap with four bullet points, a row of slide thumbnails, and cited speaker notes underneath."
+  caption="The deck preview, with the thumbnails and cited speaker notes. Download it as a PPTX file when it looks right."
+/>
+
+The **mind map** opens fully collapsed, so you start from the central topic and
+expand one branch at a time.
+
+<Screenshot
+  src={mindMap}
+  alt="Expanded mind map for a community garden pilot with four color-coded branches: demand, water, people, and risks, each with three subtopics."
+  caption="An expanded mind map. Click a topic to open or close it, then export the result as a PNG."
+/>
+
+The **quiz** is multiple choice with a cited explanation under every question.
+After scoring, you can retry only the questions you missed. **Flashcards** flip,
+self-grade, and shuffle, and you can drill just the cards you missed.
+
+<Screenshot
+  src={quiz}
+  alt="Quiz results showing 5 of 6 correct with Retry 1 missed and Retake all buttons, followed by questions with the right answers marked and cited explanations."
+  caption="A scored quiz. Retry only the misses, and every explanation points back to a source."
+/>
+
+### Script review, instructions, and music
+
+The four spoken formats (audio overview, whiteboard video, motion explainer, and
+training video) all work the same way. Generating one writes the script only,
+then stops and opens it in an editor. Nothing is narrated, drawn, or rendered
+until you press **Narrate** or **Render video**, so you can change wording,
+reassign lines, and remove anything you don't want said before any time or
+money is spent.
+
+<Screenshot
+  src={audioOverview}
+  alt="Audio overview script editor with two named hosts, voice pickers, a music selector, an instructions panel, and chaptered lines of dialogue, each assigned to a speaker."
+  caption="The audio overview script before narration: two hosts, their voices, music, and every line editable."
+/>
+
+Each one also has:
+
+- **Instructions** to the script writer, such as "explain it for a
+  non-technical audience" or "don't mention pricing."
+- A **replacement list** of terms and what to say instead, enforced on the
+  script and again right before speech. It's saved per notebook if you want it
+  to be the default.
+- **Background music** from tracks you upload. No music ships with the app, so
+  add only tracks you have the rights to use.
+- A **watermark** on the three video formats: text or an image, in any of nine
+  positions, with size and opacity settings.
+
+### Audio overviews
+
+An audio overview turns a notebook into a spoken conversation, which is handy
+for catching up on a research pile during a commute. It supports one to four
+speakers, each with a voice, name, and role. Narrating produces an MP3 with a
+synced transcript you can click to jump to a topic. With a cloud speech
+provider, the provider receives the script, not your raw sources.
 
 ### Infographics
 
-There are 33 infographic styles. Some are laid out as web pages, so the text
-stays sharp and each number keeps a clickable citation. Others are drawn by your
-image model as a single picture. A style gallery shows every style rendered on
-the same sample notebook, so you can compare them before you spend a
-generation. You can also pick the shape (landscape, portrait, or square), the
+Notes and chat answers work well when you're the one reading them. When you need
+to hand research to someone else, a page of notes isn't always the right
+format. There are 33 infographic styles. Some are laid out as web pages, so the
+text stays sharp and each number keeps a clickable citation. Others are drawn by
+your image model as a single picture. A style gallery shows every style rendered
+on the same sample notebook, so you can compare them before you spend a
+generation, and **Suggest styles for my sources** proposes three that fit your
+material. You can also pick the shape (landscape, portrait, or square), the
 level of detail, and describe what you want in a sentence or two.
 
 <Screenshot
@@ -280,10 +377,11 @@ that infographic is summarizing.
 
 ### Whiteboard videos
 
-A whiteboard video is a narrated, hand-drawn explainer. The generator plans six
-scenes, each with a hand-lettered title, one simple drawing, a caption, and a
-line or two of narration. Then it stops so you can review the script. Nothing is
-drawn or recorded until you press **Render video**.
+A whiteboard video is a narrated, hand-drawn explainer. The generator plans a
+short story of scenes (six in my samples), each with a hand-lettered title, one
+simple drawing, a caption, and a line or two of narration. The length picker
+offers Short, Standard, and Long, or a custom number of scenes or minutes. Then
+it stops so you can review the script.
 
 <Screenshot
   src={whiteboardScript}
@@ -291,11 +389,11 @@ drawn or recorded until you press **Render video**.
   caption="Every scene is editable before rendering: the title, the caption, the drawing, and the exact words the narrator says."
 />
 
-When you render, the image model draws each scene, Azure AI Speech narrates
-it, and the renderer animates a hand sketching the lines onto the board. A
-six-scene video takes about six and a half minutes end to end, mostly spent on
-the drawings. It runs in the background, so you can keep working while it
-builds.
+When you press **Render video**, the image model draws each scene, Azure AI
+Speech narrates it, and the renderer animates a hand sketching the lines onto
+the board. A six-scene video takes about six and a half minutes end to end,
+mostly spent on the drawings. It runs in the background, so you can keep
+working while it builds.
 
 <Video
   src={whiteboardVideo}
@@ -309,14 +407,14 @@ builds.
 
 A motion explainer is a short, narrated 2D animation. It follows the arc of a
 product explainer: the problem, the solution, how it works, the benefits, and a
-next step on a closing card. Characters and props slide into illustrated
-scenes, headlines animate in, and stat cards count up.
+next step on a closing card. Characters and props slide into illustrated scenes,
+headlines animate in, and stat cards count up.
 
 The image model draws the backgrounds, the character, and the props. The motion
 itself comes from the renderer, not an AI model, which keeps the timing
 predictable. Under **Options → Customize** you can change the length, tone,
-audience, illustration style, colors, recurring character, and the call to
-action on the closing card.
+audience, illustration style, colors, recurring character, closing call to
+action, resolution (720p or 1080p), and how much the character moves.
 
 <Video
   src={motionVideo}
@@ -328,18 +426,44 @@ action on the closing card.
 
 ### Training videos
 
-The training video is the most involved format. It writes a trainer's script
-from your selected sources and every note in the notebook: a welcome and
-learning objectives, a few teaching sections, a recap, and a spoken knowledge
-check. Once you're happy with the script, the Azure AI Speech text to speech
-avatar renders a lip-synced presenter, with sign-in through Microsoft Entra ID.
+The training video is the most involved format, and the one that has changed
+the most since I first wrote this post. It writes a trainer's script from your
+selected sources and every note in the notebook: a welcome and learning
+objectives, a few teaching sections, a recap, and a spoken knowledge check. You
+choose the presenter, voice, length, and background on the card.
+
+<Screenshot
+  src={trainingCard}
+  alt="Training video card in the Studio panel with trainer, voice, length, and background pickers, and a note that nothing is billed for video until Render is pressed."
+  caption="The training video card. Nothing is billed for video until you press Render."
+/>
+
+Once you're happy with the script, the Azure AI Speech text to speech avatar
+renders a lip-synced presenter, with sign-in through Microsoft Entra ID. The
+presenter list is a gallery of Microsoft's standard avatars, with a voice and
+speaking-style picker and a preview before you commit. You can also add
+gestures, so the presenter opens with a greeting and uses open-handed motions
+rather than standing still.
 
 By default the presenter shares the frame with visuals: title cards, bullet
 points, key numbers, quotes, knowledge checks, pictures, screenshots, and the
-notebook's own infographics. Each visual is pinned to a phrase in the script
-and appears as the presenter says it, so editing other parts of the script
-doesn't knock it out of sync. You can plan, edit, and preview the visuals in the
-browser before any avatar time is billed.
+notebook's own infographics. When a slide covers a Microsoft product, the planner
+can pull a real screenshot from the matching Microsoft Learn article and credit
+it on the slide. Each visual is pinned to a phrase in the script and appears as
+the presenter says it, so editing other parts of the script doesn't knock it out
+of sync.
+
+The editor has four tabs: **Script**, **Visuals**, **Design** (colors, layouts,
+transitions, logo, resolution, and captions), and **Preview**. The preview plays
+the composed video in your browser and costs almost nothing, so you can fix
+problems before any avatar time is billed. If you change only visuals, design,
+or music, **Recompose video** doesn't render the presenter again.
+
+<Screenshot
+  src={trainingEditor}
+  alt="Finished training video with a presenter in a black t-shirt above the editable transcript, with presenter, voice, and background pickers and a Render again button."
+  caption="A finished training video above its editable transcript. Change the script and Render again to update it."
+/>
 
 <Video
   src={trainingVideo}
@@ -359,108 +483,124 @@ as you add more:
 - **Whiteboard videos and motion explainers:** an image model, Azure AI Speech
   for the narration, and Python 3 with a few imaging packages on the machine
   running the app.
-- **Training videos:** Azure AI Speech for the avatar. Avatar rendering is
-  billed by the second of finished video, so review the script before you
-  render.
+- **Training videos:** Azure AI Speech for the avatar, plus the same Python
+  packages for composing visuals. Avatar rendering is billed by the second of
+  finished video, and finished sections are cached, so review the script before
+  you render.
 
 The README lists the exact settings and Python packages for each one.
 
-## The REST API and MCP
+### More samples to watch and read
 
-Everything you can do in the UI is also available through the REST API on port
-`5055`. Interactive documentation lives at `http://localhost:5055/docs`. That
-opens the door to scripting: adding sources from a pipeline, creating notebooks
-per project, or pulling notes into another tool.
+The videos above are ones I generated for this post. The project repository has
+longer samples built from a fictional community garden notebook, and a page for
+each format with setup details and timings:
 
-There's also an MCP server, which lets AI assistants such as GitHub Copilot in
-VS Code or Claude Desktop use your notebooks as a tool. Once it's connected, you
-can ask your assistant to search a notebook, list its sources, add a PDF, start
-a chat session, or save a note, without switching windows. The server exposes
-tools for notebooks, sources, notes, chat, search, models, and settings.
+- The README includes a
+  [3:37 avatar training video](https://github.com/russrimm/InfiniAIBook#sample-an-avatar-training-video),
+  a [1:14 whiteboard video](https://github.com/russrimm/InfiniAIBook#sample-a-whiteboard-video),
+  and a [1:50 motion explainer](https://github.com/russrimm/InfiniAIBook#sample-a-motion-explainer).
+- The [Studio examples](https://github.com/russrimm/InfiniAIBook#studio-examples)
+  show every format, from report to flashcards, from the same notebook.
+- The [infographic style gallery](https://github.com/russrimm/InfiniAIBook/blob/main/docs/infographics.md#style-gallery)
+  compares all 33 styles on the same content.
 
-The README has the exact VS Code configuration. One tip when you set it up:
-have VS Code prompt for the password rather than typing it into the
-configuration file, so it never ends up in a file you might commit.
+## The REST API
+
+Everything the UI does is also available through the REST API, so you can script
+it: add sources from a pipeline, create a notebook per project, or pull notes
+into another tool. Browsers use a session cookie, and scripts send a bearer
+token. The [API reference](https://github.com/russrimm/InfiniAIBook/blob/main/docs/API.md)
+lists the routes.
+
+Two housekeeping features are worth knowing before you invest in a notebook.
+You can export a notebook as a ZIP of its sources, notes, chats, artifacts, and
+finished media, and import it as a new notebook. And deletes are forgiving:
+removing a source, note, chat, or notebook offers **Undo** for eight seconds.
 
 ## Standing it up
 
-You need Docker Desktop and about five minutes. I'd also follow the habit from
-[my vibe-coding toolkit post](/blog/favorite-ai-tools-for-vibe-coding/):
-download the file, read it, then run it.
-
-Start by putting the `docker-compose.yml` file from the InfiniAIBook repository
-in a new folder. Then generate a strong encryption key:
+You need Node.js 22.13 or later and a model provider. I'd also follow the habit
+from [my vibe-coding toolkit post](/blog/favorite-ai-tools-for-vibe-coding/):
+read what you download before you run it.
 
 ```powershell
-# Generate a strong encryption key (PowerShell 7)
-[Convert]::ToBase64String([System.Security.Cryptography.RandomNumberGenerator]::GetBytes(32))
+git clone https://github.com/russrimm/InfiniAIBook.git
+cd InfiniAIBook
+npm install
+copy .env.example .env.local
 ```
 
-Before starting anything, open `docker-compose.yml` and change three things.
-The README names the exact settings.
-
-1. **Replace the encryption key.** Swap the placeholder value for the key you
-   generated. This key encrypts your provider credentials. There's no default
-   and no rotation yet, and if you lose or change it, the stored credentials
-   become unreadable. Keep it somewhere safe, apart from your data backups.
-2. **Bind the app to localhost.** Change `"8502:8502"` and `"5055:5055"` to
-   `"127.0.0.1:8502:8502"` and `"127.0.0.1:5055:5055"` so only your machine can
-   reach them. The database port is already bound this way.
-3. **Set a password if anyone else can reach it.** Without one, authentication
-   is off entirely.
-
-Then start it:
+Open `.env.local`, set a provider (the README and `.env.example` show the
+settings for each), then start the app:
 
 ```powershell
-docker compose up -d
+npm run dev
 ```
 
-Give it 15 to 20 seconds, open `http://localhost:8502`, add a provider under
-**Models**, and create your first notebook. For a fully offline setup, the
-README covers adding an Ollama container to the same compose file.
+Open `http://localhost:3000`, create a notebook, and follow the getting-started
+steps in the chat panel. If you've never set up a Node.js app, the
+[step-by-step install guide](https://github.com/russrimm/InfiniAIBook/blob/main/docs/install-guide.md)
+walks through Windows and Mac with no prior experience assumed.
+
+To use Docker instead, run `docker compose up -d --build`. The container
+publishes its port on localhost only. Whiteboard, motion, and training videos
+need Python, so build with the Python option the README describes if you want
+them. For a fully offline setup, point it at Ollama or llama.cpp.
+
+### Running it in Azure
+
+When a team needs it, InfiniAIBook can run as an Azure Container App. The
+repository includes Bicep templates that create a Container App in a virtual
+network, private Azure Files storage for the database and media, a Key Vault, a
+container registry, and a managed identity that calls Azure OpenAI and Azure
+Speech without keys. The templates reuse an Azure AI Services account you
+already have. A GitHub Actions workflow can deploy every push to `main` after
+CI passes, signing in with OpenID Connect so no Azure secret lives in GitHub.
+
+One fact to plan around: SQLite allows a single writer, so the app runs as
+exactly one replica. See [Running in Azure](https://github.com/russrimm/InfiniAIBook/blob/main/docs/azure-deployment.md)
+for the full walkthrough.
 
 ## Security: what it covers and what you add
 
-The built-in protection is intentionally simple, and the README is clear about
-it. One term before the table: Cross-Origin Resource Sharing ("CORS")
-controls which websites can call your API from a browser. Here's what's built in
-and how to fill each gap.
+The built-in protection is intentionally simple, and the project's
+[SECURITY.md](https://github.com/russrimm/InfiniAIBook/blob/main/SECURITY.md)
+is clear about it. Here's what's built in and how to fill each gap for a shared
+deployment.
 
-| Area               | Built in                                         | What to add for a shared deployment                          |
-| ------------------ | ------------------------------------------------ | ------------------------------------------------------------ |
-| Authentication     | One shared password, off until you set it        | An identity-aware proxy for single sign-on ("SSO")           |
-| Transport          | The password is sent as-is                       | HTTPS through a reverse proxy such as Caddy, nginx, or Traefik |
-| Users and roles    | None; everyone shares one login                  | Separate instances per team or audience                      |
-| Sessions           | Last until the browser closes                    | Timeout enforcement at the proxy                             |
-| Rate limiting, audit logs | Not included                              | Your API gateway or proxy logs                               |
-| CORS               | Any origin by default                            | Restrict allowed origins to your frontend's exact URL        |
+| Area            | Built in                                                                      | What to add for a shared deployment                                  |
+| --------------- | ----------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| Network access  | Listens on localhost only; other hostnames are refused                        | Use the LAN start option only after setting a password               |
+| Authentication  | One shared password, off until you set `INFINIAIBOOK_PASSWORD`                | Microsoft Entra sign-in or an identity-aware proxy for single sign-on |
+| Sessions        | Signed 30-day cookie, with a growing delay after failed sign-ins              | Timeout enforcement at the proxy                                     |
+| Users and roles | None; everyone shares one login                                               | Separate instances per team or audience                              |
+| Transport       | Plain HTTP on localhost                                                       | HTTPS through a reverse proxy or Azure Container Apps ingress        |
+| Data at rest    | Stored unencrypted under the `.data` folder                                   | Disk or share encryption, and protect the folder like the documents  |
+| Spending        | A daily model ceiling of $25 for cloud providers                              | Budgets and alerts on your provider account                          |
 
-That last row is easy to miss. The CORS default of `*` is convenient on a laptop, but on a server it means any site a signed-in user
-visits could send requests to your instance. The API logs a warning at startup
-until you restrict it.
+Two more protections matter for a tool that reads other people's content. The
+server fetches URLs on your behalf, so it refuses addresses that resolve to
+loopback, private, or cloud-metadata ranges, including after redirects. And
+source text can try to steer a model, so images in model output are shown as
+links rather than loaded, and the app sends a strict Content Security Policy.
 
-Two things InfiniAIBook handles well: API keys are encrypted at rest, and
-outbound provider calls use DNS pinning so a hostname can't be swapped to a
-cloud metadata endpoint after it's validated. Passwords and encryption keys
-also accept Docker secrets (the README shows how), which beats pasting them
-into the compose file on a shared host.
-
-For a personal instance on localhost, the defaults plus a real encryption key
-are fine. For anything a team will use, put it behind a proxy with HTTPS and
-SSO before you load sensitive documents into it.
+Without a password, anyone who can reach the server can read every notebook and
+spend your model quota. For a personal instance on localhost, the defaults are
+fine. For anything a team will use, set the password, put it behind HTTPS, and
+add single sign-on before you load sensitive documents into it.
 
 ## Where it fits
 
 InfiniAIBook is a strong fit when you want the notebook-style research workflow
 and need a say in where the data lives and which model reads it. It runs
-anywhere Docker runs, and it treats local and enterprise providers as
-first-class options. The trade-off is that you own the operations,
-including updates, backups, and the security layer around it.
+anywhere Node.js or Docker runs, and it treats local and enterprise providers as
+first-class options. The trade-off is that you own the operations, including
+updates, backups, and the security layer around it.
 
 If that trade-off works for you, start small: stand up the localhost instance,
-point it at one provider, and load a single notebook with a project you're
-actively working on. Try the three context levels in chat, run one
-transformation across your sources, and see whether it earns a permanent spot.
-The README is
-thorough when you're ready to go further, and I'd love to hear what you end up
-using it for.
+point it at one provider, and load a notebook with a project you're actively
+working on. Ask a few cited questions, try a live discussion in Q&A mode, then
+generate a deck or a quiz and see whether it earns a permanent spot. The README
+is thorough when you're ready to go further, and I'd love to hear what you end
+up using it for.
