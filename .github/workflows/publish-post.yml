@@ -33,7 +33,7 @@ jobs:
       sha: ${{ steps.commit.outputs.sha }}
       changed: ${{ steps.commit.outputs.changed }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           submodules: true
           ref: main
