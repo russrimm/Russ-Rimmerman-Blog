@@ -4,7 +4,7 @@ heroImage: ../../assets/blog/open-notebook-self-hosted-research-notebook.webp
 heroAlt: "Editorial illustration representing Self-Hosted AI Research Notebook."
 description: "A field guide to InfiniAIBook, the AI research notebook you host yourself: cited chat, live voice discussions, Studio formats, videos, and Azure deployment."
 pubDate: 2026-09-24
-updatedDate: 2026-10-09
+updatedDate: 2026-10-23
 tags: ["AI", "Open Source", "Azure", "Security"]
 featured: false
 draft: false
@@ -32,6 +32,9 @@ import trainingEditor from "@/assets/blog/open-notebook-self-hosted-research-not
 import trainingVideo from "@/assets/blog/open-notebook-self-hosted-research-notebook/training-video-clip.mp4";
 import trainingPoster from "@/assets/blog/open-notebook-self-hosted-research-notebook/training-video-poster.jpg";
 import trainingCaptions from "@/assets/blog/open-notebook-self-hosted-research-notebook/training-video-clip.vtt?url";
+import searchAsk from "@/assets/blog/open-notebook-self-hosted-research-notebook/search-ask.png";
+import transformations from "@/assets/blog/open-notebook-self-hosted-research-notebook/transformations.png";
+import flashcards from "@/assets/blog/open-notebook-self-hosted-research-notebook/flashcards.png";
 
 The "drop in your sources and talk to them" workflow is one of the most useful
 things AI has given researchers. Upload a stack of PDFs, a couple of web
@@ -54,7 +57,7 @@ Studio format, how to run it locally or in Azure, and the security settings to
 change before anyone else can reach it.
 
 <Explain title="Last verified">
-  Updated October 9, 2026, against the InfiniAIBook repository at that date.
+  Updated October 23, 2026, against the InfiniAIBook repository at that date.
   Menu labels and provider lists may have moved by the time you read this, and
   the project README and docs are the source of truth for configuration.
 </Explain>
@@ -216,6 +219,12 @@ matches meaning, so it finds related content even when the wording differs.
 **Ask** goes one step further and returns a single grounded answer from the best
 passages across your whole library, citing the notebook each one came from.
 
+<Screenshot
+  src={searchAsk}
+  alt="Search your library page with the question Who covers the watering rota, Keyword and Semantic options, and one grounded answer with four numbered citations that each name a source and its notebook."
+  caption="Ask across the whole library: one grounded answer, with each citation naming the notebook it came from."
+/>
+
 ### Notes and transformations
 
 A transformation is a saved prompt you run on a source to produce a note. Eight
@@ -223,6 +232,12 @@ ship built in, including Dense summary, Key insights, Glossary, and Action
 items, and you can add your own. Results are cited like everything else. Test a
 new prompt on one source before relying on it, because a vague prompt produces
 vague notes.
+
+<Screenshot
+  src={transformations}
+  alt="Transformations dialog listing eight built-in prompts, from Dense summary and Key insights to Glossary and Action items, with a New transformation button."
+  caption="The eight built-in transformations. Open a source, apply one, and the result is saved as a note."
+/>
 
 ## Live discussions: talk it through
 
@@ -305,6 +320,12 @@ expand one branch at a time.
 The **quiz** is multiple choice with a cited explanation under every question.
 After scoring, you can retry only the questions you missed. **Flashcards** flip,
 self-grade, and shuffle, and you can drill just the cards you missed.
+
+<Screenshot
+  src={flashcards}
+  alt="Flashcards deck of twelve cards with question and cited answer on each, two marked correct, one marked missed, and Shuffle, Study, Copy, CSV, and MD buttons."
+  caption="A flashcard deck with three cards graded. Export as CSV to load it into Anki or Quizlet."
+/>
 
 <Screenshot
   src={quiz}
@@ -440,8 +461,10 @@ choose the presenter, voice, length, and background on the card.
 
 Once you're happy with the script, the Azure AI Speech text to speech avatar
 renders a lip-synced presenter, with sign-in through Microsoft Entra ID. The
-presenter list is a gallery of Microsoft's standard avatars, with a voice and
-speaking-style picker and a preview before you commit. You can also add
+presenter list is a gallery of Microsoft's standard avatars, including the
+talking-head (photo) avatars, with a voice and speaking-style picker and a
+preview before you commit. Talking heads are drawn in a smaller frame so they
+sit beside the slides instead of filling them. You can also add
 gestures, so the presenter opens with a greeting and uses open-handed motions
 rather than standing still.
 
@@ -472,6 +495,28 @@ or music, **Recompose video** doesn't render the presenter again.
   label="First minute of an avatar training video, with a presenter introducing learning objectives as slides appear beside her"
   caption="The first minute of an eight-minute training video built from public articles about the new Microsoft Copilot. Each slide appears as the presenter reaches it."
 />
+
+### Live presenter preview
+
+Four newer talking-head presenters (Leonie, Leonie Professional, George, and
+Marcel) use Microsoft's VASA-2 model. Azure AI Speech batch rendering doesn't
+support VASA-2 yet, so the app offers them as a live preview instead. In a
+generated training video, choose **Script > Preview live (VASA-2)**, pick a
+presenter and voice, then press **Start session** and **Play transcript** (or
+**Play from here** on any section). The presenter speaks the script as you've
+edited it, so there's nothing to type.
+
+A few facts to plan around:
+
+- It's live only. Nothing is recorded or added to the finished MP4.
+- VASA-2 is in preview, and your Speech resource has to be in West US 2,
+  Central India, Southeast Asia, or Sweden Central. The panel tells you when
+  it isn't.
+- Your network has to allow WebRTC to `relay.communication.microsoft.com`.
+- Sessions end after five idle minutes or 30 minutes total, and each start
+  counts about 25 cents against the daily spending ceiling.
+- The browser only receives a short-lived Speech token. Your keys and Entra
+  token stay on the server.
 
 ### What the visual formats need
 
@@ -520,7 +565,14 @@ removing a source, note, chat, or notebook offers **Undo** for eight seconds.
 
 ## Standing it up
 
-You need Node.js 22.13 or later and a model provider. I'd also follow the habit
+You need Node.js 22.13 or later and a model endpoint. Decide on the endpoint
+first. The
+[install guide](https://github.com/russrimm/InfiniAIBook/blob/main/docs/install-guide.md)
+now starts there: a table of capabilities (only chat is required) and a
+reuse-or-create path for Microsoft Foundry, another provider, or a local model,
+with `az` commands for the Azure route. One thing to know up front: a Copilot
+Studio agent isn't a model endpoint, so it can't stand in for one. I'd also
+follow the habit
 from [my vibe-coding toolkit post](/blog/favorite-ai-tools-for-vibe-coding/):
 read what you download before you run it.
 
@@ -539,8 +591,7 @@ npm run dev
 ```
 
 Open `http://localhost:3000`, create a notebook, and follow the getting-started
-steps in the chat panel. If you've never set up a Node.js app, the
-[step-by-step install guide](https://github.com/russrimm/InfiniAIBook/blob/main/docs/install-guide.md)
+steps in the chat panel. If you've never set up a Node.js app, the install guide
 walks through Windows and Mac with no prior experience assumed.
 
 To use Docker instead, run `docker compose up -d --build`. The container
