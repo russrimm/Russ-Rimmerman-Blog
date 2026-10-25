@@ -124,7 +124,7 @@ Connecting Planner and Outlook with Power Automate is a well-worn pattern, and i
 
 What the experiment added was the other half of the answer: what the team will actually look at every day. A flow keeps systems in step, but someone still has to decide where owners, statuses, and due dates live. In 25 minutes the builder made that decision visible, with all of it on one screen.
 
-## Lessons learned: four ways to build the same app
+## Lessons learned: four ways to build it, and one way to buy it
 
 This one spreadsheet problem could be solved four different ways. Which one fits depends on who is building and how much control they need.
 
@@ -132,23 +132,23 @@ The first two are Copilot Managed Runtime apps. Microsoft hosts them, people sig
 
 I built this calendar in Copilot Studio. For Cowork, I'm going by Microsoft's documentation. For code apps and GitHub Copilot, I'm drawing on earlier builds. Preview features can change, so check the status before you commit to one.
 
+### The baseline: buy an off-the-shelf application
+
+Most teams in this spot shop for a compliance or project-tracking product first. That's a sensible move, and the products are capable. The catch is that they're built for the average customer. You rarely get your exact fields, your exact approval flow, or your exact view of the calendar, so you adapt your process to the product and live with the gaps. Each option below is measured against that baseline.
+
 ### 1. A Copilot Studio managed runtime app
 
 You describe the app in a chat, Copilot Studio proposes a plan and generates a draft, and you refine it in an interactive preview before you publish. This is what I used here.
 
-**Pros**
+**Where it wins**
 
-- Fastest path from a described problem to something clickable. This one took 25 minutes.
-- More control over the build, preview, and publish steps than a plain chat gives you.
-- Governance comes with the runtime, so there is no separate security design to write.
-- Connectors to your existing data, such as SharePoint and Planner here.
+- **Against off-the-shelf:** the app matches your process from day one, because it's built from your own description. This one took 25 minutes, with your fields, your teams, and your due-date logic.
+- **Against off-the-shelf:** changes are a sentence away. I added the Entra ID people picker with one follow-up prompt, with no vendor roadmap or support ticket involved.
+- **Against the other build options:** more control over the build, preview, and publish steps than a plain chat gives you, with no code to maintain.
+- Governance comes with the runtime, so there's no separate security design to write.
+- Connectors reach the data you already have, such as SharePoint and Planner here.
 
-**Cons**
-
-- It's in preview, so availability and behavior can change.
-- Building spends Copilot Credits in the environment. This one used 1,067.
-- You steer with prompts, not code. The Owner picker only improved because I asked for it.
-- The first draft needs a review pass before anyone relies on it.
+**What you need:** Copilot Studio's app preview experience, and Copilot Credits in the environment. This build used 1,067.
 
 **Skills needed:** describing a process clearly, knowing which data lives where, and testing the result like a user. No programming.
 
@@ -156,17 +156,14 @@ You describe the app in a chat, Copilot Studio proposes a plan and generates a d
 
 From a Copilot Cowork session, you ask for an app or use the app builder skill, preview it, and publish it. Microsoft's documentation positions it for business users who want to describe an app and keep working. Apps built in Cowork can also be opened and edited in Copilot Studio.
 
-**Pros**
+**Where it wins**
 
-- Little friction. You build without leaving the conversation you're already in.
-- Same runtime and governance as the Copilot Studio path, plus the same admin visibility.
-- A natural starting point that you can hand to Copilot Studio when you want more control.
+- **Against off-the-shelf:** you skip the evaluation, procurement, and rollout cycle. The app is built from the same conversation where the request showed up.
+- **Against the other build options:** the least friction. You never leave the conversation you're already in, and there's no separate tool to learn.
+- Same runtime, governance, and admin visibility as the Copilot Studio path.
+- You can hand the app to Copilot Studio later when you want more control.
 
-**Cons**
-
-- In preview through the Frontier program, and it needs a Microsoft 365 Copilot license with Cowork access.
-- Less control over each build step than Copilot Studio, according to the documentation.
-- Copilot Credit requirements apply to building and running apps, so confirm the billing setup first.
+**What you need:** enrollment in the Frontier program and a Microsoft 365 Copilot license with Cowork access. Copilot Credits apply to building and running apps.
 
 **Skills needed:** the same as Copilot Studio, with even less tooling to learn.
 
@@ -174,17 +171,14 @@ From a Copilot Cowork session, you ask for an app or use the app builder skill, 
 
 You write a React or Vue app in your own editor, then publish it to Power Platform, which hosts it and handles identity and governance. I covered this in [Power Apps Code Apps](/blog/power-apps-code-apps/).
 
-**Pros**
+**Where it wins**
 
-- Full control of the interface and the code, and your source lives in your own repository.
-- Microsoft Entra ID sign-in, Data Loss Prevention ("DLP") policies, and Conditional Access apply without extra work.
+- **Against off-the-shelf:** the interface is exactly what you design. Dashboards, charts, and workflows follow your thinking, not a vendor's template.
+- **Against the other managed options:** full control of the interface and the code, and your source lives in your own repository.
+- **Against self-hosting:** Microsoft Entra ID sign-in, Data Loss Prevention ("DLP") policies, and Conditional Access apply without extra work.
 - Generally available, with support for the 1,400+ Power Platform connectors Microsoft counts.
 
-**Cons**
-
-- An admin has to enable code apps on the environment first.
-- Every end user needs a Power Apps Premium license.
-- A few capabilities aren't supported yet, including Power Platform Git integration.
+**What you need:** an admin to enable code apps on the environment, and a Power Apps Premium license for each end user.
 
 **Skills needed:** comfort with a web project (Node.js, Git, a front-end framework), or the judgment to direct a coding agent and review what it writes. Environments and deployment basics help too.
 
@@ -203,34 +197,32 @@ What it does today:
 
 It's built for one person or one small trusted group. You can read the full overview in [InfiniAIBook: A Self-Hosted AI Research Notebook](/blog/open-notebook-self-hosted-research-notebook/), or try it from the [GitHub repository](https://github.com/russrimm/InfiniAIBook).
 
-**Pros**
+**Where it wins**
 
-- No platform boundaries. Any stack, any host, any design.
+- **Against off-the-shelf:** nothing is off the table. InfiniAIBook works the way I wanted because I described exactly what I wanted, down to the Studio formats and the model providers.
+- **Against the other build options:** no platform boundaries. Any stack, any host, any design, and any model provider.
 - Portable, because the code and the hosting are yours.
-- The right choice when the app has to do something the other three can't.
+- The right choice when the app has to do something the other options can't.
 
-**Cons**
-
-- You own authentication, hosting, secrets, monitoring, and updates.
-- Governance isn't inherited. You build and document it, or you don't have it.
-- It won't appear in the admin inventory unless you put it there.
+**What you need:** a place to host it, plus ownership of authentication, secrets, monitoring, and updates. Governance comes from what you build.
 
 **Skills needed:** on paper, the broadest set: web development, authentication, cloud hosting, security review, and a deployment pipeline. In practice, GitHub Copilot and its skills can carry much of the typing, and InfiniAIBook shows that a non-developer can get a long way. What stays with you is judgment: deciding what to build, testing it, and reviewing the security before anyone else uses it.
 
 ### Side by side
 
-| Approach                        | Status as of this writing | Skill level                            | Control | Governance you inherit |
-| ------------------------------- | ------------------------- | -------------------------------------- | ------- | ---------------------- |
-| Copilot Studio managed runtime  | Preview                   | Business user or maker                 | Medium  | Full                   |
-| Cowork managed runtime          | Preview (Frontier)        | Business user                          | Lower   | Full                   |
-| Power Apps code app             | Generally available       | Developer, or an agent-directing maker | High    | Full                   |
-| GitHub Copilot app, self-hosted | Not applicable            | Developer, or an agent-directing maker | Highest | None, you build it     |
+| Approach                        | Status as of this writing | Skill level                            | Fit to your process | Control | Governance you inherit |
+| ------------------------------- | ------------------------- | -------------------------------------- | ------------------- | ------- | ---------------------- |
+| Off-the-shelf application       | Generally available       | Administrator                          | Approximate         | Lowest  | Depends on the vendor  |
+| Copilot Studio managed runtime  | Preview                   | Business user or maker                 | Exact               | Medium  | Full                   |
+| Cowork managed runtime          | Preview (Frontier)        | Business user                          | Exact               | Lower   | Full                   |
+| Power Apps code app             | Generally available       | Developer, or an agent-directing maker | Exact               | High    | Full                   |
+| GitHub Copilot app, self-hosted | Not applicable            | Developer, or an agent-directing maker | Exact               | Highest | None, you build it     |
 
 Going down the list, you gain control and take on more of the engineering, security, and operations work. When a managed runtime or Power Platform hosts the app, those pieces come built in.
 
 ### How I'd choose
 
-For a spreadsheet like this one, I'd start in Copilot Studio or Cowork. A working prototype in under an hour tells you more than a requirements meeting does, and it costs very little to throw away. If the interface needs something the builder can't produce, I'd move to a code app. I'd only go self-hosted when the requirements fall outside what Power Platform or Copilot Managed Runtime can host.
+For a spreadsheet like this one, I'd start in Copilot Studio or Cowork. A working prototype in under an hour tells you more than a requirements meeting does, and it costs very little to throw away. If the interface needs something the builder can't produce, I'd move to a code app. I'd only go self-hosted when the requirements fall outside what Power Platform or Copilot Managed Runtime can host. And if an off-the-shelf product already fits your process closely, buying it is still a good call.
 
 That's my opinion for this kind of workload, not an official Microsoft position.
 
