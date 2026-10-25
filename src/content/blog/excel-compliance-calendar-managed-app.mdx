@@ -3,7 +3,7 @@ title: "From Excel Compliance Tracker to Working App in 25 Minutes"
 description: "A customer's Excel tracker became a testable app in 25 minutes. Here's how Copilot Studio, Cowork, code apps, and GitHub Copilot compare."
 pubDate: 2026-10-24
 updatedDate: 2026-10-25
-tags: ["Copilot Studio", "Cowork", "Power Platform", "Code Apps", "GitHub Copilot", "Microsoft 365", "Planner", "SharePoint", "Agents"]
+tags: ["Copilot Studio", "Cowork", "Power Platform", "Code Apps", "GitHub Copilot", "Microsoft Foundry", "Microsoft 365", "Planner", "SharePoint", "Agents"]
 draft: false
 featured: false
 ---
@@ -199,6 +199,17 @@ You write a React or Vue app in your own editor, then publish it to Power Platfo
 
 You write a normal application with GitHub Copilot's help and host it wherever you choose. This blog is built that way, and the [vibe coding series](/blog/vibe-code-your-blog-part-1-setup/) shows how.
 
+The best example I have is [InfiniAIBook](https://github.com/russrimm/InfiniAIBook), a self-hosted AI research notebook. I have no development experience, and I built it by vibe coding with GitHub Copilot, a few Copilot skills, and Microsoft Foundry models. When the app needed a model, GitHub Copilot deployed it in Foundry for me.
+
+What it does today:
+
+- Upload PDFs, web articles, and recordings, then chat with them and get answers that point back to the source passage.
+- Hold live voice discussions about your sources.
+- Turn sources into decks, infographics, quizzes, podcasts, and narrated videos.
+- Run as a Node.js app, a single Docker container, or an Azure Container App, with the model provider of your choice.
+
+It's built for one person or one small trusted group. You can read the full overview in [InfiniAIBook: A Self-Hosted AI Research Notebook](/blog/open-notebook-self-hosted-research-notebook/), or try it from the [GitHub repository](https://github.com/russrimm/InfiniAIBook).
+
 **Pros**
 
 - No platform boundaries. Any stack, any host, any design.
@@ -211,16 +222,16 @@ You write a normal application with GitHub Copilot's help and host it wherever y
 - Governance isn't inherited. You build and document it, or you don't have it.
 - It won't appear in the admin inventory unless you put it there.
 
-**Skills needed:** the broadest set. Web development, authentication, cloud hosting, security review, and a deployment pipeline. GitHub Copilot lowers the typing barrier, but the judgment barrier stays where it was.
+**Skills needed:** on paper, the broadest set: web development, authentication, cloud hosting, security review, and a deployment pipeline. In practice, GitHub Copilot and its skills can carry much of the typing, and InfiniAIBook is proof that a non-developer can get a long way. What stays with you is judgment: deciding what to build, testing it, and reviewing the security before anyone else uses it.
 
 ### Side by side
 
-| Approach                        | Status as of this writing | Skill level                    | Control | Governance you inherit |
-| ------------------------------- | ------------------------- | ------------------------------ | ------- | ---------------------- |
-| Copilot Studio managed runtime  | Preview                   | Business user or maker         | Medium  | Full                   |
-| Cowork managed runtime          | Preview (Frontier)        | Business user                  | Lower   | Full                   |
+| Approach                        | Status as of this writing | Skill level                            | Control | Governance you inherit |
+| ------------------------------- | ------------------------- | -------------------------------------- | ------- | ---------------------- |
+| Copilot Studio managed runtime  | Preview                   | Business user or maker                 | Medium  | Full                   |
+| Cowork managed runtime          | Preview (Frontier)        | Business user                          | Lower   | Full                   |
 | Power Apps code app             | Generally available       | Developer, or an agent-directing maker | High    | Full                   |
-| GitHub Copilot app, self-hosted | Not applicable            | Developer plus security and operations | Highest | None, you build it     |
+| GitHub Copilot app, self-hosted | Not applicable            | Developer, or an agent-directing maker | Highest | None, you build it     |
 
 The pattern is simple. As you move down the list, you gain control and take on more of the engineering, security, and operations work. Where a managed runtime or Power Platform hosts the app, those pieces come built in.
 
