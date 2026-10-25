@@ -1,0 +1,139 @@
+---
+title: "From Excel Compliance Tracker to Working App in 25 Minutes"
+description: "A customer asked how to replace an Excel report calendar. I pasted their question into Copilot Studio and had a testable app 25 minutes later."
+pubDate: 2026-10-24
+tags: ["Copilot Studio", "Power Platform", "Microsoft 365", "Planner", "SharePoint", "Outlook", "Agents"]
+draft: true
+featured: false
+---
+
+import Screenshot from "@/components/Screenshot.astro";
+import timelineView from "@/assets/blog/excel-compliance-calendar-managed-app/timeline-view.webp";
+import newReportForm from "@/assets/blog/excel-compliance-calendar-managed-app/new-report-form.webp";
+import listView from "@/assets/blog/excel-compliance-calendar-managed-app/list-view.webp";
+import ownerPicker from "@/assets/blog/excel-compliance-calendar-managed-app/owner-picker.webp";
+import plannerBoard from "@/assets/blog/excel-compliance-calendar-managed-app/planner-board.webp";
+import plannerTask from "@/assets/blog/excel-compliance-calendar-managed-app/planner-task.webp";
+import sharepointItem from "@/assets/blog/excel-compliance-calendar-managed-app/sharepoint-item.webp";
+import harnessTradeoffs from "@/assets/blog/excel-compliance-calendar-managed-app/harness-tradeoffs.webp";
+
+I recently had a request from a customer on behalf of one of their end users. The team has been running all of their quarterly and annual compliance reports out of an Excel spreadsheet that someone had built hears ago and they were having to continually update by hand. What a unique scenario, right?!
+
+Knowing how powerful managed runtime applications are in Cowork and Copilot Studio, I decided to paste their question into Copilot Studio's app builder feature which is currently in preview, and see what it would come up with just from this very basic amount of input. Not only that, it seemed like a good way to get additional real-world Copilot Credit app building cost examples..
+
+## The question, almost verbatim
+
+The user wanted a better report and compliance calendar with task tracking. They had already researched it and found one common option: use Power Automate to keep Planner and Outlook in sync. They asked whether that was the best approach, how I'd recommend setting it up, and whether there was an even better way to solve the challenge.
+
+I skipped their opening sentence and their last paragraph, the part asking for my recommendation, and pasted the rest into the app builder in Copilot Studio, word-for-word from the end-user's e-mail:
+
+> We have several quarterly and annual reports that are due throughout the year and are the responsibility of different teams. Right now, we track everything in an Excel spreadsheet, but it requires constant manual updates.
+>
+> Our goal is to have report due dates visible and connected across Microsoft Teams Planner, Outlook Calendar, and SharePoint, while also being able to track ownership, status, and completion. I have spent time researching different options and trying to determine the best way to make these systems work together. I know a group calendar can be displayed in SharePoint, but that alone does not provide the tracking features we need.
+
+That's the whole prompt. No design, no field list, no sample data provided.
+
+## 2:30 pm paste <enter> -> 2:55 pm v1.0 app testing
+
+I pasted the prompt at 2:30 pm. By 2:55 pm I had an app I could click through, make changes, add new projects, etc. That's twenty-five minutes from paste to a working app.
+
+It asked me for the SharePoint site I wanted it on, and if there was an existing SharePoint list or I wanted a new one. I opted for the new one and it built out a new list and all of the columns for me.
+
+The first "front and center" view in the application is a clear project timeline. Each row is a team and each column is a month, grouped by quarter, with a marker for today. Every report is a pill on its team's row with a status icon, and the header keeps a running count: 11 open, 1 overdue.
+
+<Screenshot
+  src={timelineView}
+  alt="Compliance Report Calendar timeline view with teams as rows and months as columns from July 2026 to June 2027, a Today marker in October, and a detail panel for a report named Privileged Access Review showing owner, due date, status, quarterly recurrence, three steps, and notes."
+  caption="The timeline view. The report names, teams, and owners are sample data the builder created."
+/>
+
+Everything the customer listed is on that one screen. Ownership is a field, status is a dropdown, and completion is a set of steps with a progress count ("0 of 3 done"). Frequency is there too, so a quarterly report is marked as quarterly. Overdue items turn red and say how many days late they are.
+
+Adding a report takes one dialog: report name, agency or recipient, team, owner, frequency, period, and due date.
+
+<Screenshot
+  src={newReportForm}
+  alt="New report dialog with fields for report name, agency or recipient, team, owner, frequency, period, and due date, over the timeline view."
+  caption="The New report dialog."
+/>
+
+There's also a list view for people who prefer rows to a calendar. It adds a plain-language due column, such as "Due in 7 days" or "Submitted Aug 5, 2026," which is the part I'd expect a team lead to check first.
+
+<Screenshot
+  src={listView}
+  alt="List view of the reporting calendar with columns for report, team, owner, due date, and status, showing submitted, not started, in review, and in progress reports."
+  caption="The list view, with filters for team and status."
+/>
+
+## Fixing the first thing I noticed
+
+The Owner field started as a plain text box, so nothing stopped someone from typing a name that doesn't exist. I asked for a people picker instead. By about 4 pm the field searched the tenant directory as I typed. 
+
+**I prompted it to make the dropdown display and search for users using Entra ID.**
+
+<Screenshot
+  src={ownerPicker}
+  alt="Owner field open with a search box containing the letters ru and a list of matching directory users below it, with email addresses blurred."
+  caption="The Owner field searching the directory. Email addresses are blurred."
+/>
+
+## Connecting it to Planner and SharePoint
+
+Later that evening I connected the app to Planner and SharePoint as the customer requested. The Planner plan is called Compliance Reports, with one bucket per team and one task per report. Each task carries its steps as a checklist and its due date.
+
+When I say I connected it to Planner and Sharepoint, I actually just asked my agent to do this, and it gave me the steps to build the flow for that background sync process.
+
+<Screenshot
+  src={plannerBoard}
+  alt="Planner board for a plan called Compliance Reports, with one bucket per team and task cards for reports such as Hazardous Waste Generator Report and Form 10-K Annual Report, each showing a checklist count and a due date."
+  caption="The Planner board, grouped by bucket."
+/>
+
+
+
+
+The part I wanted to check was whether the same report looked the same in each place. Take the Safety Incident Summary for Q3 2026. In Planner it's in progress, due 10/31/2026, in the Safety bucket, with one of three checklist items done.
+
+<Screenshot
+  src={plannerTask}
+  alt="Planner task details for Safety Incident Summary (Q3 2026) with status In progress, due date 10/31/2026, bucket Safety, and a checklist with one of three items done."
+  caption="The Planner task for the Safety Incident Summary."
+/>
+
+In the SharePoint list it's the same record: team Safety, frequency Quarterly, period Q3 2026, due 10/31/2026, status In progress. The list has a column for the submission date, one for notes, and an Owner column that takes a person.
+
+<Screenshot
+  src={sharepointItem}
+  alt="SharePoint list item for Safety Incident Summary showing agency, team, frequency, period, due date, status, submitted on, notes, and owner fields, with a comments pane on the right."
+  caption="The same report as a SharePoint list item."
+/>
+
+## What did it cost to build?
+
+This is the part I was most curious about, so here are the numbers.
+
+**Copilot credits consumed: 1067 (that's an MSRP of $10.67!)**
+
+Copilot Credits are worth planning for. Microsoft's comparison of the standard and GitHub Copilot harnesses (the runtime layer that sits between the model and your agent or app) is a useful way to think about it: longer, multi-step reasoning can be worth the extra consumption, and a lightweight interaction may not need it.
+
+<Screenshot
+  src={harnessTradeoffs}
+  alt="Table comparing the standard harness and the GitHub Copilot harness across best-fit gain, complexity, control, latency and consumption, and maturity."
+  caption="Harness tradeoffs, as described on Microsoft Learn."
+/>
+
+The full write-up on Copilot Studio harness differences is in [Harnesses in Copilot Studio](https://learn.microsoft.com/en-us/microsoft-copilot-studio/harnesses-overview).
+
+## So, is Power Automate the right answer?
+
+It's a reasonable one. Connecting Planner and Outlook with Power Automate is a well-worn pattern, and it's what the customer's research had turned up. I'm not going to tell them it's wrong.
+
+What this experiment gave me was the other half of the answer: what the team would actually look at every day. A flow keeps two systems in step, but someone still has to decide where owners, statuses, and due dates live. In 25 minutes the builder made that decision visible, with all of it on one screen.
+
+Three things I'd take from it:
+
+- **Paste the real request.** The customer's own words named the fields that mattered: ownership, status, completion, and due dates. I didn't need to translate them into a spec.
+- **Test it like a user.** The Owner text box looked fine until I tried to use it. A short follow-up fixed it, but only because I clicked through the app.
+- **Look at every system it touches.** The duplicates in Planner only showed up because I opened the board instead of trusting the app.
+
+If your team has a spreadsheet that runs a process, try this with your own version of the question. Paste what you'd tell a colleague, publish to a test environment, and click through it before you decide what to build for real.
