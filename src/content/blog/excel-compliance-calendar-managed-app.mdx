@@ -18,7 +18,6 @@ import ownerPicker from "@/assets/blog/excel-compliance-calendar-managed-app/own
 import plannerBoard from "@/assets/blog/excel-compliance-calendar-managed-app/planner-board.webp";
 import plannerTask from "@/assets/blog/excel-compliance-calendar-managed-app/planner-task.webp";
 import sharepointItem from "@/assets/blog/excel-compliance-calendar-managed-app/sharepoint-item.webp";
-import harnessTradeoffs from "@/assets/blog/excel-compliance-calendar-managed-app/harness-tradeoffs.webp";
 
 A customer recently sent me a request on behalf of one of their end users. The team runs all of its quarterly and annual compliance reports out of an Excel spreadsheet that someone built years ago, and they update it by hand every time something changes. Sound familiar?
 
@@ -112,11 +111,16 @@ This is the number I was most curious about. Building the app used **1,067 Copil
 
 That's worth planning for. Microsoft's comparison of the standard and GitHub Copilot harnesses (the runtime layer between the model and your agent or app) is a useful way to think about it. Longer, multi-step reasoning can justify the extra consumption, and a lightweight interaction may not need it.
 
-<Screenshot
-  src={harnessTradeoffs}
-  alt="Table comparing the standard harness and the GitHub Copilot harness across best-fit gain, complexity, control, latency and consumption, and maturity."
-  caption="Harness tradeoffs, as described on Microsoft Learn."
-/>
+| Tradeoff | Standard harness | GitHub Copilot harness |
+| --- | --- | --- |
+| Best-fit gain | An agent that tackles short, straightforward tasks, structured conversations, and bounded processes. | Advanced coordination for long-running, complex, multi-step business processes across tools, systems, and outputs. |
+| When the scenario is less simple to complex | Context is distributed across topics, tools, prompts, variables, and subagents. Makers retain direct control but must reconcile more of the context and exception logic as the process grows. | Ideal for complex scenarios. Dynamically plans, selects tools, leverages memory, and recovers from exceptions, reducing overall guidance required by the maker. |
+| When the scenario is simple | Ideal for simpler scenarios. Provides a proportionate runtime for short-running, straightforward tasks. | May introduce unnecessary reasoning, latency, and Copilot Credit consumption without materially improving the result. |
+| Control and adaptability | Offers tighter control, but unexpected conditions generally require additional authored logic. | Continuously reasons from the latest state and can adapt when information, requests, or intermediate results change. It might retry a failed tool call, select another path, or resume after a conversational detour, but its execution path can be less predictable for agent-only solutions. |
+| Latency and consumption profile | Well suited to high-traffic, user-facing scenarios where responsive interaction is important. | Longer latency and higher Copilot Credit consumption can be justified when advanced reasoning, large file processing, and orchestration create measurable value, but might be excessive for lightweight interactions. |
+| Capability and maturity | Provides established features and channels, but some advanced models and new agentic capabilities aren't available. | Provides access to the latest agentic capabilities and reasoning models, but customers should validate required features and channels as the experience matures. |
+
+_Harness tradeoffs, adapted from Microsoft Learn._
 
 The full write-up on Copilot Studio harness differences is in [Harnesses in Copilot Studio](https://learn.microsoft.com/en-us/microsoft-copilot-studio/harnesses-overview).
 
