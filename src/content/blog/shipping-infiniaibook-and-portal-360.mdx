@@ -1,0 +1,449 @@
+---
+title: "Shipping InfiniAIBook and Portal 360° with GitHub Copilot"
+description: "What's new in InfiniAIBook and Portal 360°, a screenshot tour of every InfiniAIBook feature, and what building both with GitHub Copilot changed for me."
+pubDate: 2026-11-07
+tags:
+  [
+    "GitHub Copilot",
+    "Vibe Coding",
+    "AI",
+    "Open Source",
+    "Azure",
+    "Microsoft Foundry",
+    "Power Platform",
+  ]
+featured: false
+draft: true
+---
+
+import Explain from "@/components/Explain.astro";
+import Screenshot from "@/components/Screenshot.astro";
+import Term from "@/components/Term.astro";
+import Video from "@/components/Video.astro";
+import learnImport from "@/assets/blog/shipping-infiniaibook-and-portal-360/learn-import-dialog.webp";
+import gettingStarted from "@/assets/blog/shipping-infiniaibook-and-portal-360/getting-started.webp";
+import trainingEditor from "@/assets/blog/shipping-infiniaibook-and-portal-360/training-editor.webp";
+import helpTopics from "@/assets/blog/shipping-infiniaibook-and-portal-360/help-topics.webp";
+import sourcesPanel from "@/assets/blog/shipping-infiniaibook-and-portal-360/sources-panel.webp";
+import notesPanel from "@/assets/blog/shipping-infiniaibook-and-portal-360/notes-panel.webp";
+import structureExplorer from "@/assets/blog/shipping-infiniaibook-and-portal-360/structure-explorer-har.webp";
+import liveDiscussion from "@/assets/blog/shipping-infiniaibook-and-portal-360/live-discussion-modes.webp";
+import screenHelper from "@/assets/blog/shipping-infiniaibook-and-portal-360/screen-helper.webp";
+import studioReport from "@/assets/blog/shipping-infiniaibook-and-portal-360/studio-report.webp";
+import studioBriefing from "@/assets/blog/shipping-infiniaibook-and-portal-360/studio-briefing.webp";
+import studioStudyGuide from "@/assets/blog/shipping-infiniaibook-and-portal-360/studio-study-guide.webp";
+import studioFaq from "@/assets/blog/shipping-infiniaibook-and-portal-360/studio-faq.webp";
+import studioTimeline from "@/assets/blog/shipping-infiniaibook-and-portal-360/studio-timeline.webp";
+import infographicClay from "@/assets/blog/shipping-infiniaibook-and-portal-360/infographic-clay.webp";
+import infographicWatercolor from "@/assets/blog/shipping-infiniaibook-and-portal-360/infographic-watercolor.webp";
+import infographicChalkboard from "@/assets/blog/shipping-infiniaibook-and-portal-360/infographic-chalkboard.webp";
+import videoOptions from "@/assets/blog/shipping-infiniaibook-and-portal-360/studio-video-options.webp";
+import livePresenter from "@/assets/blog/shipping-infiniaibook-and-portal-360/live-presenter.webp";
+import portalLicenses from "@/assets/blog/shipping-infiniaibook-and-portal-360/portal-license-optimization.webp";
+import portalReadiness from "@/assets/blog/shipping-infiniaibook-and-portal-360/portal-copilot-readiness.webp";
+import portalInventory from "@/assets/blog/shipping-infiniaibook-and-portal-360/portal-inventory-reports.webp";
+import workspace from "@/assets/blog/open-notebook-self-hosted-research-notebook/workspace.png";
+import searchAsk from "@/assets/blog/open-notebook-self-hosted-research-notebook/search-ask.png";
+import transformations from "@/assets/blog/open-notebook-self-hosted-research-notebook/transformations.png";
+import mindMap from "@/assets/blog/open-notebook-self-hosted-research-notebook/mind-map.png";
+import quiz from "@/assets/blog/open-notebook-self-hosted-research-notebook/quiz.png";
+import flashcards from "@/assets/blog/open-notebook-self-hosted-research-notebook/flashcards.png";
+import powerpointDeck from "@/assets/blog/open-notebook-self-hosted-research-notebook/powerpoint-deck.png";
+import audioOverview from "@/assets/blog/open-notebook-self-hosted-research-notebook/audio-overview.png";
+import infographicVisualGuide from "@/assets/blog/open-notebook-self-hosted-research-notebook/infographic-visual-guide.jpg";
+import whiteboardVideo from "@/assets/blog/open-notebook-self-hosted-research-notebook/whiteboard-video-self-hosted-ai.mp4";
+import whiteboardPoster from "@/assets/blog/open-notebook-self-hosted-research-notebook/whiteboard-video-poster.jpg";
+import whiteboardCaptions from "@/assets/blog/open-notebook-self-hosted-research-notebook/whiteboard-video-self-hosted-ai.vtt?url";
+import motionVideo from "@/assets/blog/open-notebook-self-hosted-research-notebook/motion-explainer-scout-fundraising.mp4";
+import motionPoster from "@/assets/blog/open-notebook-self-hosted-research-notebook/motion-explainer-poster.jpg";
+import motionCaptions from "@/assets/blog/open-notebook-self-hosted-research-notebook/motion-explainer-scout-fundraising.vtt?url";
+import trainingVideo from "@/assets/blog/open-notebook-self-hosted-research-notebook/training-video-clip.mp4";
+import trainingPoster from "@/assets/blog/open-notebook-self-hosted-research-notebook/training-video-poster.jpg";
+import trainingCaptions from "@/assets/blog/open-notebook-self-hosted-research-notebook/training-video-clip.vtt?url";
+
+The first <Term def="A saved checkpoint of changes to a project's files, with a short note about what changed.">commit</Term> to InfiniAIBook landed on September 18. Seven weeks later, its <Term def="The folder, tracked by a tool called Git, that holds a project's files and the full history of every change.">repository</Term> has 252 commits and more than 60,000 lines of code, and the app does things I hadn't planned when I started: it imports Microsoft Learn pages, narrates animated explainers, and coaches you through other apps by looking at your screen. Portal 360° moved faster still. Since my last update on August 1, it has merged 594 <Term def="A proposal to merge a set of changes into the main version of a project, where it can be reviewed and checked first.">pull requests</Term>.
+
+I'm a Principal Cloud Solution Architect, not a full-time developer, and I didn't type most of this code. I describe what I want, GitHub Copilot writes it, and I review, test, and steer. Building at this pace is still new to me, and I find it empowering.
+
+Here's what's inside: what's new in InfiniAIBook since my field guide, every InfiniAIBook feature with a screenshot or sample, and what's new in Portal 360°. It ends with what I think this pace means for me, and for anyone who has an idea and no developer.
+
+Both are personal projects, not Microsoft products. InfiniAIBook is open source under the <Term def="A short, permissive open-source license. Anyone may use, copy, and change the code as long as the license notice stays with it.">MIT license</Term>. Portal 360° is private while I harden it, so its screenshots come from a redacted gallery where names, addresses, and IDs are fictional stand-ins.
+
+<Explain title="Last verified">
+  Updated November 7, 2026. InfiniAIBook details come from its repository as of
+  November 6, and Portal 360° details from its main branch as of November 5.
+  Menu labels and settings may move, so the project documentation is the source
+  of truth.
+</Explain>
+
+## What's new in InfiniAIBook
+
+My field guide, [InfiniAIBook: A Self-Hosted AI Research Notebook](/blog/open-notebook-self-hosted-research-notebook/), explains how the app works and was last updated on October 23. These are the changes since then, grouped by theme.
+
+### Microsoft Learn as a source, and as live context
+
+Open **Add sources → Microsoft Learn** to search official documentation and import full pages, not just snippets. The search runs through the public Microsoft Learn <Term def="A small service that gives AI apps a standard way to reach outside tools and data.">Model Context Protocol ("MCP") server</Term>, so there's no extra key to configure. The app's server only needs to be able to reach `learn.microsoft.com` over the internet.
+
+There are two ways to use it:
+
+- **Import pages.** Selected pages become saved sources, indexed like any other, so chat, Studio, live discussions, and library-wide search can all use them. A page already in the notebook is marked, and duplicates are refused.
+- **Use live Microsoft Learn in chat.** This is a per-notebook switch, off by default. Each new question searches Learn for fresh passages alongside only the saved sources you ticked. Live results don't become sources. Their citations open the exact excerpt that was used, with a link to the original page, and that excerpt stays with the answer even if the page changes later.
+
+<Screenshot
+  src={learnImport}
+  alt="Microsoft Learn dialog with the Use live Microsoft Learn in chat box checked, a search for Azure AI Search, and four selected results from learn.microsoft.com with an Add 4 sources button."
+  caption="The Microsoft Learn dialog: the live-chat switch on top, real search results below, and Add sources to keep the pages you pick."
+/>
+
+Live mode applies to notebook chat only, so import the pages if you want Studio or live discussions to use them. If Learn can't be reached, chat says so instead of quietly dropping it. Separately, **Search web** now tries Bing's public <Term def="A feed format that lets tools read a website's new content automatically.">Really Simple Syndication ("RSS")</Term> search first and falls back to any search keys you've configured.
+
+### A guided start, and a Sources panel that stays out of the way
+
+A new notebook opens with a three-step guide in the chat panel: **Add sources**, **Choose sources**, and **Open Studio**. It's a stepper rather than a checklist. The rail shows what's done, **Back**, **Next**, or a click on the rail moves between steps, and adding or ticking a source advances it for you.
+
+<Screenshot
+  src={gettingStarted}
+  alt="Getting-started guide with three connected steps: Add sources done, Choose sources current, and Open Studio next, beside the open Sources panel and the Studio panel."
+  caption="The getting-started stepper. Here a source has been unticked, so Choose sources is the current step."
+/>
+
+Sources now starts collapsed, which gives chat the room. **Add sources** in the header opens it, **Pin** keeps it open while you work elsewhere, and **Unpin** lets it close when you click outside or press Escape. On a narrow screen, a Sources tab does the same job.
+
+### Training videos: animation controls and visible progress
+
+Training videos picked up three changes on October 26 and 27.
+
+**Animation controls.** Under **Design → Animation**, choose **None**, **Light (transitions only)**, or **Full**, then fine-tune four toggles: transitions and fades, slow push-ins on pictures, bullets that appear one at a time, and the presenter gliding between layouts. The setting applies to the in-browser preview and the exported MP4, and changing only animation recomposes the video without rendering the presenter again.
+
+**Progress and failures.** Composing a training video now shows a progress bar, the motion explainer's animation step shows a percentage, and a failed training-video render names the preparation step that failed.
+
+<Screenshot
+  src={trainingEditor}
+  alt="Finished training video with a presenter in a black t-shirt above the Script and Design tabs, presenter and voice pickers, an editable transcript, and a Render again button."
+  caption="The training editor. Animation presets live on the Design tab next to the Script tab."
+/>
+
+### An optional second renderer: HyperFrames
+
+A <Term def="The part of an app that turns a script and pictures into a finished video file.">renderer</Term> turns a script and pictures into video, and InfiniAIBook has always had one written in Python. You can now switch motion explainers and training videos to [HyperFrames](https://github.com/heygen-com/hyperframes), an open-source tool that builds the video as an animated web page and renders it frame by frame in a copy of Chrome that runs without a window.
+
+It's opt-in. Add `MOTION_RENDERER=hyperframes` or `TRAINING_RENDERER=hyperframes` to your `.env.local` file (the private settings file that stays on your computer), and only the last rendering step changes. In training videos, captions become real text, so they render sharper. If HyperFrames can't run, InfiniAIBook falls back to its built-in renderer and the video's note says so. It needs <Term def="A free command-line tool that converts and combines audio and video.">ffmpeg</Term> installed and downloads Chrome the first time it runs, and the <Term def="A tool that packages an app and everything it needs into one unit, called a container, so it runs the same way on any machine.">Docker</Term> image doesn't include HyperFrames or Chrome.
+
+### Smaller changes worth knowing
+
+- **Help and About, refreshed.** The **? Help** button opens grouped, expandable topics for every workflow, with links to the full docs. About carries the MIT license notice and the third-party notices.
+- **YouTube transcript recovery.** When a video has no public captions, the import message points to the Gemini setting as the recovery path and explains what browser cookies can and can't do.
+- **Spending ceiling coverage.** The daily ceiling now reserves budget for avatar rendering, scales speech and chat estimates by size, and applies by default whenever paid Azure AI Speech is configured.
+- **An agent skill.** A <Term def="A reusable set of instructions that an AI coding assistant loads when a task matches.">skill</Term> teaches GitHub Copilot, Claude Code, Codex, or Cursor how to install, configure, and script the app.
+
+<Screenshot
+  src={helpTopics}
+  alt="InfiniAIBook Help dialog with five topic groups as buttons, the Notebooks and workspace group open, and collapsed topics under Sources and evidence including YouTube transcripts and Import Microsoft Learn pages."
+  caption="The refreshed Help dialog, grouped by task. Each topic expands in place and links to the full docs."
+/>
+
+The skill is plain <Term def="A simple way to write formatted text using ordinary characters, such as a # to mark a heading.">Markdown</Term> with no scripts. One command installs it, and the `skills` tool asks which of your coding assistants should get it:
+
+```bash
+npx skills add russrimm/InfiniAIBook --skill infiniaibook
+```
+
+It also tells the agent to keep keys in `.env.local`, leave the server on `127.0.0.1`, and confirm before bulk generation.
+
+## Every InfiniAIBook feature, with a screenshot
+
+Everything in this section runs on made-up content: a fictional community garden pilot, plus a few screens I captured on an empty copy of the app with synthetic files. Nothing here is real data.
+
+### Add sources: seven ways in
+
+Upload files (PDF, Word, PowerPoint with speaker notes, plain text, Markdown, spreadsheets and data files, web pages, images, audio and video, or a ZIP archive), add a link (including YouTube links and RSS feeds), paste text, search the web, browse the web, import from Microsoft Learn, or copy a source from another notebook. Ingestion runs in the background three items at a time, so you can keep adding while earlier ones finish.
+
+<Screenshot
+  src={sourcesPanel}
+  alt="Notebook workspace with the Sources panel open, showing Pin and close buttons, a file drop zone, and buttons for Add link, Paste text, Search web, Browse web, Microsoft Learn, and From other notebooks, beside the three-step guide and the Studio panel."
+  caption="The Sources panel on a new notebook, with every way to add content."
+/>
+
+### Chat that shows its work
+
+You tick the sources you want in play, and answers are built only from those, with numbered citations that open the highlighted passage. **Stop** keeps a partial answer, and each notebook can hold several chat sessions.
+
+<Screenshot
+  src={workspace}
+  alt="InfiniAIBook notebook with four community garden sources selected on the left, a cited chat answer in the middle, and the Studio panel with audio overview, whiteboard video, report, and infographic options on the right."
+  caption="Sources on the left, a cited answer in the middle, and Studio on the right."
+/>
+
+### Notes, transformations, and search across notebooks
+
+Save any answer as a note with its citations intact, write your own, or turn a note into a source. A **transformation** is a saved prompt you run on one source to produce a note, and eight ship built in. **Search** and **Ask** work across every notebook, with keyword and meaning-based modes.
+
+<Screenshot
+  src={notesPanel}
+  alt="Notes panel listing a saved chat answer, an AI-generated action list, and a handwritten note, next to a second chat session about the watering rota."
+  caption="Notes sit beside chat, and a second chat session keeps an unrelated question from coloring the first."
+/>
+
+<Screenshot
+  src={transformations}
+  alt="Transformations dialog listing eight built-in prompts, from Dense summary and Key insights to Glossary and Action items, with a New transformation button."
+  caption="The built-in transformations. Add your own for prompts you reuse."
+/>
+
+<Screenshot
+  src={searchAsk}
+  alt="Search your library page with the question Who covers the watering rota, Keyword and Semantic options, and one grounded answer with four numbered citations that each name a source and its notebook."
+  caption="Ask across the library: one grounded answer, with each citation naming its notebook."
+/>
+
+### Structure explorer for data files
+
+For structured data files, **Explore structure** opens a tree and graph or a table with types and counts. It works with JavaScript Object Notation ("JSON"), Extensible Markup Language ("XML"), comma-separated values ("CSV"), and tab-separated values ("TSV") files. An HTTP Archive ("HAR") file, a recording of everything a browser loaded for a page, gets more: a request table, a waterfall, redirect chains, and ranked findings. **Diagnose with AI** sends a redacted digest, never the raw file.
+
+<Screenshot
+  src={structureExplorer}
+  alt="Structure explorer for a sample HTTP Archive file showing eight requests, 2.93 seconds of load time, two failures, findings ranked high, medium, and low, a redirect chain, and a bar showing where request time goes."
+  caption="A made-up checkout trace. The findings flag two failed requests, a key in a query string, and a slow server response."
+/>
+
+### Live tools: talk to your sources, and get coached on screen
+
+A live discussion is a spoken conversation with a realtime voice model (an AI you can talk to out loud) that has read your selected sources. You can interrupt it, it searches your sources mid-conversation, and a call can be saved to notes with the takeaways and a cited transcript. The **screen helper** is separate from your sources: share an app window, say what you're trying to do, and a <Term def="An AI model that can look at images, including a snapshot of your screen.">vision model</Term> coaches you one step at a time with a numbered box on a snapshot of your screen.
+
+<Screenshot
+  src={liveDiscussion}
+  alt="Live discussion dialog listing seven conversation types: Discussion, Debate, Q&A, Interview an expert, Get interviewed, Oral quiz, and Socratic tutor, with a Start talking button."
+  caption="Seven live discussion modes. Debate argues the other side, and Socratic tutor teaches by asking."
+/>
+
+<Screenshot
+  src={screenHelper}
+  alt="Screen helper dialog with three numbered steps, a note that screenshots go to the configured vision model, Auto-watch and Read steps aloud checkboxes, and a Share screen and ask button."
+  caption="The screen helper before sharing. Auto-watch is off until you turn it on."
+/>
+
+### Studio: fourteen formats
+
+The Studio panel turns your ticked sources into fourteen formats. A focus box at the top steers all of them, and every output carries citations. Text exports to Markdown, decks to PowerPoint ("PPTX") files, audio to MP3, video to MP4, mind maps and infographics to PNG images, and flashcards to a file that Anki and Quizlet accept.
+
+#### Documents
+
+Report, briefing, study guide, FAQ, timeline, and PowerPoint deck.
+
+<Screenshot
+  src={studioReport}
+  alt="Report titled Riverside Garden Pilot: Analytical Report with an executive summary and numbered citation badges after each claim."
+  caption="Report: an executive summary and analytical sections, with a citation badge on each claim."
+/>
+
+<Screenshot
+  src={studioBriefing}
+  alt="One-page briefing with a bottom line, a bulleted section on what the sources say, and numbered citation badges."
+  caption="Briefing doc: under 700 words, with the bottom line first."
+/>
+
+<Screenshot
+  src={studioStudyGuide}
+  alt="Study guide with core concepts such as project purpose, roles, success measures, and water supply, each with a short cited explanation."
+  caption="Study guide: core concepts, a glossary, and short-answer questions with an answer key."
+/>
+
+<Screenshot
+  src={studioFaq}
+  alt="FAQ with expandable questions, three of them open to show cited answers about the project, demand, and water."
+  caption="FAQ: collapsible questions the sources actually answer."
+/>
+
+<Screenshot
+  src={studioTimeline}
+  alt="Vertical timeline running from January grant approval through spring planting and summer routine care, with a cited entry for each step."
+  caption="Timeline: a chronology extracted from the material."
+/>
+
+<Screenshot
+  src={powerpointDeck}
+  alt="Slide preview titled Water without a tap with four bullet points, a row of slide thumbnails, and cited speaker notes underneath."
+  caption="PowerPoint deck: title, agenda, content slides, speaker notes, and a sources slide, ready to download as a PPTX file."
+/>
+
+#### Visuals
+
+The infographic generator has 33 styles. Some are web-page layouts, so the text stays sharp and every number keeps a clickable citation. Others are drawn by your image model. Here are three layouts from the same notebook, then one drawn by the image model from a different notebook.
+
+<Screenshot
+  src={infographicClay}
+  alt="Clay-style infographic titled Riverside Garden Cast with a purple-to-pink header, four headline stat cards, four rounded cards titled The Dreamer, The Builders, The Water Keeper, and The Harvest Judge, and a key takeaway, all with numbered citation badges."
+  caption="Clay: soft rounded cards, with each section framed as a character in the story."
+/>
+
+<Screenshot
+  src={infographicWatercolor}
+  alt="Watercolor-style infographic titled Riverside Garden, From Lot to Harvest, with four stat cards and a beginning, middle, and end storyline."
+  caption="Watercolor: soft colors and a story arc."
+/>
+
+<Screenshot
+  src={infographicChalkboard}
+  alt="Chalkboard-style infographic titled Riverside Garden Rule, with hand-lettered stat cards and grouped action lists."
+  caption="Chalkboard: hand-lettered type and grouped actions."
+/>
+
+<Screenshot
+  src={infographicVisualGuide}
+  alt="Illustrated infographic titled Portal 360: One Workspace, Connected Control, with a central platform graphic joined by colored ribbons to unified view, safe actions, and smart operations panels."
+  caption="Visual guide, drawn by the image model from a notebook about my Portal 360° project."
+/>
+
+<Screenshot
+  src={mindMap}
+  alt="Expanded mind map for a community garden pilot with four color-coded branches: demand, water, people, and risks, each with three subtopics."
+  caption="Mind map: starts collapsed, expands topic by topic, and exports as a PNG."
+/>
+
+#### Study aids
+
+<Screenshot
+  src={quiz}
+  alt="Quiz results showing 5 of 6 correct with Retry 1 missed and Retake all buttons, followed by questions with the right answers marked and cited explanations."
+  caption="Quiz: multiple choice, scored, with a cited explanation under every question and a retry for the misses."
+/>
+
+<Screenshot
+  src={flashcards}
+  alt="Flashcards deck of twelve cards with a question and cited answer on each, two marked correct, one marked missed, and Shuffle, Study, Copy, CSV, and MD buttons."
+  caption="Flashcards: flip, self-grade, shuffle, and drill the ones you missed."
+/>
+
+#### Audio and video
+
+The four spoken formats stop at an editable script, so nothing is narrated, drawn, or billed until you press **Narrate** or **Render video**. Each takes narration instructions, a replacement list for terms, background music from tracks you upload, and (for video) a watermark.
+
+<Screenshot
+  src={audioOverview}
+  alt="Audio overview script editor with two named hosts, voice pickers, a music selector, an instructions panel, and chaptered lines of dialogue, each assigned to a speaker."
+  caption="Audio overview: one to four speakers, and every line editable before narration."
+/>
+
+<Video
+  src={whiteboardVideo}
+  poster={whiteboardPoster}
+  captions={whiteboardCaptions}
+  label="Narrated whiteboard video about the hardware needed to self-host AI models"
+  caption="Whiteboard video: an 86-second sample generated from five public articles about self-hosting AI models."
+/>
+
+<Video
+  src={motionVideo}
+  poster={motionPoster}
+  captions={motionCaptions}
+  label="Narrated motion explainer about how Scout troops fund their year with popcorn sales and other fundraisers"
+  caption="Motion explainer: a 100-second sample generated from public pages about Scout troop fundraising."
+/>
+
+<Screenshot
+  src={videoOptions}
+  alt="Two Studio option cards side by side. The Motion explainer card has voice, length, music, and watermark pickers plus a Customize section for tone, audience, look, colors, character, motion, closing message, and quality. The Training video card has trainer, voice, length, style, music, and watermark pickers."
+  caption="Options for the two newest video formats: Motion explainer with its Customize section (left) and Training video (right)."
+/>
+
+<Video
+  src={trainingVideo}
+  poster={trainingPoster}
+  captions={trainingCaptions}
+  label="First minute of an avatar training video, with a presenter introducing learning objectives as slides appear beside her"
+  caption="Training video: the first minute of a sample built from public articles about the new Microsoft Copilot."
+/>
+
+Four newer talking-head presenters (Leonie, Leonie Professional, George, and Marcel) use Microsoft's VASA-2 model, which is in preview. Batch rendering doesn't support them yet, so the editor offers them as a live preview: pick a presenter and a voice, and the presenter speaks your edited transcript. Nothing is recorded or added to the finished MP4.
+
+<Screenshot
+  src={livePresenter}
+  alt="Live presenter dialog with the four VASA-2 avatars Leonie, Leonie Professional, George, and Marcel, a voice picker, a video area, and the transcript."
+  caption="Preview live (VASA-2): choose a presenter and voice, then have the presenter speak the transcript."
+/>
+
+## What's new in Portal 360°
+
+Portal 360° is the private admin console I covered in [Portal of Portals: One Console for Every Admin Portal](/blog/portal-of-portals-deep-dive/) and the [project page](/projects/portal-of-portals/). That deep dive was last updated on August 1. Since then the <Term def="The primary line of a project's history, which every finished change is merged into.">main branch</Term> has gained roughly 2,000 commits, and the app now has about 460 pages and more than 900 <Term def="The behind-the-scenes web addresses an app uses to read data or make changes, separate from the pages you see.">API routes</Term> behind them. Portal 360° manages a Microsoft <Term def="Your organization's own instance of Microsoft cloud services, tied to its directory of users and apps.">tenant</Term>, so most of these changes are for the administrators who run one. Here is what I'd point to, grouped by area.
+
+### Home, navigation, and people
+
+- The home page now has **Menu** and **Tenant Pulse** tabs, a near-black dark theme, and a slim **Needs attention** panel instead of a tall one.
+- Microsoft Foundry has its own group in the left navigation.
+- Every table that has a column picker uses the same **Columns** button, and wide tables pin a scrollbar to the bottom edge.
+- Microsoft Teams presence shows as a badge beside people's names across the portal, and a name opens that person's workspace.
+
+### Copilot adoption and licensing
+
+- You can search Copilot interactions by agent.
+- Copilot Studio licensing reports, with Copilot Credit consumption charts added to the licensing reports.
+- **License Optimization** ranks waste findings, lets you exclude users or groups, and supports a bulk reclaim of eligible seats.
+
+<Screenshot
+  src={portalLicenses}
+  alt="Portal 360° License Optimization page showing $2,880 in potential annual savings, 12 ranked findings, and a finding for Microsoft 365 Copilot seats that were assigned but never activated, with exclusion buttons and a guardrails note."
+  caption="License Optimization: ranked findings with exclusions and guardrails. The estimates are labeled as not confirmed savings."
+/>
+
+<Screenshot
+  src={portalReadiness}
+  alt="Portal 360° Copilot Readiness page under Copilot adoption, with Usage, Interactions, Super users, Readiness, and ROI calculator tabs, an executive summary, and tiles for people analyzed, readiness, licensed seats, and dormant seats."
+  caption="Copilot Readiness: who is ready for a seat, and which seats are sitting unused."
+/>
+
+### Power Platform and Dataverse
+
+- An **Agent Debugger** page for Copilot Studio conversations.
+- An inventory report for flows that use the HTTP request trigger, added to the Inventory Reports library.
+- Removing an Advanced Connector Policy from an environment or an environment group.
+- Billing plan creation.
+- An unquarantine switch on Copilot Studio agent cards.
+- A Dataverse audit viewer with server-side filters, sorting, record history, and CSV export.
+- An interactive graph view in the Dataverse entity relationship diagram generator.
+- A cross-tenant Power Platform solution explorer and migration tool.
+
+<Screenshot
+  src={portalInventory}
+  alt="Portal 360° Inventory Reports page listing 84 reports in six categories: counts and distribution, resource inventory, agents, connectors, environments and governance, and usage and lifecycle."
+  caption="Inventory Reports: 84 tenant-wide reports in six categories when this page was captured."
+/>
+
+### Azure and Microsoft Foundry
+
+- An Azure resource inventory page, and an Azure resource diagram.
+- Management for the Microsoft Foundry Activity protocol, a preview feature.
+
+### Installing, and the work you don't see
+
+- A guided installation skill and a setup script for a fresh tenant.
+
+Much of what I merged in the last two weeks never shows up in a screenshot. Sign-in sessions are bound to the tenant that issued them, saved agent chat history is kept separate by tenant and user, API routes return cleaned-up errors instead of raw messages from the services behind them, calls to other services have time limits, and retries are limited to requests that are safe to repeat. Keyboard-only use and pages at 200% and 400% zoom now have automated checks. This is the part of the work I spend the most time reviewing.
+
+## What this pace means
+
+The numbers, for scale:
+
+| | InfiniAIBook | Portal 360° |
+| --- | --- | --- |
+| First commit | September 18, 2026 | July 29, 2025 |
+| Commits | 252 | 3,334 |
+| Lines of code | About 61,500 (TypeScript and Python) | About 685,000 (TypeScript) |
+| Test files | 69 | 592 |
+| API routes | 65 | 916 |
+| Commits with a Copilot co-author | 158 of 252 | 1,095 of 1,230 since August 1 |
+
+Lines include tests and blank lines. TypeScript and Python are the programming languages the two apps are written in. Comparing August 1 to today, Portal 360°'s TypeScript shows roughly 360,000 lines added and 87,000 removed.
+
+Lines of code are a poor measure of value, and I'm quoting them only to show how little the typing costs now. The cost that remains is judgment. I plan before Copilot writes anything, and I read what it produces. Automated <Term def="Small programs that run the app's code and check that it still does what it should, so a mistake shows up before anyone uses it.">tests</Term> run before changes merge, and they do catch things: recently, two changes that each passed on their own broke the main branch's checks when they landed together. The fix landed as a pull request like any other.
+
+I can't read 685,000 lines, and nobody can. What I can do is decide what to build, test it against a real tenant, run security reviews, and decide what's good enough to ship. Those skills matter more now, not less.
+
+One more detail. InfiniAIBook's repository includes a [recreation prompt](https://github.com/russrimm/InfiniAIBook/blob/main/docs/recreation-prompt.md) that asks a coding assistant to rebuild the app from an empty folder, and the repository says plainly that it hasn't been tested end to end. The idea holds up anyway: if you can describe a product precisely enough for a model to rebuild it, you understand it. That precision is the skill I'd practice if I were starting over.
+
+I keep coming back to who this opens up. For most of my career, "I have an idea for a tool" ended at "and I'd need a developer." A teacher who wants a study aid, a nonprofit coordinator who needs a tracker, or a clinic manager who needs an intake form can now describe the thing and have a first version the same week. When more people can build the tools they need, more problems get solved by the people closest to them. I'm optimistic about what that does for all of us.
+
+The caution is the one I'd give anyone. Speed raises the stakes on judgment. Read what the AI writes, test it, and keep sensitive data out of anything you haven't reviewed. The [vibe-coding lessons](/blog/vibe-coding-lessons/) I wrote earlier cover the habits that help.
+
+## Where to go next
+
+If you want to try InfiniAIBook, the [field guide](/blog/open-notebook-self-hosted-research-notebook/) walks through setup and the security settings to change before anyone else can reach it, and the [repository](https://github.com/russrimm/InfiniAIBook) has the install guide. Start with one notebook about a project you're working on, import a Microsoft Learn page or two, and see which Studio format you reach for first. If you build something with it, I'd like to hear what.
