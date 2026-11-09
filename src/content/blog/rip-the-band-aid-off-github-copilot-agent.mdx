@@ -1,0 +1,326 @@
+---
+title: "Rip the Band-Aid Off: Have GitHub Copilot Build Your Agent"
+description: "Not a coder? Install GitHub Copilot, switch to Plan mode, describe what success looks like, and ask it to build an agent with the Copilot SDK."
+pubDate: 2026-11-08
+tags: ["GitHub Copilot", "Agents", "Vibe Coding", "AI", "Microsoft Foundry", "Copilot Studio", "Security"]
+draft: true
+featured: false
+---
+
+import Explain from "@/components/Explain.astro";
+import Term from "@/components/Term.astro";
+
+There's a task you do every week. You pull the same information from the same
+three places, paste it into the same document, and tell yourself you'd automate
+it if you were a coder. My advice is blunt: rip the Band-Aid off. Install
+GitHub Copilot, put it in <Term def="A setting where Copilot writes out its plan first and waits for your approval before it changes anything.">Plan mode</Term>,
+tell it what success looks like, and ask it to build you an
+<Term def="An AI that does things instead of only answering questions: it opens files, changes them, runs programs, and checks its own work.">agent</Term>.
+
+I'm not much of a coder either. I can write PowerShell, and that's about where
+it ends. I've still shipped real software, because the part that used to need a
+developer is the part artificial intelligence ("AI") now does for me. The part
+it can't do for you is deciding what "done" looks like.
+
+In practice: install the GitHub Copilot app, pick Claude Sonnet 5.5 or Claude
+Opus 5.5 as the
+<Term def="The AI engine that does the thinking inside Copilot. You pick one from a list, and they differ in strength and cost.">model</Term>,
+describe the outcome, and ask Copilot to install the GitHub Copilot
+<Term def="A toolkit of ready-made building blocks that lets your own program use someone else's service.">Software Development Kit ("SDK")</Term>
+and build the agent. If you build in Power Apps or Copilot Studio today, you're
+already a
+<Term def="Building apps and automations by configuring and connecting ready-made pieces instead of writing code.">low-code</Term>
+maker, and this works for you too.
+
+This post is written for someone who has never written code. Any word with a
+dotted underline is one you can hover over, or tap on a phone, for a
+plain-language definition.
+
+*Verified against GitHub Docs, GitHub's SDK repository, and Microsoft Learn on
+2026-11-08. These products change quickly, so check the linked docs before you
+build a process on any of this.*
+
+## Why now: writing the code stopped being the hard part
+
+The Band-Aid is a sentence: "I'm not a coder." For years that was a fair thing
+to say, because building software meant months of learning to write it. Writing
+the code is now the cheap part. Deciding what you want, and recognizing it when
+you get it, is where the value sits, and if you work in security, compliance, or
+operations, you already do that for a living.
+
+Three things make this the right time:
+
+- **The SDK is out of preview.** GitHub's Copilot SDK
+  [became generally available on June 2, 2026](https://github.blog/changelog/2026-06-02-copilot-sdk-is-now-generally-available/),
+  and it works with Copilot Free for personal use as well as paid plans.
+- **Each layer has guardrails.** The Copilot app can ask before it acts. Microsoft
+  Foundry, Microsoft's platform for building and running AI agents, has
+  guardrails for models and agents. Copilot Studio, Microsoft's agent builder,
+  has data policies.
+- **The pieces plug together.**
+  <Term def="A shared standard that lets AI tools connect to outside systems and data, so each tool doesn't need its own custom plug.">Model Context Protocol ("MCP")</Term>
+  is a shared way for AI tools to reach outside systems, and the Copilot app,
+  the Copilot SDK, and Copilot Studio can all use it.
+
+I made the case for planning first in
+[Coding with AI](/blog/vibe-coding-lessons/), my guide for non-coders. This post
+is the push to go and do it.
+
+## What you're asking for: an agent built with the Copilot SDK
+
+The [Copilot SDK](https://docs.github.com/en/copilot/how-tos/copilot-sdk) is a
+toolkit that lets a program of your own use the same agent engine that runs
+inside GitHub Copilot. You describe the job, and the engine does the planning,
+runs programs, and edits files. So you aren't asking Copilot for a chat window.
+You're asking it to build a small program that lives in a folder on your
+computer, does one job, and runs whenever you tell it to.
+
+The SDK comes in six programming languages, and for several of them it installs
+the Copilot piece it needs along with it. You don't have to choose: the prompt
+below asks Copilot to check what's already on your computer and pick one. If you
+might later want the agent running on Microsoft's servers in Microsoft Foundry,
+ask for
+<Term def="A popular, readable programming language that many tools and Microsoft services support.">Python</Term>,
+one of the two languages Foundry accepts for your own agent code. The box below
+holds GitHub's starter program, in TypeScript, from its
+[SDK quickstart](https://docs.github.com/en/copilot/get-started/sdk-quickstart),
+which has the current version.
+
+<Explain title="It's less scary than it sounds: the whole starter program">
+
+It starts Copilot's engine, asks it one question, prints the answer, and shuts down. Real agents add instructions and the actions they're allowed to take. Copilot writes all of it, and you never have to read it.
+
+<div class="mt-3 [&_pre]:rounded-lg [&_pre]:p-4">
+
+```ts
+import { CopilotClient } from "@github/copilot-sdk";
+
+const client = new CopilotClient();
+const session = await client.createSession({ model: "auto" });
+
+const response = await session.sendAndWait({ prompt: "What is 2 + 2?" });
+console.log(response?.data.content);
+
+await client.stop();
+process.exit(0);
+```
+
+</div>
+
+</Explain>
+
+## Your first run, in five steps
+
+1. **Install the app and sign in.** Download the
+   [GitHub Copilot app](https://docs.github.com/en/copilot/get-started/quickstart-copilot-app),
+   sign in with your GitHub account, and choose a Copilot plan or bring your own
+   model key. Copilot Free works. You also need
+   <Term def="A free tool that keeps a history of every change to your files.">Git</Term>
+   installed.
+   [Vibe Coding 99-101 for non-coders](/blog/vibe-code-your-blog-part-1-setup/)
+   walks through setup step by step.
+2. **Make an empty folder.** A folder with nothing in it can't be damaged by
+   mistake. Create one, such as `my-first-agent`, then in the app choose
+   **Open local folder** and start a
+   <Term def="One ongoing conversation with Copilot, working inside one folder.">session</Term>
+   there.
+3. **Set the mode, the model, and the permissions.** Under the
+   <Term def="The message you type to tell an AI what you want.">prompt</Term>
+   box, set the mode to **Plan** and pick Claude Sonnet 5.5 or Claude Opus 5.5
+   from the model list. Which models appear depends on your plan. Then open the
+   mode menu, hover over **Tool permissions**, and choose **Ask every time**. A
+   tool is anything Copilot uses to act, such as running a program or editing a
+   file, so Copilot will now stop for your approval before each one. That's a lot
+   of approval prompts, and the right trade for a first build.
+4. **Paste the success-first prompt.** This step matters most, so it gets its
+   own section next.
+5. **Read the plan before you approve it.** The plan is a contract. Check it
+   against your success list, and say so in plain language if something's
+   missing. Approve when you could explain it to a coworker. Then run the agent
+   and ask your three test questions. It may ask you to sign in to GitHub,
+   because it runs on your Copilot plan. If an answer is off, tell Copilot what
+   you expected.
+
+Either model works. At
+[GitHub's published rates](https://docs.github.com/en/copilot/reference/copilot-billing/models-and-pricing),
+Claude Opus 5.5 costs twice as much as Claude Sonnet 5.5, so if you're watching
+your spend, start with Sonnet. In my side-by-side build, Opus was more polished
+and closer to the brief, and Sonnet was leaner and held up well. I wrote it up in
+[Sonnet 5.5 vs Opus 5.5: Same Prompt, Two Models = Two Different Apps](/blog/sonnet-5-5-vs-opus-5-5-energy-profit-twin/).
+
+## Start with what success looks like
+
+A model can't know what "done" means unless you say so. Hand it steps ("make a
+folder, write a script, call this service") and you've done the planning
+yourself. Describe the outcome and it can choose the steps, while you judge the
+result by whether it matches what you said. I made this point in Lesson 5 of
+[Coding with AI](/blog/vibe-coding-lessons/): if I can't say what done looks
+like, no model can.
+
+Write down how you'll check the work before the work starts: what you'll see,
+what it must always include, what it does when it doesn't know, what it may
+touch, and what it must never do. Here's the prompt I'd paste into Plan mode.
+"Read-only" means it can look at something but can't change it.
+
+```text
+I'm not a developer. I want an agent that [one sentence: what it does, and for whom].
+
+What success looks like:
+1. [Something I can see or check, like "a one-page summary every Monday"]
+2. [Something it must always include, like "a link to the source"]
+3. [What it does when it isn't sure, like "says so instead of guessing"]
+
+What it can touch: [the folder, spreadsheet, or website it may read]. Read-only.
+What it must never do: [send messages, change settings, delete anything, use my admin account].
+How I'll test it: [three questions I'll ask, with the answers I expect].
+
+Use GitHub's current Copilot SDK documentation, not memory. Check what's already
+installed on this computer, and tell me before you install anything. Ask me
+anything that's unclear before you write the plan. Then install the GitHub
+Copilot SDK in this folder, build the agent, and show me how to run it.
+```
+
+Two lines carry extra weight. "Use GitHub's current Copilot SDK documentation,
+not memory" matters because models learn from older material, and this SDK is
+recent. "Ask me anything that's unclear" turns Plan mode into an interview, which
+is where you find out what you hadn't decided.
+
+## Four agents I'd ask for first
+
+These come from things I've already built. In each case I built the app, not an
+agent, so what follows is the agent I'd ask Copilot for. Work from the top down,
+because risk rises with access: public data first, then your own files, then
+read-only access to company systems. Anything that changes something comes last,
+with your approval.
+
+### The Monday brief
+
+I built the [Microsoft Communications Portal](/blog/microsoft-communications-portal/)
+to pull Microsoft's roadmaps, release plans, and Message Center posts into one
+place. Its optional AI layer adds a "Top 5 most impactful changes this week"
+digest, plus a Summarize with AI button on each announcement that returns a
+summary, an impact rating, the affected audience, and an admin-action flag. The
+agent version: **success** is one page every Monday with the five changes that
+matter to my team, who's affected, what I need to do, and a source link for each.
+If it can't tell, it says so. **Start with** public Microsoft feeds only. In the
+portal, I told the model to ignore instructions hidden in feed text, and I'd put
+that line in this prompt too.
+
+### The overdue nudge
+
+A customer's Excel compliance tracker became
+[a working app in 25 minutes](/blog/excel-compliance-calendar-managed-app/),
+with owners, due dates, frequency, and overdue reports that turn red and say how
+many days late they are. The agent version: **success** is a weekly list of
+what's overdue and who owns it, oldest first, with a drafted reminder for each
+owner that it never sends. **Start with** one spreadsheet, read-only.
+
+### The research assistant that shows its work
+
+[InfiniAIBook](/blog/open-notebook-self-hosted-research-notebook/) is the
+research notebook I built that you run yourself. Its chat answers only from the
+sources you tick, with numbered citations you can click to see the highlighted
+passage, and with nothing ticked it declines instead of quietly using
+everything. The agent version: **success** is every answer naming the document
+and the passage it came from, and saying so when the answer isn't in my sources.
+**Start with** a folder of documents, read-only.
+
+### The admin health check
+
+This is the one where I'd slow down. [Portal 360°](/blog/portal-of-portals-deep-dive/)
+is my admin console for a Microsoft
+<Term def="Your organization's own space in Microsoft's cloud, where its users, devices, and settings live.">tenant</Term>,
+and it isn't public yet. Two of its pages each answer one question and hand you
+the fix list: which admin accounts haven't registered for
+<Term def="Signing in with a second proof of who you are, such as a code sent to your phone.">multifactor authentication</Term>,
+and which accounts haven't signed in for 90 days, with the number of licenses
+each one holds. The agent version: **success** is a weekly answer to those two
+questions with a suggested next step for each. It can read and can't change
+anything. **Start with** read-only permissions on an account of its own, never
+yours, and ask Copilot to list every permission it wants, and why, before you
+grant any. Treat its answer as a daily convenience, not the official record.
+
+## Set the guardrails before the first run
+
+Guardrails exist at several layers, and which ones protect you depends on where
+the agent runs, so here's the map. The table uses three terms you may not know:
+<Term def="A fenced-off area where a program can run without reaching or damaging everything else on your computer.">sandbox</Term>,
+<Term def="GitHub's unit for billing Copilot usage. One credit is worth one cent.">AI Credits</Term>,
+and
+<Term def="Ready-made links that let Copilot Studio agents work with other apps and services.">connectors</Term>.
+
+| Layer | What it does for you | What I'd set first |
+| --- | --- | --- |
+| GitHub Copilot app | Plan mode makes you approve a plan. [Tool permissions](https://docs.github.com/en/copilot/how-tos/github-copilot-app/agent-sessions) decide when it asks first. | Plan mode, and Ask every time |
+| Local sandbox | [Local sandboxing](https://docs.github.com/en/copilot/concepts/security-governance-and-network-settings/about-cloud-and-local-sandboxes) limits the files, network, and system access of the commands Copilot runs on your computer. | `/sandbox on` where your session supports it |
+| Your spending | [AI Credits](https://docs.github.com/en/copilot/reference/copilot-billing/models-and-pricing) meter every model call. | On a personal plan, a $0 bundled-credits budget set to stop usage at the limit |
+| The agent you build | A permission checkpoint on each action, plus an [optional credit cap](https://github.com/github/copilot-sdk/blob/main/docs/features/session-limits.md) per session. | Read-only, ask first, and a credit cap, all in your prompt |
+| Microsoft Foundry | [Guardrails](https://learn.microsoft.com/en-us/azure/foundry/guardrails/guardrails-overview) check what goes in, the actions the agent takes, what comes back, and what goes out. Hosted agents also limit which outside services they can reach. | Assign a guardrail when you host the agent |
+| Copilot Studio | [Data policies](https://learn.microsoft.com/en-us/microsoft-copilot-studio/admin-data-loss-prevention) sort connectors into Business, Non-business, and Blocked. | Ask your admin which policy covers you |
+
+Two status notes. Foundry's guardrails for agents, and its limits on outside
+services for hosted agents, are in preview, meaning early releases that can still
+change. The SDK's session credit cap is a soft limit, so one response can
+overshoot it, and the feature is still flagged experimental in some of the SDKs.
+Keep a person in the loop for all of it. GitHub's
+[models and pricing page](https://docs.github.com/en/copilot/reference/copilot-billing/models-and-pricing)
+has the $0 budget steps, and
+[Managing GitHub Copilot Credit Consumption](/blog/managing-github-copilot-credit-consumption/)
+goes deeper on budgets.
+
+One catch: several of GitHub's starter examples for the SDK approve every tool
+request so the first run goes smoothly. That's the most convenient setting, and
+it removes your oversight, so tell Copilot up front: read-only, and ask before
+anything else.
+
+Three rules I'd keep at every layer:
+
+- **Read-only first, on an account of its own.** Give the agent only the
+  permissions the job needs, never your admin account, and keep passwords and
+  keys out of the prompt and the folder.
+- **Treat what it reads as data, not orders.** Text from a web page or a feed
+  can hide instructions meant to fool an agent, a trick called
+  <Term def="Hidden instructions placed in content that an AI reads, meant to make it do something you didn't ask for.">prompt injection</Term>.
+  The
+  [customization quickstart](/blog/customizing-github-copilot-app-quickstart/)
+  covers it, including why an MCP server is software you're trusting.
+- **Read the output before anyone acts on it.** A review step caught a real
+  security hole in one of my apps, as I described in
+  [Coding with AI](/blog/vibe-coding-lessons/).
+
+## Where your agent can live next
+
+A first agent runs on your computer, for you, and you own the guardrails above.
+If it earns its keep, you have two places to take it.
+
+- **Copilot Studio.** If you'd rather describe an agent than build one in code,
+  Copilot Studio's GitHub Copilot harness is the engine behind agents that take
+  a goal and work through the steps. It uses Power Platform data policies and
+  bills in Copilot Credits, a separate meter from GitHub's AI Credits. It's a
+  Copilot Studio runtime, not the GitHub Copilot service, and Microsoft states
+  that customer data isn't sent to the GitHub Copilot service when those agents
+  run in Copilot Studio. See
+  [Harnesses in Copilot Studio](https://learn.microsoft.com/en-us/microsoft-copilot-studio/harnesses-overview).
+- **Microsoft Foundry.** If you want your own code running on Microsoft's servers
+  under Foundry's controls, Foundry hosted agents are generally available and run
+  code written in Python or
+  <Term def="A programming language from Microsoft, widely used for business software.">C#</Term>.
+  Microsoft Learn's
+  [Deploy your own code as a hosted agent](https://learn.microsoft.com/en-us/azure/foundry/agents/quickstarts/quickstart-deploy-own-code)
+  lists the GitHub Copilot SDK among the toolkits you can use and links a Python
+  sample. You'll need an Azure subscription and permission on the Foundry
+  project. [Microsoft Foundry Canvas](/blog/microsoft-foundry-canvas/) covers the
+  side panel in the Copilot app for that.
+
+## Your next step
+
+Pick one task you repeat every week. Write three sentences about what success
+looks like and one about what the agent must never touch. Paste them into the
+template, set Plan mode, and read the plan Copilot gives back before you approve
+anything.
+
+If it works, the
+[customization quickstart](/blog/customizing-github-copilot-app-quickstart/)
+shows how to give Copilot standing instructions, skills, and MCP servers, so the
+next agent starts out knowing how you work. And if you build something,
+[tell me what it does](/contact/). I'd like to see it.
