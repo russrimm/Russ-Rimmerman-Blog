@@ -61,7 +61,7 @@ jobs:
   generate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       # The Entra app's federated identity credential trusts only
       # refs/heads/main, so Azure OIDC login fails on any other ref. Fail
