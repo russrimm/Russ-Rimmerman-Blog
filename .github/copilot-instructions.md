@@ -42,6 +42,8 @@ frustration, or a dig, rewrite it or cut it.
 Positive framing is not the same as marketing hype. Keep the practitioner
 honesty; remove the edge.
 
+Do not use commit counts as an accomplishment or promotional claim in blog posts.
+
 ## US English, always
 
 Spell in US English throughout — prose, headings, alt text, frontmatter, code
