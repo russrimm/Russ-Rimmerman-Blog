@@ -2,6 +2,7 @@
 title: "Shipping InfiniAIBook and Portal 360° with GitHub Copilot"
 description: "What's new in InfiniAIBook and Portal 360°, a screenshot tour of every InfiniAIBook feature, and what building both with GitHub Copilot changed for me."
 pubDate: 2026-11-07
+updatedDate: 2026-11-09
 tags:
   [
     "GitHub Copilot",
@@ -61,9 +62,7 @@ import trainingVideo from "@/assets/blog/open-notebook-self-hosted-research-note
 import trainingPoster from "@/assets/blog/open-notebook-self-hosted-research-notebook/training-video-poster.jpg";
 import trainingCaptions from "@/assets/blog/open-notebook-self-hosted-research-notebook/training-video-clip.vtt?url";
 
-The first <Term def="A saved checkpoint of changes to a project's files, with a short note about what changed.">commit</Term> to InfiniAIBook landed on September 18. Seven weeks later, its <Term def="The folder, tracked by a tool called Git, that holds a project's files and the full history of every change.">repository</Term> has 252 commits and more than 60,000 lines of code, and the app does things I hadn't planned when I started: it imports Microsoft Learn pages, narrates animated explainers, and coaches you through other apps by looking at your screen. Portal 360° moved faster still. Since my last update on August 1, it has merged 594 <Term def="A proposal to merge a set of changes into the main version of a project, where it can be reviewed and checked first.">pull requests</Term>.
-
-I'm a Principal Cloud Solution Architect, not a full-time developer, and I didn't type most of this code. I describe what I want, GitHub Copilot writes it, and I review, test, and steer. Building at this pace is still new to me, and I find it empowering.
+The first <Term def="A saved checkpoint of changes to a project's files, with a short note about what changed.">commit</Term> to InfiniAIBook landed on September 18. Seven weeks later, its <Term def="The folder, tracked by a tool called Git, that holds a project's files and the full history of every change.">repository</Term> has more than 60,000 lines of code, and the app does things I hadn't planned when I started: it imports Microsoft Learn pages, narrates animated explainers, and coaches you through other apps by looking at your screen. Portal 360° moved faster still. Since my last update on August 1, it has merged 594 <Term def="A proposal to merge a set of changes into the main version of a project, where it can be reviewed and checked first.">pull requests</Term>.
 
 Here's what's inside: what's new in InfiniAIBook since my field guide, every InfiniAIBook feature with a screenshot or sample, and what's new in Portal 360°. It ends with what I think this pace means for me, and for anyone who has an idea and no developer.
 
@@ -71,7 +70,7 @@ Both are personal projects, not Microsoft products. InfiniAIBook is open source 
 
 <Explain title="Last verified">
   Updated November 7, 2026. InfiniAIBook details come from its repository as of
-  November 6, and Portal 360° details from its main branch as of November 5.
+  November 6, and Portal 360° details from its <Term def="The primary line of a project's history, which every finished change is merged into.">main branch</Term> as of November 5.
   Menu labels and settings may move, so the project documentation is the source
   of truth.
 </Explain>
@@ -364,7 +363,7 @@ Four newer talking-head presenters (Leonie, Leonie Professional, George, and Mar
 
 ## What's new in Portal 360°
 
-Portal 360° is the private admin console I covered in [Portal of Portals: One Console for Every Admin Portal](/blog/portal-of-portals-deep-dive/) and the [project page](/projects/portal-of-portals/). That deep dive was last updated on August 1. Since then the <Term def="The primary line of a project's history, which every finished change is merged into.">main branch</Term> has gained roughly 2,000 commits, and the app now has about 460 pages and more than 900 <Term def="The behind-the-scenes web addresses an app uses to read data or make changes, separate from the pages you see.">API routes</Term> behind them. Portal 360° manages a Microsoft <Term def="Your organization's own instance of Microsoft cloud services, tied to its directory of users and apps.">tenant</Term>, so most of these changes are for the administrators who run one. Here is what I'd point to, grouped by area.
+Portal 360° is the private admin console I covered in [Portal of Portals: One Console for Every Admin Portal](/blog/portal-of-portals-deep-dive/) and the [project page](/projects/portal-of-portals/). That deep dive was last updated on August 1. The app now has about 460 pages and more than 900 <Term def="The behind-the-scenes web addresses an app uses to read data or make changes, separate from the pages you see.">API routes</Term> behind them. Portal 360° manages a Microsoft <Term def="Your organization's own instance of Microsoft cloud services, tied to its directory of users and apps.">tenant</Term>, so most of these changes are for the administrators who run one. Here is what I'd point to, grouped by area.
 
 ### Home, navigation, and people
 
@@ -426,11 +425,9 @@ The numbers, for scale:
 | | InfiniAIBook | Portal 360° |
 | --- | --- | --- |
 | First commit | September 18, 2026 | July 29, 2025 |
-| Commits | 252 | 3,334 |
 | Lines of code | About 61,500 (TypeScript and Python) | About 685,000 (TypeScript) |
 | Test files | 69 | 592 |
 | API routes | 65 | 916 |
-| Commits with a Copilot co-author | 158 of 252 | 1,095 of 1,230 since August 1 |
 
 Lines include tests and blank lines. TypeScript and Python are the programming languages the two apps are written in. Comparing August 1 to today, Portal 360°'s TypeScript shows roughly 360,000 lines added and 87,000 removed.
 
