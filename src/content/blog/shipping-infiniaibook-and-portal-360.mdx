@@ -1,6 +1,6 @@
 ---
 title: "Shipping InfiniAIBook and Portal 360° with GitHub Copilot"
-description: "What's new in InfiniAIBook and Portal 360°, a screenshot tour of every InfiniAIBook feature, and what building both with GitHub Copilot changed for me."
+description: "A screenshot tour of InfiniAIBook, the latest Portal 360° updates, and practical lessons from building both with GitHub Copilot."
 pubDate: 2026-11-07
 updatedDate: 2026-11-09
 tags:
@@ -62,31 +62,26 @@ import trainingVideo from "@/assets/blog/open-notebook-self-hosted-research-note
 import trainingPoster from "@/assets/blog/open-notebook-self-hosted-research-notebook/training-video-poster.jpg";
 import trainingCaptions from "@/assets/blog/open-notebook-self-hosted-research-notebook/training-video-clip.vtt?url";
 
-The first <Term def="A saved checkpoint of changes to a project's files, with a short note about what changed.">commit</Term> to InfiniAIBook landed on September 18. Seven weeks later, its <Term def="The folder, tracked by a tool called Git, that holds a project's files and the full history of every change.">repository</Term> has more than 60,000 lines of code, and the app does things I hadn't planned when I started: it imports Microsoft Learn pages, narrates animated explainers, and coaches you through other apps by looking at your screen. Portal 360° moved faster still. Since my last update on August 1, it has merged 594 <Term def="A proposal to merge a set of changes into the main version of a project, where it can be reviewed and checked first.">pull requests</Term>.
+InfiniAIBook now imports Microsoft Learn pages, narrates animated explainers, and coaches you through apps by looking at your screen. Here's a screenshot tour, followed by Portal 360° updates and what I've learned building both with GitHub Copilot.
 
-Here's what's inside: what's new in InfiniAIBook since my field guide, every InfiniAIBook feature with a screenshot or sample, and what's new in Portal 360°. It ends with what I think this pace means for me, and for anyone who has an idea and no developer.
-
-Both are personal projects, not Microsoft products. InfiniAIBook is open source under the <Term def="A short, permissive open-source license. Anyone may use, copy, and change the code as long as the license notice stays with it.">MIT license</Term>. Portal 360° is private while I harden it, so its screenshots come from a redacted gallery where names, addresses, and IDs are fictional stand-ins.
+Both are personal projects, not Microsoft products. InfiniAIBook uses the <Term def="A short, permissive open-source license. Anyone may use, copy, and change the code as long as the license notice stays with it.">MIT license</Term>. Portal 360° remains private while I harden it; its screenshots use fictional names, addresses, and IDs.
 
 <Explain title="Last verified">
-  Updated November 7, 2026. InfiniAIBook details come from its repository as of
-  November 6, and Portal 360° details from its <Term def="The primary line of a project's history, which every finished change is merged into.">main branch</Term> as of November 5.
-  Menu labels and settings may move, so the project documentation is the source
-  of truth.
+  Details verified November 7, 2026 against InfiniAIBook's <Term def="The folder, tracked by a tool called Git, that holds a project's files and change history.">repository</Term> as of
+  November 6 and Portal 360°'s <Term def="The primary line of a project's history, which every finished change is merged into.">main branch</Term> as of November 5.
+  Check the project documentation for current menu labels and settings.
 </Explain>
 
 ## What's new in InfiniAIBook
 
-My field guide, [InfiniAIBook: A Self-Hosted AI Research Notebook](/blog/open-notebook-self-hosted-research-notebook/), explains how the app works and was last updated on October 23. These are the changes since then, grouped by theme.
+These changes follow the October 23 update to my [InfiniAIBook field guide](/blog/open-notebook-self-hosted-research-notebook/).
 
-### Microsoft Learn as a source, and as live context
+### Microsoft Learn: saved sources or live context
 
-Open **Add sources → Microsoft Learn** to search official documentation and import full pages, not just snippets. The search runs through the public Microsoft Learn <Term def="A small service that gives AI apps a standard way to reach outside tools and data.">Model Context Protocol ("MCP") server</Term>, so there's no extra key to configure. The app's server only needs to be able to reach `learn.microsoft.com` over the internet.
+Open **Add sources → Microsoft Learn** to search documentation through the public Microsoft Learn <Term def="A small service that gives AI apps a standard way to reach outside tools and data.">Model Context Protocol ("MCP") server</Term>. No extra key is needed, just internet access to `learn.microsoft.com`.
 
-There are two ways to use it:
-
-- **Import pages.** Selected pages become saved sources, indexed like any other, so chat, Studio, live discussions, and library-wide search can all use them. A page already in the notebook is marked, and duplicates are refused.
-- **Use live Microsoft Learn in chat.** This is a per-notebook switch, off by default. Each new question searches Learn for fresh passages alongside only the saved sources you ticked. Live results don't become sources. Their citations open the exact excerpt that was used, with a link to the original page, and that excerpt stays with the answer even if the page changes later.
+- **Import pages.** Save full pages for chat, Studio, live discussions, and library-wide search. Existing pages are marked; duplicates are refused.
+- **Use live Microsoft Learn in chat.** Off by default for each notebook. Every question searches Learn alongside your selected sources, without saving results as sources. Citations retain the exact excerpt and link to the original page, even if it changes.
 
 <Screenshot
   src={learnImport}
@@ -94,11 +89,11 @@ There are two ways to use it:
   caption="The Microsoft Learn dialog: the live-chat switch on top, real search results below, and Add sources to keep the pages you pick."
 />
 
-Live mode applies to notebook chat only, so import the pages if you want Studio or live discussions to use them. If Learn can't be reached, chat says so instead of quietly dropping it. Separately, **Search web** now tries Bing's public <Term def="A feed format that lets tools read a website's new content automatically.">Really Simple Syndication ("RSS")</Term> search first and falls back to any search keys you've configured.
+Live mode works only in notebook chat; import pages for Studio or live discussions. Chat reports Learn connection failures. **Search web** now tries Bing's public <Term def="A feed format that lets tools read a website's new content automatically.">Really Simple Syndication ("RSS")</Term> search before falling back to configured search keys.
 
-### A guided start, and a Sources panel that stays out of the way
+### Guided setup and a collapsible Sources panel
 
-A new notebook opens with a three-step guide in the chat panel: **Add sources**, **Choose sources**, and **Open Studio**. It's a stepper rather than a checklist. The rail shows what's done, **Back**, **Next**, or a click on the rail moves between steps, and adding or ticking a source advances it for you.
+New notebooks guide you through **Add sources**, **Choose sources**, and **Open Studio**. Use **Back**, **Next**, or the step rail to navigate. Adding or selecting a source advances the guide automatically.
 
 <Screenshot
   src={gettingStarted}
@@ -106,15 +101,13 @@ A new notebook opens with a three-step guide in the chat panel: **Add sources**,
   caption="The getting-started stepper. Here a source has been unticked, so Choose sources is the current step."
 />
 
-Sources now starts collapsed, which gives chat the room. **Add sources** in the header opens it, **Pin** keeps it open while you work elsewhere, and **Unpin** lets it close when you click outside or press Escape. On a narrow screen, a Sources tab does the same job.
+Sources starts collapsed to leave room for chat. **Add sources** opens it; **Pin** keeps it open. Unpinned, it closes when you click outside or press Escape. Narrow screens use a Sources tab.
 
 ### Training videos: animation controls and visible progress
 
-Training videos picked up three changes on October 26 and 27.
+**Animation controls.** Under **Design → Animation**, choose **None**, **Light (transitions only)**, or **Full**. Four toggles control transitions and fades, picture push-ins, sequential bullets, and presenter movement. Changes apply to the preview and exported MP4 without rendering the presenter again.
 
-**Animation controls.** Under **Design → Animation**, choose **None**, **Light (transitions only)**, or **Full**, then fine-tune four toggles: transitions and fades, slow push-ins on pictures, bullets that appear one at a time, and the presenter gliding between layouts. The setting applies to the in-browser preview and the exported MP4, and changing only animation recomposes the video without rendering the presenter again.
-
-**Progress and failures.** Composing a training video now shows a progress bar, the motion explainer's animation step shows a percentage, and a failed training-video render names the preparation step that failed.
+**Progress and failures.** Training-video composition shows a progress bar; motion-explainer animation shows a percentage. Failed training-video renders name the preparation step that failed.
 
 <Screenshot
   src={trainingEditor}
@@ -122,18 +115,20 @@ Training videos picked up three changes on October 26 and 27.
   caption="The training editor. Animation presets live on the Design tab next to the Script tab."
 />
 
-### An optional second renderer: HyperFrames
+### Optional HyperFrames rendering
 
-A <Term def="The part of an app that turns a script and pictures into a finished video file.">renderer</Term> turns a script and pictures into video, and InfiniAIBook has always had one written in Python. You can now switch motion explainers and training videos to [HyperFrames](https://github.com/heygen-com/hyperframes), an open-source tool that builds the video as an animated web page and renders it frame by frame in a copy of Chrome that runs without a window.
+[HyperFrames](https://github.com/heygen-com/hyperframes) is an optional <Term def="The part of an app that turns a script and pictures into a finished video file.">renderer</Term> for motion explainers and training videos. It renders animated web pages frame by frame in Chrome, with sharper text captions in training videos.
 
-It's opt-in. Add `MOTION_RENDERER=hyperframes` or `TRAINING_RENDERER=hyperframes` to your `.env.local` file (the private settings file that stays on your computer), and only the last rendering step changes. In training videos, captions become real text, so they render sharper. If HyperFrames can't run, InfiniAIBook falls back to its built-in renderer and the video's note says so. It needs <Term def="A free command-line tool that converts and combines audio and video.">ffmpeg</Term> installed and downloads Chrome the first time it runs, and the <Term def="A tool that packages an app and everything it needs into one unit, called a container, so it runs the same way on any machine.">Docker</Term> image doesn't include HyperFrames or Chrome.
+Enable it with `MOTION_RENDERER=hyperframes` or `TRAINING_RENDERER=hyperframes` in `.env.local`, your private local settings file. Only the final rendering step changes. If it can't run, the app uses its built-in Python renderer and notes the fallback.
+
+HyperFrames requires <Term def="A free command-line tool that converts and combines audio and video.">ffmpeg</Term> and downloads Chrome on first use. Neither HyperFrames nor Chrome is included in the <Term def="A tool that packages an app and everything it needs into a container so it runs the same way on any machine.">Docker</Term> image.
 
 ### Smaller changes worth knowing
 
-- **Help and About, refreshed.** The **? Help** button opens grouped, expandable topics for every workflow, with links to the full docs. About carries the MIT license notice and the third-party notices.
-- **YouTube transcript recovery.** When a video has no public captions, the import message points to the Gemini setting as the recovery path and explains what browser cookies can and can't do.
-- **Spending ceiling coverage.** The daily ceiling now reserves budget for avatar rendering, scales speech and chat estimates by size, and applies by default whenever paid Azure AI Speech is configured.
-- **An agent skill.** A <Term def="A reusable set of instructions that an AI coding assistant loads when a task matches.">skill</Term> teaches GitHub Copilot, Claude Code, Codex, or Cursor how to install, configure, and script the app.
+- **Help and About.** **? Help** groups topics by workflow and links to the docs. About includes license and third-party notices.
+- **YouTube transcripts.** Imports without public captions point to Gemini for recovery and explain browser-cookie limits.
+- **Spending ceilings.** The daily ceiling reserves avatar-rendering budget, scales speech and chat estimates by size, and applies by default with paid Azure AI Speech.
+- **An agent skill.** A <Term def="Reusable instructions an AI coding assistant loads for a matching task.">skill</Term> covers installation, configuration, and scripting for GitHub Copilot, Claude Code, Codex, or Cursor.
 
 <Screenshot
   src={helpTopics}
@@ -141,21 +136,21 @@ It's opt-in. Add `MOTION_RENDERER=hyperframes` or `TRAINING_RENDERER=hyperframes
   caption="The refreshed Help dialog, grouped by task. Each topic expands in place and links to the full docs."
 />
 
-The skill is plain <Term def="A simple way to write formatted text using ordinary characters, such as a # to mark a heading.">Markdown</Term> with no scripts. One command installs it, and the `skills` tool asks which of your coding assistants should get it:
+The skill is <Term def="Plain text with simple formatting marks, such as # for a heading.">Markdown</Term>, with no scripts. Install it and choose your coding assistants:
 
 ```bash
 npx skills add russrimm/InfiniAIBook --skill infiniaibook
 ```
 
-It also tells the agent to keep keys in `.env.local`, leave the server on `127.0.0.1`, and confirm before bulk generation.
+It instructs agents to keep keys in `.env.local`, bind the server to `127.0.0.1`, and confirm before bulk generation.
 
 ## Every InfiniAIBook feature, with a screenshot
 
-Everything in this section runs on made-up content: a fictional community garden pilot, plus a few screens I captured on an empty copy of the app with synthetic files. Nothing here is real data.
+The examples use a fictional community garden and synthetic files, not real data.
 
 ### Add sources: seven ways in
 
-Upload files (PDF, Word, PowerPoint with speaker notes, plain text, Markdown, spreadsheets and data files, web pages, images, audio and video, or a ZIP archive), add a link (including YouTube links and RSS feeds), paste text, search the web, browse the web, import from Microsoft Learn, or copy a source from another notebook. Ingestion runs in the background three items at a time, so you can keep adding while earlier ones finish.
+Upload files, add links (including YouTube and RSS), paste text, search or browse the web, import Microsoft Learn pages, or copy sources between notebooks. Uploads support PDF, Word, PowerPoint with speaker notes, text, Markdown, spreadsheets, data files, web pages, images, audio, video, and ZIP archives. Background processing handles three items at a time.
 
 <Screenshot
   src={sourcesPanel}
@@ -165,7 +160,7 @@ Upload files (PDF, Word, PowerPoint with speaker notes, plain text, Markdown, sp
 
 ### Chat that shows its work
 
-You tick the sources you want in play, and answers are built only from those, with numbered citations that open the highlighted passage. **Stop** keeps a partial answer, and each notebook can hold several chat sessions.
+Answers use only your selected sources, with numbered citations opening the highlighted passage. **Stop** keeps partial answers. Each notebook supports multiple chat sessions.
 
 <Screenshot
   src={workspace}
@@ -175,11 +170,11 @@ You tick the sources you want in play, and answers are built only from those, wi
 
 ### Notes, transformations, and search across notebooks
 
-Save any answer as a note with its citations intact, write your own, or turn a note into a source. A **transformation** is a saved prompt you run on one source to produce a note, and eight ship built in. **Search** and **Ask** work across every notebook, with keyword and meaning-based modes.
+Save cited answers as notes, write your own, or turn notes into sources. Eight built-in **transformations** (saved prompts) turn a source into a note. **Search** and **Ask** span all notebooks, using keywords or meaning.
 
 <Screenshot
   src={notesPanel}
-  alt="Notes panel listing a saved chat answer, an AI-generated action list, and a handwritten note, next to a second chat session about the watering rota."
+  alt="Notes panel listing a saved chat answer, an AI-generated action list, and a handwritten note, next to a second chat session about the watering schedule."
   caption="Notes sit beside chat, and a second chat session keeps an unrelated question from coloring the first."
 />
 
@@ -191,13 +186,13 @@ Save any answer as a note with its citations intact, write your own, or turn a n
 
 <Screenshot
   src={searchAsk}
-  alt="Search your library page with the question Who covers the watering rota, Keyword and Semantic options, and one grounded answer with four numbered citations that each name a source and its notebook."
+  alt="Library search about the watering schedule, with Keyword and Semantic options and an answer with four numbered citations naming each source and notebook."
   caption="Ask across the library: one grounded answer, with each citation naming its notebook."
 />
 
 ### Structure explorer for data files
 
-For structured data files, **Explore structure** opens a tree and graph or a table with types and counts. It works with JavaScript Object Notation ("JSON"), Extensible Markup Language ("XML"), comma-separated values ("CSV"), and tab-separated values ("TSV") files. An HTTP Archive ("HAR") file, a recording of everything a browser loaded for a page, gets more: a request table, a waterfall, redirect chains, and ranked findings. **Diagnose with AI** sends a redacted digest, never the raw file.
+**Explore structure** shows trees, graphs, or typed tables for JavaScript Object Notation ("JSON"), Extensible Markup Language ("XML"), comma-separated values ("CSV"), and tab-separated values ("TSV") files. HTTP Archive ("HAR") files record what a browser loaded; they also get request tables, timing waterfalls, redirect chains, and ranked findings. **Diagnose with AI** sends a redacted digest, never the raw file.
 
 <Screenshot
   src={structureExplorer}
@@ -205,9 +200,11 @@ For structured data files, **Explore structure** opens a tree and graph or a tab
   caption="A made-up checkout trace. The findings flag two failed requests, a key in a query string, and a slow server response."
 />
 
-### Live tools: talk to your sources, and get coached on screen
+### Live discussions and screen coaching
 
-A live discussion is a spoken conversation with a realtime voice model (an AI you can talk to out loud) that has read your selected sources. You can interrupt it, it searches your sources mid-conversation, and a call can be saved to notes with the takeaways and a cited transcript. The **screen helper** is separate from your sources: share an app window, say what you're trying to do, and a <Term def="An AI model that can look at images, including a snapshot of your screen.">vision model</Term> coaches you one step at a time with a numbered box on a snapshot of your screen.
+**Live discussions** let you talk to AI about selected sources, interrupt, and search mid-conversation. Save the takeaways and cited transcript to notes.
+
+The **screen helper** works separately: share an app window and describe your goal. A <Term def="An AI model that can interpret images, including your screen.">vision model</Term> guides you with numbered boxes on screen snapshots.
 
 <Screenshot
   src={liveDiscussion}
@@ -223,7 +220,7 @@ A live discussion is a spoken conversation with a realtime voice model (an AI yo
 
 ### Studio: fourteen formats
 
-The Studio panel turns your ticked sources into fourteen formats. A focus box at the top steers all of them, and every output carries citations. Text exports to Markdown, decks to PowerPoint ("PPTX") files, audio to MP3, video to MP4, mind maps and infographics to PNG images, and flashcards to a file that Anki and Quizlet accept.
+Studio turns selected sources into fourteen cited formats, all steered by one focus box. Export text as Markdown, decks as PowerPoint ("PPTX"), audio as MP3, video as MP4, visuals as PNG, and flashcards for Anki or Quizlet.
 
 #### Documents
 
@@ -267,7 +264,7 @@ Report, briefing, study guide, FAQ, timeline, and PowerPoint deck.
 
 #### Visuals
 
-The infographic generator has 33 styles. Some are web-page layouts, so the text stays sharp and every number keeps a clickable citation. Others are drawn by your image model. Here are three layouts from the same notebook, then one drawn by the image model from a different notebook.
+Infographics offer 33 styles: web-page layouts with sharp text and clickable citations, or illustrations drawn by your image model. Below are three layouts from one notebook and an illustrated guide from another.
 
 <Screenshot
   src={infographicClay}
@@ -315,7 +312,7 @@ The infographic generator has 33 styles. Some are web-page layouts, so the text 
 
 #### Audio and video
 
-The four spoken formats stop at an editable script, so nothing is narrated, drawn, or billed until you press **Narrate** or **Render video**. Each takes narration instructions, a replacement list for terms, background music from tracks you upload, and (for video) a watermark.
+All four spoken formats let you edit the script before pressing **Narrate** or **Render video**; narration and rendering aren't billed until then. Options include narration instructions, term replacements, uploaded background music, and video watermarks.
 
 <Screenshot
   src={audioOverview}
@@ -353,7 +350,7 @@ The four spoken formats stop at an editable script, so nothing is narrated, draw
   caption="Training video: the first minute of a sample built from public articles about the new Microsoft Copilot."
 />
 
-Four newer talking-head presenters (Leonie, Leonie Professional, George, and Marcel) use Microsoft's VASA-2 model, which is in preview. Batch rendering doesn't support them yet, so the editor offers them as a live preview: pick a presenter and a voice, and the presenter speaks your edited transcript. Nothing is recorded or added to the finished MP4.
+Leonie, Leonie Professional, George, and Marcel use Microsoft's preview VASA-2 model. Choose a presenter and voice to hear your edited transcript live. Batch rendering isn't supported: nothing is recorded or added to the MP4.
 
 <Screenshot
   src={livePresenter}
@@ -363,20 +360,20 @@ Four newer talking-head presenters (Leonie, Leonie Professional, George, and Mar
 
 ## What's new in Portal 360°
 
-Portal 360° is the private admin console I covered in [Portal of Portals: One Console for Every Admin Portal](/blog/portal-of-portals-deep-dive/) and the [project page](/projects/portal-of-portals/). That deep dive was last updated on August 1. The app now has about 460 pages and more than 900 <Term def="The behind-the-scenes web addresses an app uses to read data or make changes, separate from the pages you see.">API routes</Term> behind them. Portal 360° manages a Microsoft <Term def="Your organization's own instance of Microsoft cloud services, tied to its directory of users and apps.">tenant</Term>, so most of these changes are for the administrators who run one. Here is what I'd point to, grouped by area.
+Portal 360° manages a Microsoft <Term def="Your organization's instance of Microsoft cloud services, tied to its directory of users and apps.">tenant</Term> from one admin console. Since my August 1 [deep dive](/blog/portal-of-portals-deep-dive/), it has merged 594 <Term def="A proposal to combine changes with the main version of a project after review and checks.">pull requests</Term>. It now has about 460 pages and more than 900 <Term def="Behind-the-scenes web addresses an app uses to read data or make changes.">API routes</Term>. The [project page](/projects/portal-of-portals/) has more background.
 
 ### Home, navigation, and people
 
-- The home page now has **Menu** and **Tenant Pulse** tabs, a near-black dark theme, and a slim **Needs attention** panel instead of a tall one.
+- **Menu** and **Tenant Pulse** home tabs, a near-black dark theme, and a slimmer **Needs attention** panel.
 - Microsoft Foundry has its own group in the left navigation.
-- Every table that has a column picker uses the same **Columns** button, and wide tables pin a scrollbar to the bottom edge.
-- Microsoft Teams presence shows as a badge beside people's names across the portal, and a name opens that person's workspace.
+- Consistent **Columns** buttons and bottom-pinned scrollbars on wide tables.
+- Microsoft Teams presence badges beside names; select a name to open that person's workspace.
 
 ### Copilot adoption and licensing
 
 - You can search Copilot interactions by agent.
-- Copilot Studio licensing reports, with Copilot Credit consumption charts added to the licensing reports.
-- **License Optimization** ranks waste findings, lets you exclude users or groups, and supports a bulk reclaim of eligible seats.
+- Copilot Studio licensing reports with Copilot Credit consumption charts.
+- **License Optimization** ranks waste findings, supports user/group exclusions, and reclaims eligible seats in bulk.
 
 <Screenshot
   src={portalLicenses}
@@ -393,7 +390,7 @@ Portal 360° is the private admin console I covered in [Portal of Portals: One C
 ### Power Platform and Dataverse
 
 - An **Agent Debugger** page for Copilot Studio conversations.
-- An inventory report for flows that use the HTTP request trigger, added to the Inventory Reports library.
+- An Inventory Reports entry for flows using the HTTP request trigger.
 - Removing an Advanced Connector Policy from an environment or an environment group.
 - Billing plan creation.
 - An unquarantine switch on Copilot Studio agent cards.
@@ -409,38 +406,32 @@ Portal 360° is the private admin console I covered in [Portal of Portals: One C
 
 ### Azure and Microsoft Foundry
 
-- An Azure resource inventory page, and an Azure resource diagram.
+- Azure resource inventory and diagrams.
 - Management for the Microsoft Foundry Activity protocol, a preview feature.
 
-### Installing, and the work you don't see
+### Installation, security, and accessibility
 
 - A guided installation skill and a setup script for a fresh tenant.
 
-Much of what I merged in the last two weeks never shows up in a screenshot. Sign-in sessions are bound to the tenant that issued them, saved agent chat history is kept separate by tenant and user, API routes return cleaned-up errors instead of raw messages from the services behind them, calls to other services have time limits, and retries are limited to requests that are safe to repeat. Keyboard-only use and pages at 200% and 400% zoom now have automated checks. This is the part of the work I spend the most time reviewing.
+Sign-in sessions are tenant-bound, and saved agent chats are isolated by tenant and user. API errors omit raw service messages; external calls have time limits and retry only when safe. Automated checks cover keyboard-only use and 200% and 400% zoom.
 
 ## What this pace means
 
-The numbers, for scale:
+For scale, not as a measure of value:
 
 | | InfiniAIBook | Portal 360° |
 | --- | --- | --- |
-| First commit | September 18, 2026 | July 29, 2025 |
+| First <Term def="A saved checkpoint of file changes, with a note about what changed.">commit</Term> | September 18, 2026 | July 29, 2025 |
 | Lines of code | About 61,500 (TypeScript and Python) | About 685,000 (TypeScript) |
-| Test files | 69 | 592 |
+| <Term def="Programs that check whether the app's code does what it should.">Test</Term> files | 69 | 592 |
 | API routes | 65 | 916 |
 
-Lines include tests and blank lines. TypeScript and Python are the programming languages the two apps are written in. Comparing August 1 to today, Portal 360°'s TypeScript shows roughly 360,000 lines added and 87,000 removed.
+Counts include tests and blank lines. TypeScript and Python are programming languages. Since August 1, Portal 360°'s TypeScript has roughly 360,000 lines added and 87,000 removed.
 
-Lines of code are a poor measure of value, and I'm quoting them only to show how little the typing costs now. The cost that remains is judgment. I plan before Copilot writes anything, and I read what it produces. Automated <Term def="Small programs that run the app's code and check that it still does what it should, so a mistake shows up before anyone uses it.">tests</Term> run before changes merge, and they do catch things: recently, two changes that each passed on their own broke the main branch's checks when they landed together. The fix landed as a pull request like any other.
+Copilot reduces the typing, not the judgment. I still plan the work, review changes, test against a real tenant, and run security reviews. Recently, two changes passed tests separately but failed together after merging. Testing the combined result matters.
 
-I can't read 685,000 lines, and nobody can. What I can do is decide what to build, test it against a real tenant, run security reviews, and decide what's good enough to ship. Those skills matter more now, not less.
-
-One more detail. InfiniAIBook's repository includes a [recreation prompt](https://github.com/russrimm/InfiniAIBook/blob/main/docs/recreation-prompt.md) that asks a coding assistant to rebuild the app from an empty folder, and the repository says plainly that it hasn't been tested end to end. The idea holds up anyway: if you can describe a product precisely enough for a model to rebuild it, you understand it. That precision is the skill I'd practice if I were starting over.
-
-I keep coming back to who this opens up. For most of my career, "I have an idea for a tool" ended at "and I'd need a developer." A teacher who wants a study aid, a nonprofit coordinator who needs a tracker, or a clinic manager who needs an intake form can now describe the thing and have a first version the same week. When more people can build the tools they need, more problems get solved by the people closest to them. I'm optimistic about what that does for all of us.
-
-The caution is the one I'd give anyone. Speed raises the stakes on judgment. Read what the AI writes, test it, and keep sensitive data out of anything you haven't reviewed. The [vibe-coding lessons](/blog/vibe-coding-lessons/) I wrote earlier cover the habits that help.
+InfiniAIBook also includes a [recreation prompt](https://github.com/russrimm/InfiniAIBook/blob/main/docs/recreation-prompt.md) for rebuilding it from an empty folder. It hasn't been tested end to end, but writing a precise product description is useful practice. Keep sensitive data out of unreviewed code; my [vibe-coding lessons](/blog/vibe-coding-lessons/) cover the habits I use.
 
 ## Where to go next
 
-If you want to try InfiniAIBook, the [field guide](/blog/open-notebook-self-hosted-research-notebook/) walks through setup and the security settings to change before anyone else can reach it, and the [repository](https://github.com/russrimm/InfiniAIBook) has the install guide. Start with one notebook about a project you're working on, import a Microsoft Learn page or two, and see which Studio format you reach for first. If you build something with it, I'd like to hear what.
+Use the [field guide](/blog/open-notebook-self-hosted-research-notebook/) for setup and security settings, or the [repository](https://github.com/russrimm/InfiniAIBook) for installation. Review those settings before allowing others to connect. Start with one notebook, import a Microsoft Learn page, and try a Studio format.
