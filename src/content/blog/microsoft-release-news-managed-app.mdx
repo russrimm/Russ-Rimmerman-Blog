@@ -1,29 +1,34 @@
 ---
-title: "Microsoft Release News: My Copilot Studio Managed App"
-description: "A tour of Microsoft Release News, the managed app I built in Copilot Studio to bring Microsoft roadmaps, product updates, and announcements together."
+title: "Microsoft Release News: A Working App From One Sentence"
+heroImage: ../../assets/blog/microsoft-release-news-managed-app.webp
+heroAlt: "Editorial illustration representing AI-Built Release News App."
+description: "I asked Copilot Studio for a single place to follow Microsoft release news and got a working managed app. Anyone can do the same without writing code, and running it doesn't consume Copilot Credits with a Power Apps Premium license."
 pubDate: 2026-11-09
+updatedDate: 2026-11-11
 tags: ["Copilot Studio", "Power Platform", "Microsoft 365", "Azure"]
 draft: false
 ---
 
 import Screenshot from "@/components/Screenshot.astro";
 import buildPreview from "@/assets/blog/microsoft-release-news-managed-app/copilot-studio-build.webp";
+import roadmapGrouped from "@/assets/blog/microsoft-release-news-managed-app/roadmap-grouped-by-product.webp";
+import roadmapSearch from "@/assets/blog/microsoft-release-news-managed-app/roadmap-search-expanded-group.webp";
+import azureUpdates from "@/assets/blog/microsoft-release-news-managed-app/azure-updates.webp";
+import techCommunity from "@/assets/blog/microsoft-release-news-managed-app/tech-community-blogs.webp";
 
-Staying current with Microsoft means reading several kinds of updates. A roadmap tells me what's coming. A product announcement explains what's available. An organization's Message Center notices help its administrators prepare for changes that affect their users.
+Every team has someone who keeps up with what's changing in the products they depend on. It's usually a side job. They read a roadmap in one tab, an announcement in another, and a blog post in a third, then summarize it for everyone else.
 
-I wanted one place to start that reading, so I built Microsoft Release News as a managed app in Copilot Studio. The app brings those source areas into the same interface, with a roadmap view organized around products rather than a long list of individual announcements.
+That kind of small, specific need almost never gets a developer's time. It's too small for a project and too useful to ignore. I wanted to see what happens if the person with the need simply asks for the app.
 
-This is my app, not an official Microsoft news service. It's also a field note about the Copilot Studio app-building experience, which is currently in preview.
+So I did. I built Microsoft Release News as a managed app in Copilot Studio, and this post is about that experience more than about the app. It's my own app, not an official Microsoft news service, and the Copilot Studio app builder is currently in preview.
 
-## The prompt I started with
+## One sentence, one working app
 
-The request visible in my build conversation was:
+The request in my build conversation was:
 
 > I want to display all Microsoft release news in a single pane of glass
 
-That's an outcome, not a screen design. It doesn't specify which controls to use, how to arrange product groups, or what the first page should look like.
-
-The build surface puts the conversation on the left and an interactive app preview on the right. In the captured version below, the app already has source tabs, a search box, product grouping, and a summary strip above the updates.
+That's an outcome, not a design. I didn't pick controls, sketch a layout, or describe a data structure. The builder asked what it needed to, then put a working preview next to the conversation.
 
 <Screenshot
   src={buildPreview}
@@ -31,63 +36,79 @@ The build surface puts the conversation on the left and an interactive app previ
   caption="The build conversation beside the app preview. Browser chrome and identifying details have been cropped out."
 />
 
-The screenshot captures the starting request and a working preview, rather than a complete build history. The useful part is having something concrete to review while the conversation is still open. I can point to the app I'm looking at instead of trying to describe an imagined screen.
+This is the part I'd want a non-developer to notice. You don't need to know what a component, a connector, or a framework is. You describe the job, look at what comes back, and say what to change. [Microsoft's app creation guide](https://learn.microsoft.com/en-us/microsoft-copilot-studio/apps-experience/create-app) describes the same loop: explain the problem, answer follow-up questions, try the preview, and ask for adjustments.
 
-[Microsoft's app creation guide](https://learn.microsoft.com/en-us/microsoft-copilot-studio/apps-experience/create-app) describes that loop: explain the problem, answer any follow-up questions, try the preview, and describe what you want changed. You can ask for a different field or layout without first having to write the code yourself.
+What came back is a real application with four source tabs, search, and product grouping. That's far more than I specified, and I could have asked for more.
 
-## A tour of Microsoft Release News
+<Screenshot
+  src={roadmapGrouped}
+  alt="Microsoft Release News in light mode on the AI At Work Roadmap tab, with four source tabs, summary counts showing 2,294 total updates, search and filter controls, and product groups including Access, Dynamics 365, Excel, and Exchange."
+  caption="The finished app, running outside the builder. Browser chrome and the signed-in account have been cropped out."
+/>
 
-The current navigation has four source areas. The roadmap tab uses artificial intelligence ("AI") in its name, but the view describes its scope as Microsoft 365 features, not only AI announcements.
+## What it gives the organization
 
-| Tab | What I use that source for |
+The value isn't the screen. It's that a question that used to take several tabs and a person's afternoon now has one place to start.
+
+| Tab | What it's for |
 | --- | --- |
-| AI At Work Roadmap | Looking at upcoming, in-development, and launched Microsoft 365 features |
-| Azure Updates | Checking Azure product announcements |
-| Tech Community & Blogs | Reading the explanation and context around an announcement |
-| Microsoft Message Center | Reviewing organization-specific notices, subject to the appropriate access |
+| AI At Work Roadmap | Upcoming, in-development, and launched Microsoft 365 features (the tab name uses artificial intelligence, "AI," but the scope is Microsoft 365 features) |
+| Azure Updates | Azure product releases, previews, and retirements |
+| Tech Community & Blogs | The explanation and context behind an announcement |
+| Microsoft Message Center | An organization's own admin notices, subject to access |
 
-My original prompt's word "all" doesn't mean the app is an exhaustive record of every Microsoft release. These are the source areas in this version. For a decision about a particular feature, I would still check the original announcement or documentation.
+Someone on the team can type "Copilot Studio" into the search box and go from 2,294 roadmap updates to 40 that matter to them.
 
-The roadmap page is the part shown in the build image. At that moment, it displayed **2,296 updates in 44 groups**. Those are snapshot counts, not fixed limits or a claim about how much news appears each week.
+<Screenshot
+  src={roadmapSearch}
+  alt="Roadmap tab with the search box set to Copilot Studio, showing 40 updates in 4 groups, with the Current Channel group expanded to show one entry about SQL Server support in Microsoft Copilot Studio."
+  caption="Searching narrows the roadmap, and each group expands in place."
+/>
 
-Above the groups, the page shows total updates, the number currently showing, and the latest-update indicator. The controls include search, a product selector, Saved, grouping, and sorting. The captured view uses **Group by product** and **Newest first**, with product headings such as Dynamics 365, Excel, and Microsoft 365.
+The other tabs work the same way, so there's nothing new to learn. Azure Updates showed 200 updates in 25 groups, and Tech Community & Blogs showed 57 updates in 5 groups.
 
-That arrangement gives me a useful place to begin: the product I'm following. The total tells me how much is in the view, but a product heading gives me somewhere to focus.
+<Screenshot
+  src={azureUpdates}
+  alt="Azure Updates tab showing 200 total updates grouped into 25 product groups, including AI + machine learning, Compute, Containers, and Databases, with search, product, Saved, grouping, and sorting controls."
+  caption="Azure Updates, grouped by product area."
+/>
 
-## Start with a question, not the update count
+<Screenshot
+  src={techCommunity}
+  alt="Tech Community and Blogs tab showing 57 updates in 5 groups: Agents, Content Understanding Series, Microsoft Copilot, Microsoft Copilot Studio, and Microsoft Foundry."
+  caption="Tech Community & Blogs."
+/>
 
-For a catch-up session, I'd start with a specific question: what's changing for the product my team uses?
+Those counts are snapshots. They'll change as the sources do, and "all" in my prompt doesn't make this an exhaustive record of every Microsoft release. For a decision about a specific feature, I still check the original announcement or documentation. Think of the app as the place you start reading, not a replacement for the source.
 
-On the roadmap page, that means starting with the product selector or search box rather than treating the total as a reading list. The grouped layout provides another way to approach the same information: find a product first, then review its updates.
+## Building costs credits, running doesn't
 
-After that, I'd look for the supporting announcement and check its dates and availability details. A roadmap entry and a rollout notice answer different questions. One helps with planning; the other may tell an administrator when to prepare or act.
+Here's the cost detail that matters if you're thinking about sharing an app like this widely.
 
-This is how I want to use the app: as a starting point for reading, not a replacement for the source material. Bringing the views together doesn't make a planned feature available sooner, and it doesn't tell me that every organization receives a change at the same time.
+Building a managed app consumes Copilot Credits. Running it is a separate question. Per Microsoft's [licensing and Copilot Credits guidance](https://learn.microsoft.com/microsoft-365/admin/manage/apps/licensing-credits), each person who runs the app needs either a Power Apps Premium license or coverage through a spending policy that includes Copilot Managed Runtime. If a user has a Power Apps Premium license, their normal use of the app doesn't consume Copilot Credits.
+
+A few caveats from that same guidance:
+
+- Sharing an app gives people access, but it doesn't cover the cost of running it. A Microsoft 365 Copilot license alone doesn't cover it either.
+- Users without Power Apps Premium can run apps through a spending policy, which charges Copilot Credits per API call.
+- Premium-licensed users can still incur credits for specialized services or for usage above the daily request limits, though the guidance calls that unlikely.
+
+So for a team that already has Power Apps Premium assigned, the ongoing cost of an app like this is mostly the build, not each person opening it. Your admin can confirm how your organization is set up.
 
 ## Message Center has a different access boundary
 
-The Message Center tab needs a distinction that the other tabs don't: public release information and an organization's notices aren't the same data.
+The Message Center tab reads an organization's own notices, so it behaves differently from the public tabs. Microsoft documents these as [service update messages for a tenant](https://learn.microsoft.com/en-us/graph/api/serviceannouncement-list-messages?view=graph-rest-1.0), and reading them through Microsoft Graph requires the relevant permission.
 
-Microsoft documents Message Center messages as [service update messages for a tenant](https://learn.microsoft.com/en-us/graph/api/serviceannouncement-list-messages?view=graph-rest-1.0), meaning a particular organization's Microsoft 365 environment. Reading them through Microsoft Graph requires the relevant permission. A tab in an app isn't evidence that every user can retrieve those messages.
+The [Copilot Studio apps overview](https://learn.microsoft.com/en-us/microsoft-copilot-studio/apps-experience/apps-overview) covers the broader rule: connected organizational data uses the signed-in user's identity, and sharing an app doesn't give someone access to data they couldn't otherwise read. That's why I'm showing the public roadmap here and not organization-specific notices. My running instance isn't a public demo.
 
-The [Copilot Studio apps overview](https://learn.microsoft.com/en-us/microsoft-copilot-studio/apps-experience/apps-overview) makes the broader rule clear: connected organizational data uses the signed-in user's identity. Publishing or sharing an app doesn't give someone access to data they couldn't otherwise read.
+## Before you try it
 
-That's why I'm showing the public roadmap view here rather than organization-specific notices. My running instance also isn't a public demo that everyone can open.
+"Managed" here means the app runs on Microsoft-hosted infrastructure for identity, approved connectivity, and governance, so you aren't standing up a website to try an idea. The [Copilot Managed Runtime admin overview](https://learn.microsoft.com/en-us/microsoft-365/admin/manage/apps/) covers app inventory in the Microsoft 365 admin center and controls over distribution and usage.
 
-## What makes this a managed app
+Two things to check first. Copilot Studio's app experience is rolling out gradually, and administrators can disable app creation. And Microsoft identifies this as a preview experience, not one intended for production use, so it's a good fit for experiments and low-risk internal tools before you rely on it for a business process.
 
-In this context, "managed" means the app uses Microsoft-hosted infrastructure for identity, approved connectivity, and governance. Governance is the set of organizational rules controlling things such as data access and sharing. I don't have to turn this experiment into a separate website-hosting project before I can preview it.
+## Start with the smallest useful job
 
-The [Copilot Managed Runtime admin overview](https://learn.microsoft.com/en-us/microsoft-365/admin/manage/apps/) explains the administrative side, including app inventory in the Microsoft 365 admin center and controls over distribution and usage.
+I took the same describe-and-preview approach with an [Excel compliance tracker turned into a managed app](/blog/excel-compliance-calendar-managed-app/). Different task, same pattern: say what you need, check the preview, refine it.
 
-There are still prerequisites and costs to check. Copilot Studio's app experience is rolling out gradually, and administrators can disable app creation. Building apps consumes Copilot Credits; running them has separate licensing and billing rules. That admin overview is the place to check the current requirements rather than assuming an app is free to build or run because its source information is public.
-
-Microsoft also identifies this as a preview experience, not one intended for production use. That's an important boundary when deciding whether to experiment with it or depend on it for a business process.
-
-## A useful app idea can start this small
-
-I've explored the same describe-and-preview approach with an [Excel compliance tracker turned into a managed app](/blog/excel-compliance-calendar-managed-app/). Microsoft Release News applies it to a different task: giving me a place to begin reviewing product changes.
-
-The starting request didn't prescribe development tools or a data model, the structure an app uses to organize its information. It described what I wanted to do. The preview made the next decisions visible: which sources belong together, which product groups help, and what needs an access check.
-
-If you're trying the app builder, start with a recurring task you can describe in one sentence. Then use the preview to check one complete task, including its source data and access requirements, before widening the scope.
+If you're curious, pick one recurring job you can describe in a sentence, like "show me what changed for the products my team uses." Ask for it, try the preview, and see whether it's useful before widening the scope. If it is, you've given your team something real, and you didn't need to write a line of code to get there.
