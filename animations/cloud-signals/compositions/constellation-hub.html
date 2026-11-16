@@ -1,0 +1,157 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+      background: var(--ground, #070d16);
+      color: #e6ebf1;
+      font-family: Inter, sans-serif;
+      --signal: var(--accent, #60affc);
+      --signal-alt: var(--secondary, #2dd4bf);
+    }
+    .network { width: 100%; height: 100%; }
+    .fiber { fill: none; stroke: var(--signal); stroke-width: 1.5; opacity: 0.3; }
+    .fiber-teal { stroke: var(--signal-alt); }
+    .fiber-back { opacity: 0.13; stroke-width: 1; }
+    .flow {
+      fill: none;
+      stroke: url(#pulse-blue);
+      stroke-width: 3;
+      stroke-linecap: round;
+      stroke-dasharray: 100 900;
+    }
+    .flow-teal { stroke: url(#pulse-teal); stroke-dasharray: 65 935; }
+    .neuron { fill: var(--signal); }
+    .neuron-teal { fill: var(--signal-alt); }
+    .aura { fill: url(#neuron-light); }
+    .node-label { fill: #e6ebf1; font-size: 40px; font-weight: 600; }
+    .product-label { fill: #9fb0c3; font-size: 34px; font-weight: 400; }
+    .node-label, .product-label {
+      paint-order: stroke fill;
+      stroke: var(--ground, #070d16);
+      stroke-width: 10px;
+      stroke-linejoin: round;
+    }
+    .label-link { fill: none; stroke: #4a5f76; stroke-width: 1; }
+  </style>
+  <div data-hf-id="hf-m5zy" id="root" data-composition-id="constellation-hub" data-duration="8">
+    <div data-hf-studio-original-inline-translate="" data-hf-studio-original-display="" data-hf-studio-original-box-sizing="" data-hf-studio-original-flex-shrink="" data-hf-studio-original-flex-grow="" data-hf-studio-original-flex-basis="" data-hf-studio-original-max-height="" data-hf-studio-original-max-width="" data-hf-studio-original-min-height="" data-hf-studio-original-min-width="" data-hf-studio-original-box-height="173" data-hf-studio-original-box-width="300" data-hf-studio-original-height="" data-hf-studio-original-width="" data-hf-studio-box-size="true" style="--hf-studio-width: 1912px; --hf-studio-height: 1103px; width: 1912px; height: 1103px; min-width: 0px; min-height: 0px; max-width: none; max-height: none; box-sizing: border-box; translate: -6.721px -10.951px" data-hf-id="hf-jtb6" id="network" class="clip" data-start="0" data-duration="8" data-track-index="0" data-layout-allow-overflow>
+      <svg class="network" viewBox="0 0 1920 1080" role="img"
+        aria-label="Flowing neural connections link Azure; agents with Microsoft Foundry, Copilot, and Copilot Studio; identity with Microsoft Entra; compliance with Microsoft Purview; and security with Microsoft Defender and Microsoft Sentinel.">
+        <defs>
+          <radialGradient id="neuron-light">
+            <stop offset="0" stop-color="#60affc" stop-opacity="0.22" />
+            <stop offset="0.35" stop-color="#0078d4" stop-opacity="0.08" />
+            <stop offset="1" stop-color="#0078d4" stop-opacity="0" />
+          </radialGradient>
+          <linearGradient id="pulse-blue" x1="0" x2="1">
+            <stop stop-color="#60affc" stop-opacity="0.15" />
+            <stop offset="0.6" stop-color="#bfe1ff" />
+            <stop offset="1" stop-color="#60affc" stop-opacity="0.3" />
+          </linearGradient>
+          <linearGradient id="pulse-teal" x1="0" x2="1">
+            <stop stop-color="#14b8a6" stop-opacity="0.15" />
+            <stop offset="0.6" stop-color="#2dd4bf" />
+            <stop offset="1" stop-color="#2dd4bf" stop-opacity="0.3" />
+          </linearGradient>
+        </defs>
+        <ellipse class="aura" cx="960" cy="540" rx="720" ry="430" />
+        <g class="fiber fiber-back">
+          <path d="M250 510C480 160 660 800 960 470S1420 180 1670 590" />
+          <path d="M280 630C550 850 700 180 1040 550S1420 890 1650 440" />
+          <path d="M390 350C540 120 820 280 1080 700S1460 910 1560 680" />
+          <path d="M310 740C670 1000 680 350 1090 380S1360 250 1610 340" />
+          <path d="M360 420C650 660 640 880 1050 640S1440 150 1580 380" />
+          <path d="M430 240C590 530 820 140 1130 400S1480 810 1610 640" />
+        </g>
+        <g id="neural-weave">
+          <g class="fiber">
+            <path id="fiber-cloud" d="M340 400C540 400 530 210 720 330S800 610 1030 480S1350 350 1570 520" />
+            <path id="fiber-agents" class="fiber-teal" d="M390 670C630 730 510 430 790 510S1090 790 1270 640S1420 410 1600 430" />
+            <path id="fiber-identity" class="fiber-teal" d="M450 310C640 310 610 730 850 640S1130 330 1320 420S1430 710 1560 720" />
+            <path id="fiber-code" d="M330 560C540 450 650 770 920 610S1110 260 1320 330S1430 650 1610 610" />
+            <path d="M510 800C600 660 700 750 850 640C960 560 1010 610 1150 720S1410 780 1510 610" />
+            <path d="M510 250C600 480 650 330 790 510S1040 380 1210 260S1390 320 1470 400" />
+            <path d="M720 330C850 240 1030 180 1130 360S1250 580 1270 640" />
+            <path class="fiber-teal" d="M550 550C640 450 680 290 790 350S930 740 1130 710S1390 470 1440 520" />
+            <path d="M790 510C810 450 880 380 1030 480S1150 700 1320 730" />
+            <path class="fiber-teal" d="M720 330C750 430 680 590 850 640S1020 770 1150 720" />
+          </g>
+          <g data-layout-ignore>
+            <path id="signal-cloud" class="flow" pathLength="1000" d="M340 400C540 400 530 210 720 330S800 610 1030 480S1350 350 1570 520" />
+            <path id="signal-agents" class="flow flow-teal" pathLength="1000" d="M390 670C630 730 510 430 790 510S1090 790 1270 640S1420 410 1600 430" />
+            <path id="signal-identity" class="flow flow-teal" pathLength="1000" d="M450 310C640 310 610 730 850 640S1130 330 1320 420S1430 710 1560 720" />
+            <path id="signal-code" class="flow" pathLength="1000" d="M330 560C540 450 650 770 920 610S1110 260 1320 330S1430 650 1610 610" />
+          </g>
+          <g class="neuron">
+            <circle cx="340" cy="400" r="4" /><circle cx="1570" cy="520" r="4" />
+            <circle cx="720" cy="330" r="7" /><circle cx="1030" cy="480" r="8" />
+            <circle cx="920" cy="610" r="5" /><circle cx="1320" cy="330" r="6" />
+            <circle cx="330" cy="560" r="3" /><circle cx="1610" cy="610" r="4" />
+            <circle cx="510" cy="800" r="3" /><circle cx="510" cy="250" r="3" />
+          </g>
+          <g class="neuron neuron-teal">
+            <circle cx="790" cy="510" r="8" /><circle cx="850" cy="640" r="7" />
+            <circle cx="1270" cy="640" r="6" /><circle cx="1150" cy="720" r="4" />
+            <circle cx="390" cy="670" r="4" /><circle cx="1600" cy="430" r="4" />
+            <circle cx="450" cy="310" r="4" /><circle cx="1560" cy="720" r="4" />
+          </g>
+          <circle id="cloud-contact" class="aura" cx="720" cy="330" r="100" />
+          <circle id="agents-contact" class="aura" cx="1030" cy="480" r="120" />
+          <circle id="identity-contact" class="aura" cx="850" cy="640" r="90" />
+          <circle id="code-contact" class="aura" cx="1270" cy="640" r="100" />
+        </g>
+        <g id="cloud-node">
+          <path class="label-link" d="M350 310H300V280" />
+          <text class="node-label" x="290" y="258" data-var-text="cloud">Azure</text>
+        </g>
+        <g id="agents-node">
+          <path class="label-link" d="M1280 255C1180 255 1160 350 1080 350M1280 255C1390 255 1400 350 1470 350M1280 255C1250 285 1260 325 1300 350" />
+          <text class="node-label" x="1250" y="225" data-var-text="agents">Agents</text>
+          <g id="foundry-node">
+            <text class="product-label" x="1020" y="318" data-var-text="hub">Foundry</text>
+          </g>
+          <g id="code-node">
+            <text class="product-label" x="1390" y="318" data-var-text="code">Copilot</text>
+          </g>
+          <g id="studio-node">
+            <text class="product-label" x="1210" y="398" data-var-text="studio">Copilot Studio</text>
+          </g>
+        </g>
+        <g id="identity-node">
+          <path class="label-link" d="M490 730C460 730 460 770 490 770" />
+          <text class="node-label" x="300" y="788" data-var-text="identity">Identity</text>
+          <text class="product-label" x="300" y="838" data-var-text="entra">Entra</text>
+        </g>
+        <g id="security-node">
+          <path class="label-link" d="M510 490C560 490 570 440 610 440" />
+          <text class="node-label" x="300" y="460" data-var-text="security">Security</text>
+          <text class="product-label" x="300" y="510" data-var-text="defender">Defender</text>
+          <text class="product-label" x="300" y="558" data-var-text="sentinel">Sentinel</text>
+        </g>
+        <g id="compliance-node">
+          <path class="label-link" d="M1150 740C1110 765 1050 750 960 770" />
+          <text class="node-label" x="960" y="828" text-anchor="middle" data-var-text="compliance">Compliance</text>
+          <text class="product-label" x="960" y="878" text-anchor="middle" data-var-text="purview">Purview</text>
+        </g>
+      </svg>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    const signals = ["#signal-cloud", "#signal-agents", "#signal-identity", "#signal-code"];
+    signals.forEach((selector, index) => {
+      const start = index * -247;
+      tl.fromTo(selector, { strokeDashoffset: start },
+        { strokeDashoffset: start - 2000, duration: 8, ease: "none" }, 0);
+    });
+    const contacts = ["#cloud-contact", "#agents-contact", "#identity-contact", "#code-contact"];
+    contacts.forEach((selector, index) => {
+      tl.fromTo(selector, { opacity: 0.35 },
+        { opacity: 0.95, duration: 2, repeat: 3, yoyo: true, ease: "sine.inOut" }, 0);
+    });
+    tl.fromTo("#neural-weave", { y: 0 },
+      { y: -16, duration: 4, repeat: 1, yoyo: true, ease: "sine.inOut" }, 0);
+    window.__timelines["constellation-hub"] = tl;
+  </script>
+</template>
