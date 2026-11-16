@@ -241,3 +241,25 @@ Hero → featured post → latest posts → full-width newsletter signup → "Ex
 - **Don't** add glassmorphism (blur + transparency cards) as decoration. The header's backdrop-blur is functional, not stylistic.
 - **Don't** pair a second sans-serif with Inter. If you need contrast, it's Inter at different weights/sizes or JetBrains Mono for code.
 - **Don't** use arbitrary z-index values. The scale is: dropdown (10) → sticky header (40) → modal-backdrop (50) → modal (60) → toast (70) → tooltip (80).
+
+## 7. HyperFrames Animation Source
+
+`animations/cloud-signals/` contains an editable, eight-second neural-network
+composition for preview. It has not yet been integrated into the site. Curved
+blue and teal signals connect Azure with topic clusters. Agents groups Microsoft
+Foundry, Copilot, and Copilot Studio; Identity pairs with Microsoft Entra;
+Compliance pairs with Microsoft Purview; Security groups Microsoft Defender and
+Microsoft Sentinel. This is an editorial topic map, not a product architecture
+diagram; no product logos or product UI are simulated.
+
+The composition preserves the site's Inter stack. Its 40px topic labels and 34px
+product labels are video-space sizes on a 1920 x 1080 canvas, not additions to the
+website's CSS type scale. Foundry sits alongside Copilot and Copilot Studio near
+Agents rather than occupying the center of the network.
+
+From that directory, use `npm run dev` for the editable preview and
+`npm run check` for the animation audits. Approve the preview before rendering
+with `npm run render`. Local preview history and intermediate renders are ignored
+by Git. Site integration should use self-hosted media, explicit playback controls,
+and a static reduced-motion fallback without adding the animation runtime to
+article pages.

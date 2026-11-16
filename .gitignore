@@ -30,3 +30,8 @@ pnpm-debug.log*
 
 # local agent tooling cache (tracked config in .impeccable/ stays tracked)
 .impeccable/hook.cache.json
+
+# Local animation previews, render history, and intermediate exports
+animations/**/.hyperframes/
+animations/**/.thumbnails/
+animations/**/renders/

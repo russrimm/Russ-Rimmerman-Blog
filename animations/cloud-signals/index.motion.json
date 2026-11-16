@@ -1,0 +1,15 @@
+{
+  "duration": 8,
+  "assertions": [
+    { "kind": "appearsBy", "selector": "#cloud-node", "bySec": 0 },
+    { "kind": "staysInFrame", "selector": "#cloud-node" },
+    { "kind": "staysInFrame", "selector": "#agents-node" },
+    { "kind": "staysInFrame", "selector": "#foundry-node" },
+    { "kind": "staysInFrame", "selector": "#studio-node" },
+    { "kind": "staysInFrame", "selector": "#identity-node" },
+    { "kind": "staysInFrame", "selector": "#security-node" },
+    { "kind": "staysInFrame", "selector": "#code-node" },
+    { "kind": "staysInFrame", "selector": "#compliance-node" },
+    { "kind": "keepsMoving", "withinSelector": "#network", "maxStaticSec": 2 }
+  ]
+}
